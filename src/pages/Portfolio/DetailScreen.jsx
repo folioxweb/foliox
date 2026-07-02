@@ -6,7 +6,7 @@ import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
 import { useState } from 'react';
 import HoldingActionModal from '../../components/portfolio/HoldingActionModal';
-
+import FDActionModal from '../../components/portfolio/FDActionModal';
 /**
  * Maps a sector/category string to a Badge color variant.
  * Mirrors the mapping used in HoldingCard for visual consistency.
@@ -396,11 +396,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
         <div className="px-4 mt-8">
           <button
             type="button"
-            onClick={() => {
-  if (!isFD) {
-    setShowHoldingAction(true);
-  }
-}}
+            onClick={() => setShowHoldingAction(true)}
             className="w-full rounded-2xl py-4 text-white font-semibold"
             style={{
               background: 'linear-gradient(135deg,#10B981,#059669)'
@@ -411,13 +407,20 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
         </div>
       </motion.div>
 
-      {!isFD && (
+  {isFD ? (
+  <FDActionModal
+    holding={holding}
+    isOpen={showHoldingAction}
+    onClose={() => setShowHoldingAction(false)}
+  />
+) : (
   <HoldingActionModal
     holding={{
       ...holding,
-      assetType: holding.symbol
-        ? (category === "ETF" ? "etfs" : "stocks")
-        : "mutualFunds",
+      assetType:
+        holding.symbol
+          ? (category === "ETF" ? "etfs" : "stocks")
+          : "mutualFunds"
     }}
     isOpen={showHoldingAction}
     onClose={() => setShowHoldingAction(false)}

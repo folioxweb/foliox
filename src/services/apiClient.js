@@ -278,7 +278,18 @@ const realApi = {
     apiPost({
       action: "addHolding",
       ...payload
-    })
+    }),
+    updateFD: (payload) =>
+  apiPost({
+    action: "updateFD",
+    ...payload
+  }),
+
+deleteFD: (payload) =>
+  apiPost({
+    action: "deleteFD",
+    ...payload
+  }),
 
 };
 

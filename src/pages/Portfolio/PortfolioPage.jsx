@@ -24,8 +24,8 @@ import AddHoldingModal from "../../components/portfolio/AddHoldingModal";
 const TAB_CONFIG = [
   { label: 'Stocks', stateKey: 'stocks', fetchKey: 'fetchStocks' },
   { label: 'ETFs', stateKey: 'etfs', fetchKey: 'fetchEtfs' },
-  { label: 'Mutual Funds', stateKey: 'mutualFunds', fetchKey: 'fetchMutualFunds' },
-  { label: 'Fixed Deposits', stateKey: 'fds', fetchKey: 'fetchFDs' },
+  { label: 'MF', stateKey: 'mutualFunds', fetchKey: 'fetchMutualFunds' },
+  { label: 'FD', stateKey: 'fds', fetchKey: 'fetchFDs' },
 ]; 
 
 const TAB_LABELS = TAB_CONFIG.map((t) => t.label);
@@ -117,10 +117,10 @@ switch (activeTab) {
   case "ETFs":
     assetType = "etfs";
     break;
-  case "Mutual Funds":
+  case "MF":
     assetType = "mutualFunds";
     break;
-  case "Fixed Deposits":
+  case "FD":
     assetType = "fds";
     break;
 }
@@ -187,10 +187,11 @@ switch (activeTab) {
   return (
     <motion.main
       ref={scrollRef}
-      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-24"
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
       style={{
         background: '#0F172A',
         paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
+        paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
       }}
       variants={pageVariants}
       initial="hidden"
@@ -201,7 +202,7 @@ switch (activeTab) {
       onTouchCancel={() => { swipeStart.current = null; }}
     >
       {/* ── Page header ─────────────────────────────────────────────────── */}
-      <header className="px-4 pb-4">
+      <header className="px-4 pb-4" style={{ paddingBottom: '0px' }}>
         <div className="flex items-center justify-between mb-4 h-10 relative overflow-hidden">
           <AnimatePresence mode="wait">
             {!isSearchOpen ? (

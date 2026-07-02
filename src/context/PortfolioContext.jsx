@@ -185,6 +185,24 @@ const addHolding = useCallback(
   [executeHoldingAction]
 );
 
+const updateFD = useCallback(
+  (payload) =>
+    executeHoldingAction(
+      api.updateFD,
+      payload
+    ),
+  [executeHoldingAction]
+);
+
+const deleteFD = useCallback(
+  (payload) =>
+    executeHoldingAction(
+      api.deleteFD,
+      payload
+    ),
+  [executeHoldingAction]
+);
+
   useEffect(() => {
     let intervalId;
     let cancelled = false;
@@ -219,7 +237,9 @@ const addHolding = useCallback(
   buyMore,
   updateHolding,
   sellHolding,
-  addHolding
+  addHolding,
+  updateFD,
+  deleteFD,
 };
 
   return (
