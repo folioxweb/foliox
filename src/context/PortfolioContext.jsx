@@ -14,6 +14,7 @@ const initialState = {
   stocks: emptySlice(),
   etfs: emptySlice(),
   mutualFunds: emptySlice(),
+  fds: emptySlice(),
   lastUpdated: null,
 };
 
@@ -25,6 +26,7 @@ const ENDPOINT_TO_KEY = {
   stocks: 'stocks',
   etfs: 'etfs',
   mutualFunds: 'mutualFunds',
+  fds: 'fds',
 };
 
 const LIVE_REFRESH_INTERVAL_MS = 10_000;
@@ -86,6 +88,10 @@ export function PortfolioProvider({ children }) {
   const fetchStocks = useCallback(() => fetchEndpoint('stocks', api.getStocks), [fetchEndpoint]);
   const fetchEtfs = useCallback(() => fetchEndpoint('etfs', api.getEtfs), [fetchEndpoint]);
   const fetchMutualFunds = useCallback(() => fetchEndpoint('mutualFunds', api.getMutualFunds), [fetchEndpoint]);
+  const fetchFDs = useCallback(
+  () => fetchEndpoint('fds', api.getFDs),
+  [fetchEndpoint]
+);
 
   // These market-sensitive datasets refresh continuously. The rest load once
   // on startup (or when the user explicitly refreshes).
@@ -111,6 +117,10 @@ export function PortfolioProvider({ children }) {
       { endpoint: 'stocks', apiFn: api.getStocks },
       { endpoint: 'etfs', apiFn: api.getEtfs },
       { endpoint: 'mutualFunds', apiFn: api.getMutualFunds },
+      {
+  endpoint: 'fds',
+  apiFn: api.getFDs
+},
     ];
 
     endpoints.forEach(({ endpoint }) =>
@@ -203,6 +213,7 @@ const addHolding = useCallback(
   fetchStocks,
   fetchEtfs,
   fetchMutualFunds,
+  fetchFDs,
   refreshLiveHoldings,
   refreshAll,
   buyMore,

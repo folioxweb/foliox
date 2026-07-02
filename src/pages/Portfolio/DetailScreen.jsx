@@ -141,13 +141,20 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
     buyPrice,
     avgPurchasePrice = buyPrice,
   } = holding;
+  const isFD = holding.assetType === "fds";
 
   const { isPrivacyMode } = usePrivacy();
   const [showHoldingAction, setShowHoldingAction] = useState(false);
 
-  const returnValue = holding.returnValue !== undefined
-    ? holding.returnValue
-    : (currentValue && investedValue ? currentValue - investedValue : 0);
+   const returnValue = isFD
+   ? holding.interestEarned
+   : (
+       holding.returnValue !== undefined
+         ? holding.returnValue
+         : (currentValue && investedValue
+            ? currentValue - investedValue
+            : 0)
+     );
 
   const isProfit = returnValue >= 0;
   const pnlColor = isProfit ? '#22C55E' : '#EF4444';
@@ -208,9 +215,10 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
             </button>
 
             {/* Sector / category badge */}
-            {labelStr && (
-              <Badge label={labelStr} color={badgeColor} />
-            )}
+             <Badge
+  label={isFD ? "Fixed Deposit" : labelStr}
+  color={isFD ? "teal" : badgeColor}
+ />
           </div>
 
           {/* Company / fund name — large (Req 5.1) */}
@@ -239,7 +247,9 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
               className="text-sm font-bold px-2.5 py-0.5 rounded-full"
               style={{ color: pnlColor, background: pnlBg }}
             >
-              {formatPercent(returnPct)}
+               {isFD
+   ? `${holding.interestRate}%`
+ : formatPercent(returnPct)}
             </span>
 
             {/* Allocation % (Req 5.1) */}
@@ -276,96 +286,143 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
 
           {/* dl wraps all dt/dd pairs for semantic key-value structure */}
           <dl>
-            {/* Invested value (Req 5.2) */}
-            <InfoRow
-              label="Invested Value"
-              value={isPrivacyMode ? '₹***' : formatCurrency(investedValue)}
-            />
+           {isFD ? (
+  <>
+    <InfoRow
+      label="Principal"
+      value={isPrivacyMode ? "₹***" : formatCurrency(holding.principal)}
+    />
 
-            {/* Current value (Req 5.2) */}
-            <InfoRow
-              label="Current Value"
-              value={isPrivacyMode ? '₹***' : formatCurrency(currentValue)}
-            />
+    <InfoRow
+      label="Current Value"
+      value={isPrivacyMode ? "₹***" : formatCurrency(holding.currentValue)}
+    />
 
-            {/* Return ₹ and % (Req 5.2) */}
-            <InfoRow
-              label="Return"
-              value={`${isProfit && returnValue !== 0 ? '+' : ''}${isPrivacyMode ? '₹***' : formatCurrency(returnValue)} (${formatPercent(returnPct)})`}
-              valueStyle={{ color: pnlColor }}
-            />
+    <InfoRow
+      label="Interest Earned"
+      value={isPrivacyMode ? "₹***" : formatCurrency(holding.interestEarned)}
+      valueStyle={{ color: pnlColor }}
+    />
 
-            {/* Quantity (Req 5.2) */}
-            <InfoRow
-              label="Quantity"
-              value={quantity != null ? (isPrivacyMode ? '***' : String(quantity)) : '—'}
-            />
+    <InfoRow
+      label="Interest Rate"
+      value={`${holding.interestRate}%`}
+    />
 
-            {/* Average purchase price (Req 5.2) */}
-            <InfoRow
-              label="Avg Purchase Price"
-              value={avgPurchasePrice != null ? (isPrivacyMode ? '₹***' : formatCurrency(avgPurchasePrice)) : '—'}
-            />
+    <InfoRow
+      label="Start Date"
+      value={new Date(holding.startDate).toLocaleDateString("en-IN")}
+    />
 
-            {/* Confidence level badge (Req 5.2) — High=green, Medium=yellow, Low=red */}
-            {confidenceLevel && (
-              <div
-                className="flex items-center justify-between py-3"
-                style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
-              >
-                <dt className="text-sm font-medium" style={{ color: '#94A3B8' }}>
-                  Confidence Level
-                </dt>
-                <dd>
-                  <Badge
-                    label={confidenceLevel}
-                    color={confidenceBadgeColor}
-                    className="font-semibold"
-                  />
-                </dd>
-              </div>
-            )}
+    <InfoRow
+      label="Maturity Date"
+      value={new Date(holding.maturityDate).toLocaleDateString("en-IN")}
+    />
 
-            {/* Sector / category (Req 5.2) */}
-            {labelStr && (
-              <InfoRow
-                label="Sector / Category"
-                value={labelStr}
-              />
-            )}
+    <InfoRow
+      label="Maturity Value"
+      value={isPrivacyMode ? "₹***" : formatCurrency(holding.maturityValue)}
+    />
+
+    <InfoRow
+      label="Portfolio Allocation"
+      value={`${holding.weightage.toFixed(2)}%`}
+    />
+  </>
+) : (
+  <>
+    {/* Invested value (Req 5.2) */}
+    <InfoRow
+      label="Invested Value"
+      value={isPrivacyMode ? '₹***' : formatCurrency(investedValue)}
+    />
+
+    {/* Current value (Req 5.2) */}
+    <InfoRow
+      label="Current Value"
+      value={isPrivacyMode ? '₹***' : formatCurrency(currentValue)}
+    />
+
+    {/* Return ₹ and % (Req 5.2) */}
+    <InfoRow
+      label="Return"
+      value={`${isProfit && returnValue !== 0 ? '+' : ''}${isPrivacyMode ? '₹***' : formatCurrency(returnValue)} (${formatPercent(returnPct)})`}
+      valueStyle={{ color: pnlColor }}
+    />
+
+    {/* Quantity (Req 5.2) */}
+    <InfoRow
+      label="Quantity"
+      value={quantity != null ? (isPrivacyMode ? '***' : String(quantity)) : '—'}
+    />
+
+    {/* Average purchase price (Req 5.2) */}
+    <InfoRow
+      label="Avg Purchase Price"
+      value={avgPurchasePrice != null ? (isPrivacyMode ? '₹***' : formatCurrency(avgPurchasePrice)) : '—'}
+    />
+
+    {/* Confidence level badge (Req 5.2) */}
+    {confidenceLevel && (
+      <div
+        className="flex items-center justify-between py-3"
+        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      >
+        <dt className="text-sm font-medium" style={{ color: '#94A3B8' }}>
+          Confidence Level
+        </dt>
+        <dd>
+          <Badge
+            label={confidenceLevel}
+            color={confidenceBadgeColor}
+            className="font-semibold"
+          />
+        </dd>
+      </div>
+    )}
+
+    {/* Sector / category (Req 5.2) */}
+    {labelStr && (
+      <InfoRow
+        label="Sector / Category"
+        value={labelStr}
+      />
+    )}
+  </>
+)}
           </dl>
         </section>
 
         <div className="px-4 mt-8">
           <button
             type="button"
-            onClick={() => setShowHoldingAction(true)}
+            onClick={() => {
+  if (!isFD) {
+    setShowHoldingAction(true);
+  }
+}}
             className="w-full rounded-2xl py-4 text-white font-semibold"
             style={{
               background: 'linear-gradient(135deg,#10B981,#059669)'
             }}
           >
-            Manage Position
+            {isFD ? "Update FD" : "Manage Position"}
           </button>
         </div>
       </motion.div>
 
-      <HoldingActionModal
-        holding={{
-          ...holding,
-
-          assetType:
-            holding.symbol
-              ? (
-                category === "ETF"
-                  ? "etfs"
-                  : "stocks"
-              )
-              : "mutualFunds"
-        }}
-        isOpen={showHoldingAction}
-        onClose={() => setShowHoldingAction(false)}
-      />
+      {!isFD && (
+  <HoldingActionModal
+    holding={{
+      ...holding,
+      assetType: holding.symbol
+        ? (category === "ETF" ? "etfs" : "stocks")
+        : "mutualFunds",
+    }}
+    isOpen={showHoldingAction}
+    onClose={() => setShowHoldingAction(false)}
+  />
+)}
     </Modal>
   );
 }

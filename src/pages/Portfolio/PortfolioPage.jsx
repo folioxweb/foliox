@@ -25,7 +25,8 @@ const TAB_CONFIG = [
   { label: 'Stocks', stateKey: 'stocks', fetchKey: 'fetchStocks' },
   { label: 'ETFs', stateKey: 'etfs', fetchKey: 'fetchEtfs' },
   { label: 'Mutual Funds', stateKey: 'mutualFunds', fetchKey: 'fetchMutualFunds' },
-];
+  { label: 'Fixed Deposits', stateKey: 'fds', fetchKey: 'fetchFDs' },
+]; 
 
 const TAB_LABELS = TAB_CONFIG.map((t) => t.label);
 
@@ -57,8 +58,8 @@ export default function PortfolioPage() {
   const swipeStart = useRef(null);
   const searchInputRef = useRef(null);
 
-  const { state, fetchStocks, fetchEtfs, fetchMutualFunds, refreshAll } = usePortfolio();
-  const fetchFns = { fetchStocks, fetchEtfs, fetchMutualFunds };
+  const { state, fetchStocks, fetchEtfs, fetchMutualFunds, fetchFDs, refreshAll } = usePortfolio();
+  const fetchFns = { fetchStocks, fetchEtfs, fetchMutualFunds,fetchFDs };
 
   const ensureTabData = useCallback(
     (tabLabel) => {
@@ -69,7 +70,7 @@ export default function PortfolioPage() {
         fetchFns[config.fetchKey]();
       }
     },
-    [state, fetchStocks, fetchEtfs, fetchMutualFunds]
+    [state, fetchStocks, fetchEtfs, fetchMutualFunds, fetchFDs]
   );
 
   useEffect(() => {
@@ -112,11 +113,17 @@ export default function PortfolioPage() {
 
   function handleHoldingPress(holding) {
     let assetType = "stocks";
-    if (activeTab === "ETFs") {
-      assetType = "etfs";
-    } else if (activeTab === "Mutual Funds") {
-      assetType = "mutualFunds";
-    }
+switch (activeTab) {
+  case "ETFs":
+    assetType = "etfs";
+    break;
+  case "Mutual Funds":
+    assetType = "mutualFunds";
+    break;
+  case "Fixed Deposits":
+    assetType = "fds";
+    break;
+}
     setSelectedHolding({ ...holding, assetType });
     setDetailOpen(true);
   }
@@ -136,16 +143,17 @@ export default function PortfolioPage() {
     // 1. Text Search Filter
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
-      holdings = holdings.filter(
-        h => (h.name ?? '').toLowerCase().includes(query) || (h.symbol ?? '').toLowerCase().includes(query)
-      );
+      holdings = holdings.filter(h =>
+  (h.name ?? h.bankName ?? "").toLowerCase().includes(query) ||
+  (h.symbol ?? "").toLowerCase().includes(query)
+);
     }
 
     // 2. Returns Filter
     if (filterBy === 'profit') {
-      holdings = holdings.filter(h => (h.pnl ?? h.returnPct ?? 0) >= 0);
+      holdings = holdings.filter(h => (h.pnl ?? h.returnPct ?? h.interestEarned ?? 0) >= 0);
     } else if (filterBy === 'loss') {
-      holdings = holdings.filter(h => (h.pnl ?? h.returnPct ?? 0) < 0);
+      holdings = holdings.filter(h => (h.pnl ?? h.returnPct ?? h.interestEarned ?? 0) < 0);
     }
 
     // 3. Sorting Engine
@@ -154,9 +162,13 @@ export default function PortfolioPage() {
       if (sortBy === 'name') {
         comparison = (a.name ?? '').localeCompare(b.name ?? '');
       } else if (sortBy === 'return') {
-        comparison = (a.pnl ?? a.returnPct ?? 0) - (b.pnl ?? b.returnPct ?? 0);
+        comparison =
+  (a.pnl ?? a.returnPct ?? a.interestEarned ?? 0) -
+  (b.pnl ?? b.returnPct ?? b.interestEarned ?? 0);
       } else if (sortBy === 'investedValue') {
-        comparison = (a.investedValue ?? a.invested ?? 0) - (b.investedValue ?? b.invested ?? 0);
+        comparison =
+  (a.investedValue ?? a.invested ?? a.principal ?? 0) -
+  (b.investedValue ?? b.invested ?? b.principal ?? 0);
       } else if (sortBy === 'weight') {
         comparison = (a.portfolioWeight ?? a.weightage ?? 0) - (b.portfolioWeight ?? b.weightage ?? 0);
       } else {

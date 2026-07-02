@@ -253,6 +253,9 @@ const realApi = {
   getMutualFunds: () =>
     apiFetch("mutualFunds"),
 
+  getFDs: () =>
+    apiFetch("fds"),
+
   buyMore: (payload) =>
     apiPost({
       action: "buyMore",

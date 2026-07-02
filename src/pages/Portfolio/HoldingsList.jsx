@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import HoldingCard from '../../components/cards/HoldingCard';
+import FDCard from '../../components/cards/FDCard';
 import Skeleton from '../../components/ui/Skeleton';
 import Button from '../../components/ui/Button';
 
@@ -161,11 +162,18 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
           key={holding.id ?? holding.symbol ?? holding.srNo ?? holding.name}
           variants={itemVariants}
         >
-          <HoldingCard
-            holding={holding}
-            variant="full"
-            onPress={onPress ? () => onPress(holding) : undefined}
-          />
+          {holding.assetType === "fds" ? (
+  <FDCard
+    holding={holding}
+    onPress={onPress ? () => onPress(holding) : undefined}
+  />
+) : (
+  <HoldingCard
+    holding={holding}
+    variant="full"
+    onPress={onPress ? () => onPress(holding) : undefined}
+  />
+)}
         </motion.div>
       ))}
     </motion.section>
