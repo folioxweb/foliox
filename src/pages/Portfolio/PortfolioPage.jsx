@@ -191,7 +191,7 @@ switch (activeTab) {
       style={{
         background: '#0F172A',
         paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
-        paddingBottom: "calc(1rem + env(safe-area-inset-bottom))",
+        paddingBottom: "1rem",
       }}
       variants={pageVariants}
       initial="hidden"

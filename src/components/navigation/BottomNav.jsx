@@ -53,7 +53,7 @@ const BottomNav = () => {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 bg-slate-dark border-t border-[#334155]"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      style={{ paddingBottom: 0 }}
       data-safe-area-bottom="true"
       aria-label="Main navigation"
     >

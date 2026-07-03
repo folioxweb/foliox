@@ -242,7 +242,7 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <a
+              {/* <a
                 href="https://github.com/equity-dashboard/equity-dashboard"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -259,7 +259,7 @@ export default function SettingsPage() {
               >
                 <GitBranch size={16} aria-hidden="true" />
                 github.com/equity-dashboard/equity-dashboard
-              </a>
+              </a> */}
             </div>
           </section>
 
