@@ -129,23 +129,26 @@ async function apiPost(body) {
     });
 
     clearTimeout(timer);
+
     const json = await res.json();
 
     // Handle expired session
     if (json.error && String(json.error).includes("Unauthorized")) {
-      logout();
-      throw new Error("Session expired");
+      logout("Your session has expired. Please sign in again.");
+      return null;
     }
 
     if (!res.ok) {
       throw {
         endpoint: body.action,
         status: res.status,
-        message: res.statusText
+        message: res.statusText,
+        payload: json
       };
     }
 
     return json.data;
+
   } catch (err) {
     clearTimeout(timer);
 
@@ -194,6 +197,11 @@ const realApi = {
     action: "login",
     password
   });
+
+  if (!data) {
+    return null;
+  }
+
   setToken(data.token);
   return data;
 },

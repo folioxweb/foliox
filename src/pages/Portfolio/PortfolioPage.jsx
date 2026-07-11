@@ -21,6 +21,8 @@ import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import AddHoldingModal from "../../components/portfolio/AddHoldingModal";
 import LoadingIndicator from "../../components/ui/LoadingIndicator";
+import { Settings } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const TAB_CONFIG = [
   { label: 'Stocks', stateKey: 'stocks' },
@@ -46,6 +48,7 @@ const pageVariants = {
 
 export default function PortfolioPage() {
   const scrollRef = usePageScrollRestoration('portfolio');
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState(TAB_LABELS[0]);
   const [selectedHolding, setSelectedHolding] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -235,6 +238,7 @@ export default function PortfolioPage() {
           </AnimatePresence>
 
           <div className="flex items-center gap-2 absolute right-0">
+             
             <button
               onClick={() => {
                 if (isSearchOpen) setSearchQuery('');
@@ -253,6 +257,14 @@ export default function PortfolioPage() {
             </button>
             <RefreshButton onRefresh={refreshAll} />
             <PrivacyToggle />
+            <button
+    onClick={() => navigate("/settings")}
+    className="
+      flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+    aria-label="Settings"
+  >
+    <Settings size={20} />
+  </button>
           </div>
         </div>
 

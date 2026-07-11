@@ -29,11 +29,11 @@ const TABS = [
     icon: Briefcase,
     label: 'Assets',
   },
-  {
-    path: '/settings',
-    icon: Settings,
-    label: 'Settings',
-  },
+  // {
+  //   path: '/settings',
+  //   icon: Settings,
+  //   label: 'Settings',
+  // },
 ];
 
 const BottomNav = () => {

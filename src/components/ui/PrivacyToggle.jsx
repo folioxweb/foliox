@@ -7,7 +7,7 @@ export default function PrivacyToggle() {
   return (
     <button
       onClick={togglePrivacyMode}
-      className="p-2 rounded-full bg-slate-800 border border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
       aria-label={isPrivacyMode ? "Disable privacy mode" : "Enable privacy mode"}
     >
       {isPrivacyMode ? <EyeOff size={18} /> : <Eye size={18} />}

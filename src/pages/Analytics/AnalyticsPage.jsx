@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Layers, BarChart2 } from 'lucide-react';
+import { Layers, BarChart2, Settings } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import Skeleton from '../../components/ui/Skeleton';
 import PrivacyToggle from '../../components/ui/PrivacyToggle';
@@ -8,6 +8,7 @@ import { usePrivacy } from '../../context/PrivacyContext';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
+import { useNavigate } from 'react-router-dom';
 
 // ─── Framer Motion variants ───────────────────────────────────────────────────
 
@@ -115,7 +116,7 @@ export default function AnalyticsPage() {
   refreshing,
 } = usePortfolio();
   const scrollRef = usePageScrollRestoration('analytics');
-
+  const navigate = useNavigate();
   const { data: sectorData, loading: sectorLoading } = state.overallSectorAllocation;
   const { data: stocksData, loading: stocksLoading } = state.stocksAllocation;
   const isLoading = refreshing;
@@ -151,6 +152,13 @@ export default function AnalyticsPage() {
   <div className="flex items-center gap-2">
     <RefreshButton onRefresh={refreshAll} />
     <PrivacyToggle />
+    <button
+    onClick={() => navigate("/settings")}
+    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+    aria-label="Settings"
+  >
+    <Settings size={20} />
+  </button>
   </div>
 
 </div>

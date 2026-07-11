@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Settings} from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 
 import OverallInvestments from './OverallInvestments';
@@ -11,6 +11,7 @@ import PrivacyToggle from '../../components/ui/PrivacyToggle';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
+import { useNavigate } from 'react-router-dom';
 
 function ErrorBanner({ onRetry }) {
   return (
@@ -51,7 +52,7 @@ export default function DashboardPage() {
   refreshing,
 } = usePortfolio();
   const scrollRef = usePageScrollRestoration('dashboard');
-
+  const navigate = useNavigate();
   const { overallInvestments, assetAllocation, overallSectorAllocation, stocksAllocation } = state;
 
   const isLoading = refreshing;
@@ -80,9 +81,22 @@ export default function DashboardPage() {
   </div>
 
   <div className="flex items-center gap-2">
-    <RefreshButton onRefresh={handleDashboardRefresh} />
-    <PrivacyToggle />
-  </div>
+
+  <RefreshButton onRefresh={handleDashboardRefresh} />
+
+  <PrivacyToggle />
+
+  <button
+    type="button"
+    onClick={() => navigate("/settings")}
+    className="
+      flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+    aria-label="Settings"
+  >
+    <Settings size={18} />
+  </button>
+
+</div>
 
 </div>
         <AnimatePresence>
