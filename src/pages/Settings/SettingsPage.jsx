@@ -1,78 +1,56 @@
-import { useState, useCallback, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import { Sun, Moon, RefreshCw, GitBranch, Info } from 'lucide-react';
-
-import { useTheme } from '../../context/ThemeContext';
+import { useState } from 'react';
+import { Info, Database, Trash2, Shield, LogOut } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
-import Button from '../../components/ui/Button';
-import Toast from '../../components/ui/Toast';
-import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
+import { logout } from "../../services/apiClient";
 
 // App version — falls back to '0.0.0' if env var is not set (Requirement 7.4)
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? '1.0.0';
+const APP_VERSION = "1.0.1";
+const BUILD_DATE = __BUILD_DATE__;
+const REACT_VERSION = __REACT_VERSION__;
+const VITE_VERSION = __VITE_VERSION__;
+const API_VERSION = "Version 40 on 12 Jul 2026, 12:48 AM"; // Maintain manually 
 
-/**
- * Formats a Date object into a readable "Last Updated" string.
- * Returns null when date is null/undefined.
- *
- * @param {Date|null} date
- * @returns {string|null}
- */
 function formatLastUpdated(date) {
-  if (!date) return null;
-  return date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+
+  if (!date) return "Never";
+
+  return new Date(date).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
+
 }
 
-/**
- * SettingsPage — theme toggle, refresh control, and app info.
- *
- * Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7
- */
 export default function SettingsPage() {
-  const { mode, toggle, isStorageAvailable } = useTheme();
-  const { state, refreshAll } = usePortfolio();
+  const { state } = usePortfolio();
   const scrollRef = usePageScrollRestoration('settings');
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [errorToast, setErrorToast] = useState(null);
+  const lastUpdated = formatLastUpdated(
+  state.lastUpdated
+);
 
-  // We use a ref to capture state after refreshAll settles, since refreshAll
-  // uses Promise.allSettled internally and never throws — endpoint errors are
-  // stored in state.*.error instead.
-  const stateRef = useRef(state);
-  stateRef.current = state;
+  function InfoRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between py-3">
 
-  const lastUpdatedStr = formatLastUpdated(state.lastUpdated);
+      <span className="text-sm text-[var(--text-secondary)]">
+        {label}
+      </span>
 
-  // ── Refresh handler ──────────────────────────────────────────────────────
-  // Requirement 7.2, 7.6, 7.7
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    setErrorToast(null);
-    try {
-      await refreshAll();
-      // refreshAll uses Promise.allSettled so it won't throw.
-      // Check the context state snapshot for any endpoint errors after settling.
-      const updatedState = stateRef.current;
-      const endpoints = ['dashboard', 'stocks', 'etfs', 'mutualFunds', 'health'];
-      const hasAnyError = endpoints.some((key) => updatedState[key]?.error != null);
-      if (hasAnyError) {
-        setErrorToast('Some data failed to refresh. Please try again.');
-      }
-    } catch {
-      // Safety net for truly unexpected errors
-      setErrorToast('Failed to refresh data. Please try again.');
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [refreshAll]);
+      <span className="text-sm font-semibold text-[var(--text)]">
+        {value}
+      </span>
+
+    </div>
+  );
+
+  
+}
 
   // ── Section styles ───────────────────────────────────────────────────────
   const sectionClass = [
@@ -84,7 +62,12 @@ export default function SettingsPage() {
   const sectionLabelClass =
     'text-xs font-semibold uppercase tracking-widest text-[var(--text-secondary)]';
 
-  const rowClass = 'flex items-center justify-between gap-4';
+  const rowClass = "flex items-center justify-between";
+
+  function handleClearCache() {
+    localStorage.removeItem("portfolio-cache");
+    window.location.reload();
+  }
 
   return (
     <>
@@ -95,188 +78,170 @@ export default function SettingsPage() {
         style={{ paddingTop: 'max(1.5rem, env(safe-area-inset-top))' }}
       >
         {/* ── Page heading ──────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-[var(--text)]">Settings</h1>
-          <RefreshButton onRefresh={handleRefresh} />
         </div>
 
-        <div className="flex flex-col gap-4">
-
-          {/* ── Appearance section ─────────────────────────────────────── */}
-          {/* Requirement 7.1 */}
-          <section aria-label="Appearance" className={sectionClass}>
-            <h2 className={sectionLabelClass}>Appearance</h2>
-
-            <div className={rowClass}>
-              <div>
-                <p className="text-base font-medium text-[var(--text)]">
-                  Dark Mode
-                </p>
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {mode === 'dark' ? 'Dark theme active' : 'Light theme active'}
-                </p>
+        {/* ───────────────── Storage ───────────────── */}
+        <section aria-label="Storage" className={sectionClass}>
+          <h2 className={sectionLabelClass}>Storage</h2>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex gap-3">
+              <div className="mt-1">
+                <Database size={20} className="text-sky-400" />
               </div>
+              <div>
+                <h3 className="text-base font-semibold text-[var(--text)]">
+                  Local Cache
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
+                  Portfolio data is stored locally for faster startup. Clearing the cache will download fresh data from the server.
+                </p>
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-800/50 px-3 py-2">
+  <span className="text-sm text-[var(--text-secondary)]">
+    Last Updated
+  </span>
 
-              {/* Sun / Moon toggle — Requirement 7.1 */}
-              <button
-                type="button"
-                aria-label={
-                  isStorageAvailable
-                    ? mode === 'dark'
-                      ? 'Switch to light mode'
-                      : 'Switch to dark mode'
-                    : 'Theme toggle disabled — localStorage unavailable'
-                }
-                aria-pressed={mode === 'light'}
-                disabled={!isStorageAvailable}
-                onClick={toggle}
-                className={[
-                  'flex items-center justify-center',
-                  'w-11 h-11 rounded-full',
-                  'border border-[var(--border)]',
-                  'bg-[var(--bg)] transition-colors duration-300',
-                  'hover:bg-[var(--border)] active:scale-95',
-                  'focus-visible:outline-none focus-visible:ring-2',
-                  'focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
-                  'focus-visible:ring-offset-[var(--bg)]',
-                  !isStorageAvailable
-                    ? 'opacity-40 cursor-not-allowed'
-                    : 'cursor-pointer',
-                ].join(' ')}
-              >
-                {mode === 'dark' ? (
-                  <Sun
-                    size={20}
-                    className="text-amber-400"
-                    aria-hidden="true"
-                  />
-                ) : (
-                  <Moon
-                    size={20}
-                    className="text-slate-600"
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
+  <span className="text-sm font-medium text-[var(--text)]">
+    {lastUpdated}
+  </span>
+</div>
+              </div>
             </div>
+          </div>
+          <button
+            type="button"
+            className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20"
+            onClick={handleClearCache}
+          >
+            <Trash2 size={16} />
+            Clear Cache
+          </button>
+        </section>
 
-            {/* Storage unavailable notice (Requirement 2.6) */}
-            {!isStorageAvailable && (
-              <p className="text-xs text-amber-400" role="note">
-                Theme preference cannot be saved — localStorage is unavailable.
+        <div className="mt-4" /> {/* Spacer between sections */}
+
+        {/* ───────────────── Security ───────────────── */}
+        <section aria-label="Security" className={sectionClass}>
+          <h2 className={sectionLabelClass}>Security</h2>
+          <div className="flex items-start gap-3">
+            <Shield size={20} className="mt-1 text-amber-400" />
+            <div>
+              <h3 className="text-base font-semibold text-[var(--text)]">Logout</h3>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--text-secondary)]">
+                End your current session. You'll need to sign in again to access your portfolio.
               </p>
-            )}
-          </section>
-
-          {/* ── Data section ───────────────────────────────────────────── */}
-          {/* Requirements 7.2, 7.3, 7.6 */}
-          <section aria-label="Data" className={sectionClass}>
-            <h2 className={sectionLabelClass}>Data</h2>
-
-            {/* Last Updated — Requirement 7.3 */}
-            <div className={rowClass}>
-              <div>
-                <p className="text-base font-medium text-[var(--text)]">
-                  Last Updated
-                </p>
-                <p
-                  className="text-sm text-[var(--text-secondary)]"
-                  aria-live="polite"
-                  aria-atomic="true"
-                >
-                  {lastUpdatedStr ?? 'Never'}
-                </p>
-              </div>
             </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowLogoutDialog(true)}
+            className="mt-2 flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-400 transition-all hover:bg-amber-500/20"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
+        </section>
 
-            {/* Refresh Data — Requirements 7.2, 7.6 */}
-            <Button
-              variant="primary"
-              size="md"
-              loading={isRefreshing}
-              disabled={isRefreshing}
-              aria-label={isRefreshing ? 'Refreshing data…' : 'Refresh all portfolio data'}
-              onClick={handleRefresh}
-              className="w-full justify-center"
-            >
-              {!isRefreshing && (
-                <RefreshCw
-                  size={16}
-                  aria-hidden="true"
-                />
-              )}
-              {isRefreshing ? 'Refreshing…' : 'Refresh Data'}
-            </Button>
-          </section>
-
-          {/* ── About section ──────────────────────────────────────────── */}
-          {/* Requirements 7.4, 7.5 */}
+        <div
+          className="flex flex-col gap-4 padding-top-10"
+          style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}
+        >
+          
           <section aria-label="About" className={sectionClass}>
-            <h2 className={sectionLabelClass}>About</h2>
+            <h2 className={sectionLabelClass}>
+  About
+</h2>
 
-            {/* App version — Requirement 7.4 */}
-            <div className={rowClass}>
-              <p className="text-base font-medium text-[var(--text)]">
-                Version
-              </p>
-              <p className="text-sm font-mono text-[var(--text-secondary)]">
-                {APP_VERSION}
-              </p>
-            </div>
+<div className="flex items-center gap-3 mb-3">
+  <Info
+    size={20}
+    className="text-sky-400"
+  />
 
-            <hr className="border-[var(--border)]" />
+  <div>
+    <h3 className="text-lg font-semibold text-[var(--text)]">
+      Equity Dashboard
+    </h3>
 
-            {/* Description + GitHub link — Requirement 7.5 */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-start gap-3">
-                <Info
-                  size={18}
-                  className="mt-0.5 shrink-0 text-emerald-400"
-                  aria-hidden="true"
-                />
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
-                  Equity Dashboard is a mobile-first portfolio tracker that pulls
-                  live investment data from Google Sheets via a Google Apps Script
-                  REST API. Installable as a PWA on iPhone for a native-app
-                  experience.
-                </p>
-              </div>
+    <p className="text-sm text-[var(--text-secondary)]">
+      Personal Portfolio Management Platform
+    </p>
+  </div>
+</div>
 
-              {/* <a
-                href="https://github.com/equity-dashboard/equity-dashboard"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="View source code on GitHub (opens in new tab)"
-                className={[
-                  'flex items-center gap-2',
-                  'text-sm font-medium text-emerald-400',
-                  'hover:text-emerald-300 transition-colors duration-200',
-                  'focus-visible:outline-none focus-visible:ring-2',
-                  'focus-visible:ring-emerald-500 focus-visible:ring-offset-2',
-                  'focus-visible:ring-offset-[var(--bg)]',
-                  'rounded-sm',
-                ].join(' ')}
-              >
-                <GitBranch size={16} aria-hidden="true" />
-                github.com/equity-dashboard/equity-dashboard
-              </a> */}
-            </div>
+<div className="divide-y divide-[var(--border)]">
+
+  <InfoRow
+    label="App Version"
+    value={APP_VERSION}
+  />
+
+  <InfoRow
+    label="API Version"
+    value={API_VERSION}
+  />
+
+  <InfoRow
+    label="Build Date"
+    value={BUILD_DATE}
+  />
+
+  <InfoRow
+    label="React"
+    value={REACT_VERSION}
+  />
+
+  <InfoRow
+    label="Vite"
+    value={VITE_VERSION}
+  />
+
+  <InfoRow
+    label="Powered By"
+    value="Google Apps Script"
+  />
+
+  <InfoRow
+    label="Hosting"
+    value="GitHub Pages"
+  />
+
+  <InfoRow
+    label="Developer"
+    value="Parth Deshmukh"
+  />
+
+</div>  
           </section>
-
         </div>
       </main>
 
-      {/* ── Error toast — Requirement 7.7 ──────────────────────────────── */}
-      <AnimatePresence>
-        {errorToast && (
-          <Toast
-            key="settings-error-toast"
-            message={errorToast}
-            type="error"
-            onDismiss={() => setErrorToast(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* ── Logout Dialog ──────────────────────────────────────────── */}
+      {showLogoutDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="w-[90%] max-w-sm rounded-3xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-white">Logout?</h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400">
+              You will need to sign in again to access your portfolio.
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setShowLogoutDialog(false)}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-slate-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => logout()}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

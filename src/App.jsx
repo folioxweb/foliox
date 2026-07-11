@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { PortfolioProvider } from './context/PortfolioContext';
+import { PrivacyProvider } from './context/PrivacyContext';
 import BottomNav from './components/navigation/BottomNav';
 import Skeleton from './components/ui/Skeleton';
 import LoginPage from "./pages/Login/LoginPage";
@@ -15,7 +16,6 @@ const DashboardPage  = lazy(() => import('./pages/Dashboard/DashboardPage'));
 const AnalyticsPage  = lazy(() => import('./pages/Analytics/AnalyticsPage'));
 const PortfolioPage  = lazy(() => import('./pages/Portfolio/PortfolioPage'));
 const SettingsPage   = lazy(() => import('./pages/Settings/SettingsPage'));
-
 
 // ---------------------------------------------------------------------------
 // Page-level Suspense fallback
@@ -88,16 +88,12 @@ function isStandaloneMode() {
   );
 }
 
-import { PrivacyProvider } from './context/PrivacyContext';
-
 // ---------------------------------------------------------------------------
 // App root
 // ---------------------------------------------------------------------------
 export default function App() {
   const [showBanner, setShowBanner] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(
-  isLoggedIn()
-);
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn);
 
   // Detect standalone mode on mount; show banner if running in browser.
   useEffect(() => {
@@ -106,43 +102,69 @@ export default function App() {
     }
   }, []);
 
-if (!loggedIn) {
-  return (
-    <ThemeProvider>
-      <LoginPage
-        onLogin={() => setLoggedIn(true)}
-      />
-    </ThemeProvider>
-  );
-}
+  // Listen for focus/visibility changes to sync login state across tabs
+  useEffect(() => {
+    const syncLoginState = () => {
+      setLoggedIn(isLoggedIn());
+    };
+
+    window.addEventListener("focus", syncLoginState);
+    document.addEventListener("visibilitychange", syncLoginState);
+
+    return () => {
+      window.removeEventListener("focus", syncLoginState);
+      document.removeEventListener("visibilitychange", syncLoginState);
+    };
+  }, []);
+
+  // Listen for a custom app-wide logout event
+  useEffect(() => {
+    const handleLogout = () => {
+      setLoggedIn(false);
+    };
+
+    window.addEventListener("app-logout", handleLogout);
+
+    return () => {
+      window.removeEventListener("app-logout", handleLogout);
+    };
+  }, []);
+
+  if (!loggedIn) {
+    return (
+      <ThemeProvider>
+        <LoginPage onLogin={() => setLoggedIn(true)} />
+      </ThemeProvider>
+    );
+  }
 
   return (
     /*
      * Provider order (outer → inner):
-     *   ThemeProvider  — applies dark/light class to <html>
-     *   PortfolioProvider — all async data state
-     *   PrivacyProvider — state for discrete masking mode
-     *   BrowserRouter  — client-side routing with GitHub Pages basename
+     * ThemeProvider  — applies dark/light class to <html>
+     * PortfolioProvider — all async data state
+     * PrivacyProvider — state for discrete masking mode
+     * BrowserRouter  — client-side routing with GitHub Pages basename
      */
     <ThemeProvider>
       <PortfolioProvider>
         <PrivacyProvider>
           <BrowserRouter basename="/equity-dashboard/">
-          {/* "Add to Home Screen" banner — only visible in non-standalone Safari */}
-          {showBanner && (
-            <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
-          )}
+            {/* "Add to Home Screen" banner — only visible in non-standalone Safari */}
+            {showBanner && (
+              <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
+            )}
 
-          <Routes>
-            {/* AppShell wraps every route so BottomNav is always rendered */}
-            <Route element={<AppShell />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="portfolio" element={<PortfolioPage />} />
-              <Route path="settings" element={<SettingsPage />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+            <Routes>
+              {/* AppShell wraps every route so BottomNav is always rendered */}
+              <Route element={<AppShell />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="analytics" element={<AnalyticsPage />} />
+                <Route path="portfolio" element={<PortfolioPage />} />
+                <Route path="settings" element={<SettingsPage />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
         </PrivacyProvider>
       </PortfolioProvider>
     </ThemeProvider>

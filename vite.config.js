@@ -1,10 +1,26 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import pkg from './package.json' with { type: 'json' };
 
 // https://vite.dev/config/
 export default defineConfig({
   base: '/equity-dashboard/',
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+    __REACT_VERSION__: JSON.stringify(
+      pkg.dependencies.react.replace("^", "")
+    ),
+    __VITE_VERSION__: JSON.stringify(
+      pkg.devDependencies.vite.replace("^", "")
+    ),
+    __BUILD_DATE__: JSON.stringify(
+      new Date().toLocaleString("en-IN", {
+  dateStyle: "medium",
+  timeStyle: "short",
+})
+    ),
+  },
   // Dev server proxy to avoid CORS during local development. Requests to /api
   // will be forwarded to the configured Apps Script exec endpoint.
   server: {

@@ -17,8 +17,14 @@ function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
 }
 
-export function logout() {
+export function logout(message = null) {
   localStorage.removeItem(TOKEN_KEY);
+
+  if (message) {
+    sessionStorage.setItem("logoutMessage", message);
+  }
+
+  window.dispatchEvent(new Event("app-logout"));
 }
 /**
  * -----------------------------------------
