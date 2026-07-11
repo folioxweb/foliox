@@ -128,7 +128,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           {[
             { id: ASSET_TYPES.STOCK, label: "Stock" },
             { id: ASSET_TYPES.ETF, label: "ETF" },
-            { id: ASSET_TYPES.MF, label: "Mutual Fund" },
+            { id: ASSET_TYPES.MF, label: "MF" },
             { id: ASSET_TYPES.FD, label: "FD" },
           ].map((tab) => (
             <button
@@ -239,25 +239,32 @@ export default function AddHoldingModal({ isOpen, onClose }) {
 
           {assetType === ASSET_TYPES.FD && (
             <>
-              <input
-                type="number"
-                placeholder="Interest Rate (%)"
-                value={interestRate}
-                onChange={(e) => setInterestRate(e.target.value)}
-                className={inputClasses}
-              />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className={inputClasses}
-              />
-              <input
-                type="date"
-                value={maturityDate}
-                onChange={(e) => setMaturityDate(e.target.value)}
-                className={inputClasses}
-              />
+              <div>
+  <label className="block mb-1 text-sm text-slate-400">
+    Start Date
+  </label>
+
+  <input
+    type="date"
+    value={startDate}
+    onChange={(e) => setStartDate(e.target.value)}
+    className={inputClasses}
+  />
+</div>
+
+
+<div>
+  <label className="block mb-1 text-sm text-slate-400">
+    Maturity Date
+  </label>
+
+  <input
+    type="date"
+    value={maturityDate}
+    onChange={(e) => setMaturityDate(e.target.value)}
+    className={inputClasses}
+  />
+</div>
             </>
           )}
         </div>

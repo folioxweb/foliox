@@ -77,6 +77,7 @@ export default function HoldingActionModal({ holding, isOpen, onClose }) {
           await buyMore(payload);
           break;
         case ACTIONS.UPDATE:
+          console.log("Sending payload:", payload);
           await updateHolding(payload);
           break;
         case ACTIONS.SELL:
@@ -90,8 +91,14 @@ export default function HoldingActionModal({ holding, isOpen, onClose }) {
       setPrice("");
       onClose();
     } catch (err) {
-      alert(err.message || "Unable to update holding.");
-    } finally {
+  console.log("ERROR OBJECT:", err);
+  console.log("PAYLOAD:", payload);
+
+  alert(
+    err.message ||
+    JSON.stringify(err, null, 2)
+  );
+} finally {
       setLoading(false);
     }
   }

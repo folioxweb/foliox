@@ -86,6 +86,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress }) {
     quantity,
     invested,
     investedValue = invested,
+    currentPrice,
     currentValue,
     pnl,
     returnPct = pnl,
@@ -260,29 +261,60 @@ export default function HoldingCard({ holding, variant = 'full', onPress }) {
       />
 
       {/* ── Return row ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-medium uppercase tracking-wide" style={{ color: '#64748B' }}>
-            Return
-          </span>
-          <span className="text-sm font-bold" style={{ color: returnColor }}>
-            {isProfit && returnValue !== 0 ? '+' : ''}
-            {isPrivacyMode ? '₹***' : formatCurrency(returnValue)}
-          </span>
-        </div>
+<div className="flex items-center justify-between">
 
-        <span
-          className="text-base font-bold px-2.5 py-1 rounded-full"
-          style={{
-            color: returnColor,
-            background: isProfit
-              ? 'rgba(34, 197, 94, 0.12)'
-              : 'rgba(239, 68, 68, 0.12)',
-          }}
-        >
-          {formatPercent(returnPct)}
-        </span>
-      </div>
+  {/* Return Amount */}
+  <div className="flex flex-col gap-0.5">
+    <span
+      className="text-xs font-medium uppercase tracking-wide"
+      style={{ color: '#64748B' }}
+    >
+      Return
+    </span>
+
+    <span
+      className="text-sm font-bold"
+      style={{ color: returnColor }}
+    >
+      {isProfit && returnValue !== 0 ? '+' : ''}
+      {isPrivacyMode ? '₹***' : formatCurrency(returnValue)}
+    </span>
+  </div>
+
+
+  {/* Current Price */}
+  {currentPrice && (
+    <div className="flex flex-col gap-0.5 text-center">
+      <span
+        className="text-xs font-medium uppercase tracking-wide"
+        style={{ color: '#64748B' }}
+      >
+        Current Price
+      </span>
+
+      <span className="text-sm font-bold text-white">
+        {isPrivacyMode
+          ? '₹***'
+          : formatCurrency(currentPrice)}
+      </span>
+    </div>
+  )}
+
+
+  {/* Return Percentage */}
+  <span
+    className="text-base font-bold px-2.5 py-1 rounded-full"
+    style={{
+      color: returnColor,
+      background: isProfit
+        ? 'rgba(34, 197, 94, 0.12)'
+        : 'rgba(239, 68, 68, 0.12)',
+    }}
+  >
+    {formatPercent(returnPct)}
+  </span>
+
+</div>
     </Tag>
   );
 }
