@@ -10,6 +10,7 @@ import Button from '../../components/ui/Button';
 import PrivacyToggle from '../../components/ui/PrivacyToggle';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
+import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
 function ErrorBanner({ onRetry }) {
   return (
@@ -45,27 +46,20 @@ function ErrorBanner({ onRetry }) {
 
 export default function DashboardPage() {
   const {
-    state,
-    fetchOverallInvestments,
-    fetchAssetAllocation,
-    fetchOverallSectorAllocation,
-    fetchStocksAllocation,
-  } = usePortfolio();
+  state,
+  refreshAll,
+  refreshing,
+} = usePortfolio();
   const scrollRef = usePageScrollRestoration('dashboard');
 
   const { overallInvestments, assetAllocation, overallSectorAllocation, stocksAllocation } = state;
 
-  const isLoading = overallInvestments.loading || assetAllocation.loading || overallSectorAllocation.loading || stocksAllocation.loading;
+  const isLoading = refreshing;
   const hasError = !!overallInvestments.error || !!assetAllocation.error || !!overallSectorAllocation.error || !!stocksAllocation.error;
 
   async function handleDashboardRefresh() {
-    await Promise.allSettled([
-      fetchOverallInvestments(),
-      fetchAssetAllocation(),
-      fetchOverallSectorAllocation(),
-      fetchStocksAllocation(),
-    ]);
-  }
+  await refreshAll();
+}
 
   return (
     <main
@@ -76,12 +70,21 @@ export default function DashboardPage() {
     >
       <div className="max-w-[428px] mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <RefreshButton onRefresh={handleDashboardRefresh} />
-            <PrivacyToggle />
-          </div>
-        </div>
+
+  <div className="flex items-center gap-2">
+    <h1 className="text-2xl font-bold text-white">
+      Dashboard
+    </h1>
+
+    <LoadingIndicator loading={isLoading} />
+  </div>
+
+  <div className="flex items-center gap-2">
+    <RefreshButton onRefresh={handleDashboardRefresh} />
+    <PrivacyToggle />
+  </div>
+
+</div>
         <AnimatePresence>
           {hasError && <ErrorBanner key="error-banner" onRetry={handleDashboardRefresh} />}
         </AnimatePresence>

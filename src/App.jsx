@@ -5,6 +5,8 @@ import { ThemeProvider } from './context/ThemeContext';
 import { PortfolioProvider } from './context/PortfolioContext';
 import BottomNav from './components/navigation/BottomNav';
 import Skeleton from './components/ui/Skeleton';
+import LoginPage from "./pages/Login/LoginPage";
+import { isLoggedIn } from "./services/apiClient";
 
 // ---------------------------------------------------------------------------
 // Lazy page imports — each page becomes its own bundle chunk (Requirement 11.7)
@@ -13,6 +15,7 @@ const DashboardPage  = lazy(() => import('./pages/Dashboard/DashboardPage'));
 const AnalyticsPage  = lazy(() => import('./pages/Analytics/AnalyticsPage'));
 const PortfolioPage  = lazy(() => import('./pages/Portfolio/PortfolioPage'));
 const SettingsPage   = lazy(() => import('./pages/Settings/SettingsPage'));
+
 
 // ---------------------------------------------------------------------------
 // Page-level Suspense fallback
@@ -92,6 +95,9 @@ import { PrivacyProvider } from './context/PrivacyContext';
 // ---------------------------------------------------------------------------
 export default function App() {
   const [showBanner, setShowBanner] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(
+  isLoggedIn()
+);
 
   // Detect standalone mode on mount; show banner if running in browser.
   useEffect(() => {
@@ -99,6 +105,16 @@ export default function App() {
       setShowBanner(true);
     }
   }, []);
+
+if (!loggedIn) {
+  return (
+    <ThemeProvider>
+      <LoginPage
+        onLogin={() => setLoggedIn(true)}
+      />
+    </ThemeProvider>
+  );
+}
 
   return (
     /*

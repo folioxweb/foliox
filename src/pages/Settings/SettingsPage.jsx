@@ -10,7 +10,7 @@ import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 
 // App version — falls back to '0.0.0' if env var is not set (Requirement 7.4)
-const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? '0.0.0';
+const APP_VERSION = import.meta.env.VITE_APP_VERSION ?? '1.0.0';
 
 /**
  * Formats a Date object into a readable "Last Updated" string.

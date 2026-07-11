@@ -20,12 +20,13 @@ import {
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import AddHoldingModal from "../../components/portfolio/AddHoldingModal";
+import LoadingIndicator from "../../components/ui/LoadingIndicator";
 
 const TAB_CONFIG = [
-  { label: 'Stocks', stateKey: 'stocks', fetchKey: 'fetchStocks' },
-  { label: 'ETFs', stateKey: 'etfs', fetchKey: 'fetchEtfs' },
-  { label: 'MF', stateKey: 'mutualFunds', fetchKey: 'fetchMutualFunds' },
-  { label: 'FD', stateKey: 'fds', fetchKey: 'fetchFDs' },
+  { label: 'Stocks', stateKey: 'stocks' },
+  { label: 'ETFs', stateKey: 'etfs' },
+  { label: 'MF', stateKey: 'mutualFunds' },
+  { label: 'FD', stateKey: 'fds' },
 ]; 
 
 const TAB_LABELS = TAB_CONFIG.map((t) => t.label);
@@ -58,24 +59,11 @@ export default function PortfolioPage() {
   const swipeStart = useRef(null);
   const searchInputRef = useRef(null);
 
-  const { state, fetchStocks, fetchEtfs, fetchMutualFunds, fetchFDs, refreshAll } = usePortfolio();
-  const fetchFns = { fetchStocks, fetchEtfs, fetchMutualFunds,fetchFDs };
-
-  const ensureTabData = useCallback(
-    (tabLabel) => {
-      const config = TAB_CONFIG.find((t) => t.label === tabLabel);
-      if (!config) return;
-      const slice = state[config.stateKey];
-      if (!slice.data && !slice.loading) {
-        fetchFns[config.fetchKey]();
-      }
-    },
-    [state, fetchStocks, fetchEtfs, fetchMutualFunds, fetchFDs]
-  );
-
-  useEffect(() => {
-    ensureTabData(activeTab);
-  }, []);
+  const {
+  state,
+  refreshAll,
+  refreshing,
+} = usePortfolio();
 
   // Focus search input when opened
   useEffect(() => {
@@ -86,7 +74,6 @@ export default function PortfolioPage() {
 
   function handleTabChange(tab) {
     setActiveTab(tab);
-    ensureTabData(tab);
   }
 
   function handleTouchStart(event) {
@@ -101,29 +88,32 @@ export default function PortfolioPage() {
     const touch = event.changedTouches[0];
     const horizontalDistance = touch.clientX - start.x;
     const verticalDistance = touch.clientY - start.y;
+    
     if (Math.abs(horizontalDistance) < 56 || Math.abs(horizontalDistance) <= Math.abs(verticalDistance)) {
       return;
     }
+    
     const currentIndex = TAB_LABELS.indexOf(activeTab);
     const nextIndex = horizontalDistance < 0
       ? Math.min(currentIndex + 1, TAB_LABELS.length - 1)
       : Math.max(currentIndex - 1, 0);
+      
     if (nextIndex !== currentIndex) handleTabChange(TAB_LABELS[nextIndex]);
   }
 
   function handleHoldingPress(holding) {
     let assetType = "stocks";
-switch (activeTab) {
-  case "ETFs":
-    assetType = "etfs";
-    break;
-  case "MF":
-    assetType = "mutualFunds";
-    break;
-  case "FD":
-    assetType = "fds";
-    break;
-}
+    switch (activeTab) {
+      case "ETFs":
+        assetType = "etfs";
+        break;
+      case "MF":
+        assetType = "mutualFunds";
+        break;
+      case "FD":
+        assetType = "fds";
+        break;
+    }
     setSelectedHolding({ ...holding, assetType });
     setDetailOpen(true);
   }
@@ -144,9 +134,9 @@ switch (activeTab) {
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
       holdings = holdings.filter(h =>
-  (h.name ?? h.bankName ?? "").toLowerCase().includes(query) ||
-  (h.symbol ?? "").toLowerCase().includes(query)
-);
+        (h.name ?? h.bankName ?? "").toLowerCase().includes(query) ||
+        (h.symbol ?? "").toLowerCase().includes(query)
+      );
     }
 
     // 2. Returns Filter
@@ -163,12 +153,12 @@ switch (activeTab) {
         comparison = (a.name ?? '').localeCompare(b.name ?? '');
       } else if (sortBy === 'return') {
         comparison =
-  (a.pnl ?? a.returnPct ?? a.interestEarned ?? 0) -
-  (b.pnl ?? b.returnPct ?? b.interestEarned ?? 0);
+          (a.pnl ?? a.returnPct ?? a.interestEarned ?? 0) -
+          (b.pnl ?? b.returnPct ?? b.interestEarned ?? 0);
       } else if (sortBy === 'investedValue') {
         comparison =
-  (a.investedValue ?? a.invested ?? a.principal ?? 0) -
-  (b.investedValue ?? b.invested ?? b.principal ?? 0);
+          (a.investedValue ?? a.invested ?? a.principal ?? 0) -
+          (b.investedValue ?? b.invested ?? b.principal ?? 0);
       } else if (sortBy === 'weight') {
         comparison = (a.portfolioWeight ?? a.weightage ?? 0) - (b.portfolioWeight ?? b.weightage ?? 0);
       } else {
@@ -179,9 +169,7 @@ switch (activeTab) {
   }
 
   function handleRetry() {
-    if (activeConfig) {
-      fetchFns[activeConfig.fetchKey]();
-    }
+    refreshAll();
   }
 
   return (
@@ -206,15 +194,18 @@ switch (activeTab) {
         <div className="flex items-center justify-between mb-4 h-10 relative overflow-hidden">
           <AnimatePresence mode="wait">
             {!isSearchOpen ? (
-              <motion.h1
+              <motion.div
                 key="title"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="text-2xl font-bold text-white absolute left-0"
+                className="absolute left-0 flex items-center gap-2"
               >
-                Portfolio
-              </motion.h1>
+                <h1 className="text-2xl font-bold text-white">
+                  Portfolio
+                </h1>
+                <LoadingIndicator loading={refreshing} />
+              </motion.div>
             ) : (
               <motion.div
                 key="search-input"

@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, useCallback, useRef } from 'react';
+import { createContext, useContext, useReducer, useEffect, useCallback, useRef, useState } from 'react';
 import { api } from '../services/apiClient';
 import { isIndianMarketOpen } from '../utils/marketHours';
 
@@ -31,94 +31,43 @@ const ENDPOINT_TO_KEY = {
 
 const LIVE_REFRESH_INTERVAL_MS = 60_000;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const CACHE_KEY = "portfolio-cache";
 
 function portfolioReducer(state, action) {
   const key = ENDPOINT_TO_KEY[action.endpoint];
 
   switch (action.type) {
     case "DASHBOARD_SUCCESS":
-  return {
-    ...state,
-
-    overallInvestments: {
-      data: action.data.overallInvestments,
-      loading: false,
-      error: null,
-    },
-
-    assetAllocation: {
-      data: action.data.assetAllocation,
-      loading: false,
-      error: null,
-    },
-
-    overallSectorAllocation: {
-      data: action.data.overallSectorAllocation,
-      loading: false,
-      error: null,
-    },
-
-    stocksAllocation: {
-      data: action.data.stocksAllocation,
-      loading: false,
-      error: null,
-    },
-
-    lastUpdated: new Date(),
-  };
-
-  case "PORTFOLIO_SUCCESS":
-  return {
-    ...state,
-
-    stocks: {
-      data: action.data.stocks,
-      loading: false,
-      error: null,
-    },
-
-    etfs: {
-      data: action.data.etfs,
-      loading: false,
-      error: null,
-    },
-
-    mutualFunds: {
-      data: action.data.mutualFunds,
-      loading: false,
-      error: null,
-    },
-
-    fds: {
-      data: action.data.fds,
-      loading: false,
-      error: null,
-    },
-
-    lastUpdated: new Date(),
-  };
-
-    case 'FETCH_START':
-      if (!key) return state;
       return {
         ...state,
-        [key]: { ...state[key], loading: true, error: null },
-      };
-
-    case 'FETCH_SUCCESS':
-      if (!key) return state;
-      return {
-        ...state,
-        [key]: { data: action.data, loading: false, error: null },
+        overallInvestments: { data: action.data.overallInvestments, loading: false, error: null },
+        assetAllocation: { data: action.data.assetAllocation, loading: false, error: null },
+        overallSectorAllocation: { data: action.data.overallSectorAllocation, loading: false, error: null },
+        stocksAllocation: { data: action.data.stocksAllocation, loading: false, error: null },
         lastUpdated: new Date(),
       };
 
-    case 'FETCH_ERROR':
-      if (!key) return state;
+    case "PORTFOLIO_SUCCESS":
       return {
         ...state,
-        [key]: { ...state[key], loading: false, error: action.error },
+        stocks: { data: action.data.stocks, loading: false, error: null },
+        etfs: { data: action.data.etfs, loading: false, error: null },
+        mutualFunds: { data: action.data.mutualFunds, loading: false, error: null },
+        fds: { data: action.data.fds, loading: false, error: null },
+        lastUpdated: new Date(),
       };
+
+    case 'FETCH_START':
+      if (!key) return state;
+      return { ...state, [key]: { ...state[key], loading: true, error: null } };
+
+    case 'FETCH_SUCCESS':
+      if (!key) return state;
+      return { ...state, [key]: { data: action.data, loading: false, error: null }, lastUpdated: new Date() };
+
+    case 'FETCH_ERROR':
+      if (!key) return state;
+      return { ...state, [key]: { ...state[key], loading: false, error: action.error } };
 
     default:
       return state;
@@ -128,8 +77,29 @@ function portfolioReducer(state, action) {
 const PortfolioContext = createContext(null);
 
 export function PortfolioProvider({ children }) {
-  const [state, dispatch] = useReducer(portfolioReducer, initialState);
+  const [state, dispatch] = useReducer(
+    portfolioReducer,
+    initialState,
+    () => {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (!cached) return initialState;
+        const parsed = JSON.parse(cached);
+        // Keep loading/error clean
+        Object.keys(ENDPOINT_TO_KEY).forEach((key) => {
+          parsed[key].loading = false;
+          parsed[key].error = null;
+        });
+        return parsed;
+      } catch {
+        return initialState;
+      }
+    }
+  );
+  
   const liveRefreshInFlight = useRef(false);
+  const refreshInProgress = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchEndpoint = useCallback(async (endpoint, apiFn) => {
     dispatch({ type: 'FETCH_START', endpoint });
@@ -144,275 +114,97 @@ export function PortfolioProvider({ children }) {
   }, []);
 
   const fetchDashboard = useCallback(async () => {
-  try {
+    try {
+      dispatch({ type: "FETCH_START", endpoint: "overallInvestments" });
+      dispatch({ type: "FETCH_START", endpoint: "assetAllocation" });
+      dispatch({ type: "FETCH_START", endpoint: "overallSectorAllocation" });
+      dispatch({ type: "FETCH_START", endpoint: "stocksAllocation" });
+      
+      const data = await api.getDashboard();
+      console.log("[API] dashboard ->", data);
+      dispatch({ type: "DASHBOARD_SUCCESS", data });
+    } catch (error) {
+      console.error("[API ERROR] dashboard", error);
+    }
+  }, []);
 
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "overallInvestments"
-    });
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "assetAllocation"
-    });
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "overallSectorAllocation"
-    });
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "stocksAllocation"
-    });
-
-
-    const data = await api.getDashboard();
-
-    console.log(
-      "[API] dashboard ->",
-      data
-    );
-
-    dispatch({
-      type: "DASHBOARD_SUCCESS",
-      data
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "[API ERROR] dashboard",
-      error
-    );
-
-  }
-}, []);
-
-const fetchPortfolio = useCallback(async () => {
-  try {
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "stocks"
-    });
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "etfs"
-    });
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "mutualFunds"
-    });
-
-    dispatch({
-      type: "FETCH_START",
-      endpoint: "fds"
-    });
-
-
-    const data = await api.getPortfolio();
-
-
-    console.log(
-      "[API] portfolio ->",
-      data
-    );
-
-
-    dispatch({
-      type: "PORTFOLIO_SUCCESS",
-      data
-    });
-
-
-  } catch (error) {
-
-    console.error(
-      "[API ERROR] portfolio",
-      error
-    );
-
-  }
-
-}, []);
-
+  const fetchPortfolio = useCallback(async () => {
+    try {
+      dispatch({ type: "FETCH_START", endpoint: "stocks" });
+      dispatch({ type: "FETCH_START", endpoint: "etfs" });
+      dispatch({ type: "FETCH_START", endpoint: "mutualFunds" });
+      dispatch({ type: "FETCH_START", endpoint: "fds" });
+      
+      const data = await api.getPortfolio();
+      console.log("[API] portfolio ->", data);
+      dispatch({ type: "PORTFOLIO_SUCCESS", data });
+    } catch (error) {
+      console.error("[API ERROR] portfolio", error);
+    }
+  }, []);
 
   const fetchOverallInvestments = useCallback(() => fetchEndpoint('overallInvestments', api.getOverallInvestments), [fetchEndpoint]);
   const fetchAssetAllocation = useCallback(() => fetchEndpoint('assetAllocation', api.getAssetAllocation), [fetchEndpoint]);
   const fetchOverallSectorAllocation = useCallback(() => fetchEndpoint('overallSectorAllocation', api.getOverallSectorAllocation), [fetchEndpoint]);
   const fetchStocksAllocation = useCallback(() => fetchEndpoint('stocksAllocation', api.getStocksAllocation), [fetchEndpoint]);
-  
   const fetchStocks = useCallback(() => fetchEndpoint('stocks', api.getStocks), [fetchEndpoint]);
   const fetchEtfs = useCallback(() => fetchEndpoint('etfs', api.getEtfs), [fetchEndpoint]);
   const fetchMutualFunds = useCallback(() => fetchEndpoint('mutualFunds', api.getMutualFunds), [fetchEndpoint]);
-  const fetchFDs = useCallback(
-    () => fetchEndpoint('fds', api.getFDs),
-    [fetchEndpoint]
-  );
+  const fetchFDs = useCallback(() => fetchEndpoint('fds', api.getFDs), [fetchEndpoint]);
 
-  // These market-sensitive datasets refresh continuously. The rest load once
-  // on startup (or when the user explicitly refreshes).
-  const refreshLiveHoldings = useCallback(async () => {
-  // Automatic polling is limited to regular NSE market hours in IST.
-  if (!isIndianMarketOpen()) return;
-
-  // avoid duplicate refresh
-  if (liveRefreshInFlight.current) return;
-
-
-  liveRefreshInFlight.current = true;
-
-  try {
-
-    // refresh complete dashboard
-    await fetchDashboard();
-
-
-    // small gap to avoid Apps Script pressure
-    await sleep(1000);
-
-
-    // refresh complete portfolio
-    await fetchPortfolio();
-
-
-  } finally {
-
-    liveRefreshInFlight.current = false;
-
-  }
-
-}, [
-  fetchDashboard,
-  fetchPortfolio
-]);
 
   const refreshAll = useCallback(async () => {
+  if (refreshInProgress.current) {
+    return;
+  }
+  refreshInProgress.current = true;
+  setRefreshing(true);
+  try {
+    await fetchDashboard();
+    await sleep(2000);
+    await fetchPortfolio();
+  } finally {
+    refreshInProgress.current = false;
+    setRefreshing(false);
+  }
+}, [fetchDashboard, fetchPortfolio]);
 
-  // dashboard single API
-  await fetchDashboard();
+  const refreshLiveHoldings = useCallback(async () => {
+  if (!isIndianMarketOpen()) return;
+  if (liveRefreshInFlight.current) return;
+  liveRefreshInFlight.current = true;
+  try {
+    await refreshAll();
+  } finally {
+    liveRefreshInFlight.current = false;
+  }
+}, [refreshAll]);
 
 
-  // wait before portfolio APIs
-  await sleep(2000);
-
-
-  await fetchPortfolio();
-
-
-}, [
-  fetchDashboard,
-  fetchPortfolio,
-]);
-
-
-  const executeHoldingAction = useCallback(
-  async (apiFn, payload) => {
-
+  const executeHoldingAction = useCallback(async (apiFn, payload) => {
     try {
-
-      // 1. Execute POST action
-      // buy / sell / update / add
       const result = await apiFn(payload);
-
-
-      // 2. Refresh data in background
-      // Do not block save success
       refreshAll().catch((error) => {
-
-        console.error(
-          "Background refresh failed:",
-          error
-        );
-
+        console.error("Background refresh failed:", error);
       });
-
-
-      // 3. Return success immediately
       return result;
-
-
     } catch (error) {
-
-      // Only actual save failure reaches here
-      console.error(
-        "Save failed:",
-        error
-      );
-
+      console.error("Save failed:", error);
       throw error;
-
     }
+  }, [refreshAll]);
 
-  },
-  [refreshAll]
-);
-
-  const buyMore = useCallback(
-    (payload) =>
-      executeHoldingAction(
-        api.buyMore,
-        payload
-      ),
-    [executeHoldingAction]
-  );
-  
-  const updateHolding = useCallback(
-    (payload) =>
-      executeHoldingAction(
-        api.updateHolding,
-        payload
-      ),
-    [executeHoldingAction]
-  );
-
-  const sellHolding = useCallback(
-    (payload) =>
-      executeHoldingAction(
-        api.sellHolding,
-        payload
-      ),
-    [executeHoldingAction]
-  );
-
-  const addHolding = useCallback(
-    (payload) =>
-      executeHoldingAction(
-        api.addHolding,
-        payload
-      ),
-    [executeHoldingAction]
-  );
-
-  const updateFD = useCallback(
-    (payload) =>
-      executeHoldingAction(
-        api.updateFD,
-        payload
-      ),
-    [executeHoldingAction]
-  );
-
-  const deleteFD = useCallback(
-    (payload) =>
-      executeHoldingAction(
-        api.deleteFD,
-        payload
-      ),
-    [executeHoldingAction]
-  );
+  const buyMore = useCallback((payload) => executeHoldingAction(api.buyMore, payload), [executeHoldingAction]);
+  const updateHolding = useCallback((payload) => executeHoldingAction(api.updateHolding, payload), [executeHoldingAction]);
+  const sellHolding = useCallback((payload) => executeHoldingAction(api.sellHolding, payload), [executeHoldingAction]);
+  const addHolding = useCallback((payload) => executeHoldingAction(api.addHolding, payload), [executeHoldingAction]);
+  const updateFD = useCallback((payload) => executeHoldingAction(api.updateFD, payload), [executeHoldingAction]);
+  const deleteFD = useCallback((payload) => executeHoldingAction(api.deleteFD, payload), [executeHoldingAction]);
 
   useEffect(() => {
     let intervalId;
     let cancelled = false;
 
-    // Load the complete dashboard once, then poll live market-sensitive data.
-    // Starting the interval after the initial request avoids overlapping the
-    // first full load with the first live refresh.
     refreshAll().finally(() => {
       if (!cancelled) {
         intervalId = window.setInterval(refreshLiveHoldings, LIVE_REFRESH_INTERVAL_MS);
@@ -425,8 +217,30 @@ const fetchPortfolio = useCallback(async () => {
     };
   }, [refreshAll, refreshLiveHoldings]);
 
+  // Optimized Cache Sync
+  useEffect(() => {
+    const hasData =
+      state.overallInvestments.data ||
+      state.assetAllocation.data ||
+      state.overallSectorAllocation.data ||
+      state.stocksAllocation.data ||
+      state.stocks.data ||
+      state.etfs.data ||
+      state.mutualFunds.data ||
+      state.fds.data;
+
+    if (!hasData) return;
+
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.error("Unable to cache portfolio", e);
+    }
+  }, [state.lastUpdated]);
+
   const value = {
     state,
+    refreshing,
     fetchDashboard,
     fetchPortfolio,
     fetchOverallInvestments,

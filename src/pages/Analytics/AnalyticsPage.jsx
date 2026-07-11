@@ -7,6 +7,7 @@ import PrivacyToggle from '../../components/ui/PrivacyToggle';
 import { usePrivacy } from '../../context/PrivacyContext';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
+import LoadingIndicator from '../../components/ui/LoadingIndicator';
 
 // ─── Framer Motion variants ───────────────────────────────────────────────────
 
@@ -37,9 +38,9 @@ const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currenc
 function FullSectorList({ data, loading }) {
   const { isPrivacyMode } = usePrivacy();
 
-  if (loading || !data) {
-    return <Skeleton width="100%" height={300} rounded="xl" />;
-  }
+  if (!data) {
+  return <Skeleton width="100%" height={300} rounded="xl" />;
+}
 
   const sortedData = [...data].sort((a, b) => b.allocation - a.allocation);
 
@@ -73,9 +74,9 @@ function FullSectorList({ data, loading }) {
 function FullStocksList({ data, loading }) {
   const { isPrivacyMode } = usePrivacy();
 
-  if (loading || !data) {
-    return <Skeleton width="100%" height={300} rounded="xl" />;
-  }
+  if (!data) {
+  return <Skeleton width="100%" height={300} rounded="xl" />;
+}
 
   const sortedData = [...data].sort((a, b) => b.allocation - a.allocation);
 
@@ -108,17 +109,22 @@ function FullStocksList({ data, loading }) {
 // ─── AnalyticsPage ────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const { state, fetchOverallSectorAllocation, fetchStocksAllocation, refreshAll } = usePortfolio();
+  const {
+  state,
+  refreshAll,
+  refreshing,
+} = usePortfolio();
   const scrollRef = usePageScrollRestoration('analytics');
 
   const { data: sectorData, loading: sectorLoading } = state.overallSectorAllocation;
   const { data: stocksData, loading: stocksLoading } = state.stocksAllocation;
+  const isLoading = refreshing;
 
-  useEffect(() => {
-    if (!sectorData && !sectorLoading) fetchOverallSectorAllocation();
-    if (!stocksData && !stocksLoading) fetchStocksAllocation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // useEffect(() => {
+  //   if (!sectorData && !sectorLoading) fetchOverallSectorAllocation();
+  //   if (!stocksData && !stocksLoading) fetchStocksAllocation();
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, []);
 
   return (
     <main
@@ -133,12 +139,21 @@ export default function AnalyticsPage() {
     >
       <div className="max-w-[428px] mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">Full Allocation Lists</h1>
-          <div className="flex items-center gap-2">
-            <RefreshButton onRefresh={refreshAll} />
-            <PrivacyToggle />
-          </div>
-        </div>
+
+  <div className="flex items-center gap-2">
+    <h1 className="text-2xl font-bold text-white">
+      Full Allocation Lists
+    </h1>
+
+    <LoadingIndicator loading={isLoading} />
+  </div>
+
+  <div className="flex items-center gap-2">
+    <RefreshButton onRefresh={refreshAll} />
+    <PrivacyToggle />
+  </div>
+
+</div>
 
         <motion.div
           variants={pageVariants}
