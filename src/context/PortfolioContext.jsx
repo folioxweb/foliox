@@ -11,6 +11,7 @@ const initialState = {
   assetAllocation: emptySlice(),
   overallSectorAllocation: emptySlice(),
   stocksAllocation: emptySlice(),
+  todayPerformance: emptySlice(), 
   stocks: emptySlice(),
   etfs: emptySlice(),
   mutualFunds: emptySlice(),
@@ -44,6 +45,7 @@ function portfolioReducer(state, action) {
         assetAllocation: { data: action.data.assetAllocation, loading: false, error: null },
         overallSectorAllocation: { data: action.data.overallSectorAllocation, loading: false, error: null },
         stocksAllocation: { data: action.data.stocksAllocation, loading: false, error: null },
+        todayPerformance: { data: action.data.todayPerformance, loading: false, error: null },
         lastUpdated: new Date(),
       };
 
@@ -105,8 +107,14 @@ export function PortfolioProvider({ children }) {
     dispatch({ type: 'FETCH_START', endpoint });
     try {
       const data = await apiFn();
-      console.log(`[API] ${endpoint} ->`, data);
-      dispatch({ type: 'FETCH_SUCCESS', endpoint, data });
+
+if (!data) return;
+
+dispatch({
+    type:"FETCH_SUCCESS",
+    endpoint,
+    data
+});
     } catch (error) {
       console.error(`[API ERROR] ${endpoint} ->`, error);
       dispatch({ type: 'FETCH_ERROR', endpoint, error });
@@ -121,8 +129,12 @@ export function PortfolioProvider({ children }) {
       dispatch({ type: "FETCH_START", endpoint: "stocksAllocation" });
       
       const data = await api.getDashboard();
-      console.log("[API] dashboard ->", data);
-      dispatch({ type: "DASHBOARD_SUCCESS", data });
+if (!data) return;
+console.log("[API] dashboard ->", data);
+dispatch({
+  type: "DASHBOARD_SUCCESS",
+  data
+});
     } catch (error) {
       console.error("[API ERROR] dashboard", error);
     }
@@ -136,8 +148,12 @@ export function PortfolioProvider({ children }) {
       dispatch({ type: "FETCH_START", endpoint: "fds" });
       
       const data = await api.getPortfolio();
-      console.log("[API] portfolio ->", data);
-      dispatch({ type: "PORTFOLIO_SUCCESS", data });
+if (!data) return;
+console.log("[API] portfolio ->", data);
+dispatch({
+  type: "PORTFOLIO_SUCCESS",
+  data
+});
     } catch (error) {
       console.error("[API ERROR] portfolio", error);
     }
@@ -224,6 +240,7 @@ export function PortfolioProvider({ children }) {
       state.assetAllocation.data ||
       state.overallSectorAllocation.data ||
       state.stocksAllocation.data ||
+      state.todayPerformance.data ||
       state.stocks.data ||
       state.etfs.data ||
       state.mutualFunds.data ||

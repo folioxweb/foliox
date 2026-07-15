@@ -12,6 +12,8 @@ import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import { useNavigate } from 'react-router-dom';
+import TodayPerformance from './TodayPerformance';
+
 
 function ErrorBanner({ onRetry }) {
   return (
@@ -53,7 +55,7 @@ export default function DashboardPage() {
 } = usePortfolio();
   const scrollRef = usePageScrollRestoration('dashboard');
   const navigate = useNavigate();
-  const { overallInvestments, assetAllocation, overallSectorAllocation, stocksAllocation } = state;
+  const { overallInvestments, todayPerformance, assetAllocation, overallSectorAllocation, stocksAllocation } = state;
 
   const isLoading = refreshing;
   const hasError = !!overallInvestments.error || !!assetAllocation.error || !!overallSectorAllocation.error || !!stocksAllocation.error;
@@ -109,6 +111,7 @@ export default function DashboardPage() {
           transition={{ duration: 0.5 }}
         >
           <OverallInvestments data={overallInvestments.data} loading={overallInvestments.loading} />
+          <TodayPerformance data={todayPerformance.data} loading={todayPerformance.loading}/>
           <AssetAllocation data={assetAllocation.data} loading={assetAllocation.loading} />
           <OverallSectorAllocation data={overallSectorAllocation.data} loading={overallSectorAllocation.loading} />
           <StocksAllocation data={stocksAllocation.data} loading={stocksAllocation.loading} />

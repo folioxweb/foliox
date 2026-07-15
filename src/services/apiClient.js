@@ -2,6 +2,7 @@
  * Real API Client
  * Google Apps Script API Client
  */
+
 import { mockApi } from './mockClient.js';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -14,10 +15,18 @@ function getToken() {
 }
 
 function setToken(token) {
+  logoutInProgress = false;
   localStorage.setItem(TOKEN_KEY, token);
 }
 
+let logoutInProgress = false;
+
 export function logout(message = null) {
+
+  if (logoutInProgress) return;
+
+  logoutInProgress = true;
+
   localStorage.removeItem(TOKEN_KEY);
 
   if (message) {
@@ -59,10 +68,10 @@ async function apiFetch(action) {
   String(json.error).includes("Unauthorized")
 ) {
 
-  logout();
+  logout("Your session has expired. Please sign in again.");
+return null;
 
-  window.location.reload();
-
+  
 }
 
       if (!res.ok) {

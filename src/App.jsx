@@ -93,7 +93,7 @@ function isStandaloneMode() {
 // ---------------------------------------------------------------------------
 export default function App() {
   const [showBanner, setShowBanner] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(isLoggedIn);
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn());
 
   // Detect standalone mode on mount; show banner if running in browser.
   useEffect(() => {
