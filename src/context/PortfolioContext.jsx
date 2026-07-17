@@ -127,16 +127,26 @@ dispatch({
       dispatch({ type: "FETCH_START", endpoint: "assetAllocation" });
       dispatch({ type: "FETCH_START", endpoint: "overallSectorAllocation" });
       dispatch({ type: "FETCH_START", endpoint: "stocksAllocation" });
-      
+
       const data = await api.getDashboard();
-if (!data) return;
-console.log("[API] dashboard ->", data);
-dispatch({
-  type: "DASHBOARD_SUCCESS",
-  data
-});
+      if (!data) {
+        // Session expired — apiClient already dispatched app-logout.
+        // Clear loading state so UI doesn't hang on skeletons.
+        const sessionErr = { message: 'Session expired' };
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'overallInvestments', error: sessionErr });
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'assetAllocation', error: sessionErr });
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'overallSectorAllocation', error: sessionErr });
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'stocksAllocation', error: sessionErr });
+        return;
+      }
+      dispatch({ type: "DASHBOARD_SUCCESS", data });
     } catch (error) {
       console.error("[API ERROR] dashboard", error);
+      const sessionErr = { message: error.message || 'Failed to load dashboard' };
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'overallInvestments', error: sessionErr });
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'assetAllocation', error: sessionErr });
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'overallSectorAllocation', error: sessionErr });
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'stocksAllocation', error: sessionErr });
     }
   }, []);
 
@@ -146,16 +156,25 @@ dispatch({
       dispatch({ type: "FETCH_START", endpoint: "etfs" });
       dispatch({ type: "FETCH_START", endpoint: "mutualFunds" });
       dispatch({ type: "FETCH_START", endpoint: "fds" });
-      
+
       const data = await api.getPortfolio();
-if (!data) return;
-console.log("[API] portfolio ->", data);
-dispatch({
-  type: "PORTFOLIO_SUCCESS",
-  data
-});
+      if (!data) {
+        // Session expired — apiClient already dispatched app-logout.
+        const sessionErr = { message: 'Session expired' };
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'stocks', error: sessionErr });
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'etfs', error: sessionErr });
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'mutualFunds', error: sessionErr });
+        dispatch({ type: 'FETCH_ERROR', endpoint: 'fds', error: sessionErr });
+        return;
+      }
+      dispatch({ type: "PORTFOLIO_SUCCESS", data });
     } catch (error) {
       console.error("[API ERROR] portfolio", error);
+      const sessionErr = { message: error.message || 'Failed to load portfolio' };
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'stocks', error: sessionErr });
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'etfs', error: sessionErr });
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'mutualFunds', error: sessionErr });
+      dispatch({ type: 'FETCH_ERROR', endpoint: 'fds', error: sessionErr });
     }
   }, []);
 

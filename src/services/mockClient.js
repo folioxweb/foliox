@@ -39,7 +39,28 @@ export const mockApi = {
     { name: "Reliance Industries", exposure: 29135.18, allocation: 5.47 },
     { name: "TCS", exposure: 27122.41, allocation: 5.09 }
   ]),
-  getStocks: () => mockFetch('stocks', stocksData),
-  getEtfs: () => mockFetch('etfs', etfsData),
-  getMutualFunds: () => mockFetch('mutualFunds', mutualfundsData),
+  getStocks: async () => {
+    const data = await mockFetch('stocks', stocksData);
+    return data.map(item => ({
+      ...item,
+      dayChange: (item.quantity * 0.15) * (item.name.length % 2 === 0 ? 1 : -1),
+      dayChangePercent: (item.name.length % 2 === 0 ? 0.75 : -0.35),
+    }));
+  },
+  getEtfs: async () => {
+    const data = await mockFetch('etfs', etfsData);
+    return data.map(item => ({
+      ...item,
+      dayChange: (item.quantity * 0.08) * (item.name.length % 2 === 0 ? 1 : -1),
+      dayChangePercent: (item.name.length % 2 === 0 ? 0.54 : -0.19),
+    }));
+  },
+  getMutualFunds: async () => {
+    const data = await mockFetch('mutualFunds', mutualfundsData);
+    return data.map(item => ({
+      ...item,
+      dayChange: (item.quantity * 0.12) * (item.name.length % 2 === 0 ? 1 : -1),
+      dayChangePercent: (item.name.length % 2 === 0 ? 0.88 : -0.42),
+    }));
+  },
 };

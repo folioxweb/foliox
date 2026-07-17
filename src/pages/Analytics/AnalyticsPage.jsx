@@ -1,198 +1,230 @@
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Layers, BarChart2, Settings } from 'lucide-react';
+import { PieChart, BarChart2, Settings, TrendingUp } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import Skeleton from '../../components/ui/Skeleton';
 import PrivacyToggle from '../../components/ui/PrivacyToggle';
-import { usePrivacy } from '../../context/PrivacyContext';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import { useNavigate } from 'react-router-dom';
+import { usePrivacy } from '../../context/PrivacyContext';
 
-// ─── Framer Motion variants ───────────────────────────────────────────────────
+// ─── Palette & Helpers ────────────────────────────────────────────────────────
 
-const pageVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
+const SECTOR_PALETTE = [
+  '#6366F1','#06B6D4','#F59E0B','#10B981','#EF4444',
+  '#8B5CF6','#0EA5E9','#F97316','#14B8A6','#EC4899',
+  '#64748B','#A78BFA',
+];
+const RANK_COLORS = ['#F59E0B','#94A3B8','#CD7F32'];
+
+const formatAmt = (val) => {
+  if (!val) return '₹0';
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+  if (val >= 100000)   return `₹${(val / 100000).toFixed(1)}L`;
+  if (val >= 1000)     return `₹${(val / 1000).toFixed(1)}K`;
+  return `₹${Math.round(val)}`;
 };
 
-const sectionVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.35, ease: 'easeOut' },
-  },
-};
+// ─── Section heading ─────────────────────────────────────────────────────────
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
-
-// ─── List Components ──────────────────────────────────────────────────────────
-
-function FullSectorList({ data, loading }) {
-  const { isPrivacyMode } = usePrivacy();
-
-  if (!data) {
-  return <Skeleton width="100%" height={300} rounded="xl" />;
-}
-
-  const sortedData = [...data].sort((a, b) => b.allocation - a.allocation);
-
+function SectionHeading({ icon: Icon, title, color = '#64748B' }) {
   return (
-    <div className="space-y-4">
-      {sortedData.map((item, i) => (
-        <div key={item.sector} className="flex flex-col gap-1">
-          <div className="flex justify-between items-end">
-            <span className="text-sm font-medium text-slate-200">{item.sector}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400">
-                {isPrivacyMode ? '₹***' : formatCurrency(item.exposure)}
-              </span>
-              <span className="text-sm font-bold text-white w-12 text-right">{item.allocation.toFixed(2)}%</span>
-            </div>
-          </div>
-          <div className="w-full bg-slate-700/50 rounded-full h-1.5 mt-1 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${item.allocation}%` }}
-              transition={{ duration: 0.8, delay: i * 0.05 }}
-              className="bg-indigo-500 h-1.5 rounded-full"
-            />
-          </div>
-        </div>
-      ))}
+    <div className="flex items-center gap-2 mb-3 px-1">
+      <Icon size={15} style={{ color }} />
+      <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+        {title}
+      </h2>
     </div>
   );
 }
 
-function FullStocksList({ data, loading }) {
+// ─── Full Sector List ─────────────────────────────────────────────────────────
+
+function FullSectorList({ data }) {
   const { isPrivacyMode } = usePrivacy();
+  if (!data) return <Skeleton width="100%" height={300} rounded="xl" />;
 
-  if (!data) {
-  return <Skeleton width="100%" height={300} rounded="xl" />;
-}
-
-  const sortedData = [...data].sort((a, b) => b.allocation - a.allocation);
+  const sorted = [...data].sort((a, b) => b.allocation - a.allocation);
+  const maxAlloc = Math.max(...sorted.map((d) => d.allocation), 1);
 
   return (
-    <div className="divide-y divide-slate-700/50">
-      {sortedData.map((item, i) => (
-        <div key={item.name} className="flex items-center justify-between py-3">
-          <div className="flex items-center gap-3">
-            <div className="w-6 h-6 rounded-full bg-slate-700/50 flex items-center justify-center text-[10px] font-bold text-slate-300">
-              {i + 1}
-            </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-semibold text-white truncate max-w-[180px]">
-                {isPrivacyMode ? 'Confidential Asset' : item.name}
-              </span>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'var(--card-bg)',
+        border: '1px solid var(--card-border)',
+        boxShadow: 'var(--card-shadow)',
+      }}
+    >
+      {sorted.map((item, i) => {
+        const color = SECTOR_PALETTE[i % SECTOR_PALETTE.length];
+        const barPct = (item.allocation / maxAlloc) * 100;
+        return (
+          <div
+            key={item.sector}
+            className="relative px-4 py-3"
+            style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none' }}
+          >
+            <motion.div
+              className="absolute left-0 top-0 bottom-0 pointer-events-none"
+              initial={{ width: 0 }}
+              animate={{ width: `${barPct}%` }}
+              transition={{ duration: 0.7, delay: i * 0.04, ease: 'easeOut' }}
+              style={{ background: `${color}12` }}
+            />
+            <div className="relative z-10 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.sector}</span>
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
+                </span>
+                <span className="text-sm font-bold w-12 text-right" style={{ color }}>
+                  {item.allocation.toFixed(2)}%
+                </span>
+              </div>
             </div>
           </div>
-          <div className="flex flex-col items-end flex-shrink-0">
-            <span className="text-sm font-bold text-white">{item.allocation.toFixed(2)}%</span>
-            <span className="text-xs text-slate-400">
-              {isPrivacyMode ? '₹***' : formatCurrency(item.exposure)}
+        );
+      })}
+    </motion.div>
+  );
+}
+
+// ─── Full Stocks List ─────────────────────────────────────────────────────────
+
+function FullStocksList({ data }) {
+  const { isPrivacyMode } = usePrivacy();
+  if (!data) return <Skeleton width="100%" height={300} rounded="xl" />;
+
+  const sorted = [...data].sort((a, b) => b.allocation - a.allocation);
+  const maxExposure = Math.max(...sorted.map((d) => d.exposure), 1);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl overflow-hidden"
+      style={{
+        background: 'var(--card-bg)',
+        border: '1px solid var(--card-border)',
+        boxShadow: 'var(--card-shadow)',
+      }}
+    >
+      {sorted.map((item, i) => {
+        const rankColor = RANK_COLORS[i] ?? '#6366F1';
+        const barPct = (item.exposure / maxExposure) * 100;
+        return (
+          <div
+            key={item.name}
+            className="relative px-4 py-3 flex items-center gap-3"
+            style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none' }}
+          >
+            <motion.div
+              className="absolute left-0 top-0 bottom-0 pointer-events-none"
+              initial={{ width: 0 }}
+              animate={{ width: `${barPct}%` }}
+              transition={{ duration: 0.7, delay: i * 0.03, ease: 'easeOut' }}
+              style={{ background: `${rankColor}0D` }}
+            />
+            <span
+              className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+              style={{
+                background: i < 3 ? `${rankColor}22` : 'var(--card-border)',
+                color: i < 3 ? rankColor : 'var(--text-muted)',
+              }}
+            >
+              {i + 1}
+            </span>
+            <div className="relative z-10 flex-1 min-w-0">
+              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
+                {isPrivacyMode ? '••••••••' : item.name}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
+              </p>
+            </div>
+            <span
+              className="relative z-10 text-sm font-bold flex-shrink-0"
+              style={{ color: i < 3 ? rankColor : 'var(--text-2)' }}
+            >
+              {item.allocation.toFixed(2)}%
             </span>
           </div>
-        </div>
-      ))}
-    </div>
+        );
+      })}
+    </motion.div>
   );
 }
 
 // ─── AnalyticsPage ────────────────────────────────────────────────────────────
 
 export default function AnalyticsPage() {
-  const {
-  state,
-  refreshAll,
-  refreshing,
-} = usePortfolio();
+  const { state, refreshAll, refreshing } = usePortfolio();
   const scrollRef = usePageScrollRestoration('analytics');
   const navigate = useNavigate();
-  const { data: sectorData, loading: sectorLoading } = state.overallSectorAllocation;
-  const { data: stocksData, loading: stocksLoading } = state.stocksAllocation;
-  const isLoading = refreshing;
-
-  // useEffect(() => {
-  //   if (!sectorData && !sectorLoading) fetchOverallSectorAllocation();
-  //   if (!stocksData && !stocksLoading) fetchStocksAllocation();
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, []);
+  const { data: sectorData } = state.overallSectorAllocation;
+  const { data: stocksData } = state.stocksAllocation;
 
   return (
     <main
       ref={scrollRef}
-      className="min-h-0 flex-1 overflow-y-auto px-4 pb-28 bg-slate-900"
+      className="min-h-0 flex-1 overflow-y-auto"
       aria-label="Analytics"
       id="analytics-main"
       style={{
-        paddingTop: 'max(1.5rem, env(safe-area-inset-top))',
+        background: 'var(--bg)',
         paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
       }}
     >
-      <div className="max-w-[428px] mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      {/* Sticky Header */}
+      <div
+        className="sticky top-0 z-20 px-4 flex items-center justify-between"
+        style={{
+          paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
+          paddingBottom: '0.75rem',
+          background: 'var(--header-bg)',
+          borderBottom: '1px solid var(--header-border)',
+        }}
+      >
+        <div className="flex items-center gap-2">
+          <TrendingUp size={18} className="text-indigo-400" />
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>Analytics</h1>
+          <LoadingIndicator loading={refreshing} />
+        </div>
+        <div className="flex items-center gap-2">
+          <RefreshButton onRefresh={refreshAll} />
+          <PrivacyToggle />
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
+            style={{
+              border: '1px solid var(--card-border)',
+              background: 'var(--card-bg)',
+              color: 'var(--text-2)',
+            }}
+            aria-label="Settings"
+          >
+            <Settings size={18} />
+          </button>
+        </div>
+      </div>
 
-  <div className="flex items-center gap-2">
-    <h1 className="text-2xl font-bold text-white">
-      Full Allocation Lists
-    </h1>
-
-    <LoadingIndicator loading={isLoading} />
-  </div>
-
-  <div className="flex items-center gap-2">
-    <RefreshButton onRefresh={refreshAll} />
-    <PrivacyToggle />
-    <button
-    onClick={() => navigate("/settings")}
-    className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-    aria-label="Settings"
-  >
-    <Settings size={20} />
-  </button>
-  </div>
-
-</div>
-
-        <motion.div
-          variants={pageVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* ── 1. Full Sector Allocation ────────────── */}
-          <motion.section variants={sectionVariants} className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Layers size={16} className="text-slate-400" />
-              <h2 className="text-base font-semibold text-white">Full Sector Allocation</h2>
-            </div>
-
-            <div className="rounded-[24px] px-4 py-5 bg-slate-800/50 border border-slate-700/50 backdrop-blur-md">
-              <FullSectorList data={sectorData} loading={sectorLoading} />
-            </div>
-          </motion.section>
-
-          {/* ── 2. Full Stocks Allocation ──────────────────── */}
-          <motion.section variants={sectionVariants} className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <BarChart2 size={16} className="text-slate-400" />
-              <h2 className="text-base font-semibold text-white">Full Stocks Allocation</h2>
-            </div>
-
-            <div className="rounded-[24px] px-4 py-3 bg-slate-800/50 border border-slate-700/50 backdrop-blur-md">
-              <FullStocksList data={stocksData} loading={stocksLoading} />
-            </div>
-          </motion.section>
-
-        </motion.div>
+      {/* Content */}
+      <div className="px-4 pt-5 space-y-6">
+        <section>
+          <SectionHeading icon={PieChart} title="Full Sector Allocation" color="#6366F1" />
+          <FullSectorList data={sectorData} />
+        </section>
+        <section>
+          <SectionHeading icon={BarChart2} title="All Holdings by Exposure" color="#F59E0B" />
+          <FullStocksList data={stocksData} />
+        </section>
       </div>
     </main>
   );

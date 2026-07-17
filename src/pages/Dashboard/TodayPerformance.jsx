@@ -1,45 +1,25 @@
-import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown } from "lucide-react";
-import Skeleton from "../../components/ui/Skeleton";
-import { usePrivacy } from "../../context/PrivacyContext";
-import { formatCurrency, formatPercent } from "../../utils/formatters";
+import { motion } from 'framer-motion';
+import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import Skeleton from '../../components/ui/Skeleton';
+import { usePrivacy } from '../../context/PrivacyContext';
+import { formatCurrency, formatPercent } from '../../utils/formatters';
 
-function AssetRow({ label, gain, percent, isPrivacyMode }) {
-  const isProfit = gain >= 0;
+const ASSET_META = [
+  { label: 'Stocks',       gainKey: 'stocksGain',      pctKey: 'stocksGainPercent',      color: '#6366F1' },
+  { label: 'ETFs',         gainKey: 'etfsGain',        pctKey: 'etfsGainPercent',        color: '#F59E0B' },
+  { label: 'Mutual Funds', gainKey: 'mutualFundsGain', pctKey: 'mutualFundsGainPercent', color: '#06B6D4' },
+];
 
+function MiniBar({ value, max, color }) {
+  const pct = max > 0 ? Math.min(Math.abs(value) / max, 1) * 100 : 0;
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700/30">
-      <div className="flex flex-col">
-        <span className="text-white text-sm font-medium">
-          {label}
-        </span>
-
-        <span
-          className={`text-xs font-medium ${
-            isProfit ? "text-green-400" : "text-red-400"
-          }`}
-        >
-          {isProfit ? (
-            <TrendingUp size={12} className="inline mr-1" />
-          ) : (
-            <TrendingDown size={12} className="inline mr-1" />
-          )}
-
-          {isPrivacyMode
-            ? "₹***"
-            : `${gain >= 0 ? "+" : ""}${formatCurrency(gain)}`}
-        </span>
-      </div>
-
-      <div className="flex flex-col items-end">
-        <span
-  className={`text-sm font-semibold ${
-    isProfit ? "text-green-400" : "text-red-400"
-  }`}
->
-  {formatPercent(percent)}
-</span>
-      </div>
+    <div className="flex-1 rounded-full overflow-hidden" style={{ height: 3, background: 'var(--divider)' }}>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        style={{ height: '100%', background: color, borderRadius: 99 }}
+      />
     </div>
   );
 }
@@ -48,102 +28,94 @@ export default function TodayPerformance({ data, loading }) {
   const { isPrivacyMode } = usePrivacy();
 
   if (loading && !data) {
-    return (
-      <section className="mb-6">
-        <Skeleton width="100%" height={260} rounded="xl" />
-      </section>
-    );
+    return <section className="mb-5"><Skeleton width="100%" height={220} rounded="xl" /></section>;
   }
+  if (!data) return null;
 
   const gain = Number(data?.gain) || 0;
   const gainPercent = Number(data?.gainPercent) || 0;
-
   const isProfit = gain >= 0;
+  const accentColor = isProfit ? 'var(--profit)' : 'var(--loss)';
 
-  const assets = [
-    {
-      label: "Stocks",
-      gain: Number(data?.stocksGain) || 0,
-      percent: Number(data?.stocksGainPercent) || 0,
-    },
-    {
-      label: "ETFs",
-      gain: Number(data?.etfsGain) || 0,
-      percent: Number(data?.etfsGainPercent) || 0,
-    },
-    {
-      label: "Mutual Funds",
-      gain: Number(data?.mutualFundsGain) || 0,
-      percent: Number(data?.mutualFundsGainPercent) || 0,
-    },
-  ];
+  const assetRows = ASSET_META.map((m) => ({
+    label: m.label,
+    gain: Number(data?.[m.gainKey]) || 0,
+    pct: Number(data?.[m.pctKey]) || 0,
+    color: m.color,
+  }));
+  const maxGain = Math.max(...assetRows.map((r) => Math.abs(r.gain)), 1);
 
   return (
-    <section className="mb-6">
-      <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3 px-1">
-        Today's Performance
-      </h2>
-
+    <section className="mb-5">
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-5 shadow-lg backdrop-blur-md"
+        transition={{ duration: 0.4, delay: 0.06 }}
+        className="relative overflow-hidden rounded-2xl p-5 shadow-lg"
+        style={{
+          background: 'var(--card-bg)',
+          border: `1px solid ${isProfit ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}`,
+          boxShadow: 'var(--card-shadow)',
+        }}
       >
-        {/* Hero */}
-        <div className="flex flex-col gap-1">
-          <span className="text-slate-400 text-sm font-medium">
-            Day Gain / Loss
-          </span>
+        {/* Accent left bar */}
+        <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: accentColor }} />
 
-          <div className="flex items-end gap-3">
-            <span
-              className={`text-3xl font-bold tracking-tight ${
-                isProfit ? "text-green-400" : "text-red-400"
-              }`}
-            >
-              {isPrivacyMode
-                ? "₹***"
-                : `${gain >= 0 ? "+" : ""}${formatCurrency(gain)}`}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 mt-2">
-            <div
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-sm font-medium ${
-                isProfit
-                  ? "bg-green-500/10 text-green-400"
-                  : "bg-red-500/10 text-red-400"
-              }`}
-            >
-              {isProfit ? (
-                <TrendingUp size={16} />
-              ) : (
-                <TrendingDown size={16} />
-              )}
-
-              <span>
-                {gain >= 0 }
-                {formatPercent(gainPercent)}
+        <div className="relative z-10">
+          {/* Header row */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Clock size={13} style={{ color: 'var(--text-muted)' }} />
+              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+                Today's P&amp;L
               </span>
             </div>
-
-            <span className="text-slate-500 text-xs font-medium">
-              Today
+            <span
+              className="text-xs font-bold px-2 py-0.5 rounded-full"
+              style={{
+                background: isProfit ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
+                color: accentColor,
+              }}
+            >
+              {isProfit}{formatPercent(gainPercent)}
             </span>
           </div>
-        </div>
 
-        {/* Breakdown */}
-        <div className="mt-5 pt-5 border-t border-slate-700/50 space-y-3">
-          {assets.map((asset) => (
-            <AssetRow
-              key={asset.label}
-              label={asset.label}
-              gain={asset.gain}
-              percent={asset.percent}
-              isPrivacyMode={isPrivacyMode}
-            />
-          ))}
+          {/* Hero gain */}
+          <div className="flex items-baseline gap-2 mb-5">
+            {isProfit
+              ? <TrendingUp size={18} style={{ color: accentColor, flexShrink: 0 }} />
+              : <TrendingDown size={18} style={{ color: accentColor, flexShrink: 0 }} />}
+            <span className="text-3xl font-bold tracking-tight" style={{ color: accentColor }}>
+              {isPrivacyMode ? '₹••••••' : `${gain >= 0 ? '+' : ''}${formatCurrency(gain)}`}
+            </span>
+          </div>
+
+          {/* Asset breakdown */}
+          <div className="space-y-3">
+            {assetRows.map((row) => {
+              const rowIsProfit = row.gain >= 0;
+              return (
+                <div key={row.label} className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: row.color }} />
+                      <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{row.label}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold" style={{ color: rowIsProfit ? 'var(--profit)' : 'var(--loss)' }}>
+                        {isPrivacyMode ? '₹•••' : `${row.gain >= 0 ? '+' : ''}${formatCurrency(row.gain)}`}
+                      </span>
+                      <span className="text-xs w-12 text-right" style={{ color: 'var(--text-muted)' }}>
+                        {formatPercent(row.pct)}
+                      </span>
+                    </div>
+                  </div>
+                  <MiniBar value={row.gain} max={maxGain} color={row.color} />
+                </div>
+              );
+            })}
+          </div>
         </div>
       </motion.div>
     </section>

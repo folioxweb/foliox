@@ -1,65 +1,79 @@
 import { motion } from 'framer-motion';
-import { Layers } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { usePrivacy } from '../../context/PrivacyContext';
+
+const SEGMENT_COLORS = { Equity: '#6366F1', 'Cash/Debt': '#10B981', Debt: '#10B981' };
+
+const formatCrore = (val) => {
+  if (!val) return '₹0';
+  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
+  if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+};
 
 export default function AssetAllocation({ data, loading }) {
   const { isPrivacyMode } = usePrivacy();
 
-  if (loading || !data) {
-    return (
-      <section className="mb-6">
-        <Skeleton width="100%" height={160} rounded="xl" />
-      </section>
-    );
+  if (loading && !data) {
+    return <section className="mb-5"><Skeleton width="100%" height={140} rounded="xl" /></section>;
   }
+  if (!data) return null;
 
-  // Find the total row and individual items
   const totalItem = data.find((d) => d.asset === 'Total');
-  const filteredData = data.filter((d) => d.asset !== 'Total' && d.allocation > 0);
-
-  const totalAllocation = totalItem ? totalItem.allocation : filteredData.reduce((acc, curr) => acc + curr.allocation, 0);
-
-  const formatCurrency = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
+  const segments = data.filter((d) => d.asset !== 'Total' && d.allocation > 0);
+  const totalAllocation = totalItem?.allocation ?? segments.reduce((s, d) => s + d.allocation, 0);
 
   return (
-    <section className="mb-6">
-      <div className="flex items-center gap-2 mb-3 px-1">
-        <Layers size={16} className="text-slate-400" />
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Asset Allocation</h2>
-      </div>
-
+    <section className="mb-5">
+      <p className="text-xs font-semibold uppercase tracking-widest mb-3 px-1" style={{ color: 'var(--text-muted)' }}>
+        Asset Allocation
+      </p>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-5 shadow-lg backdrop-blur-md space-y-5"
+        className="rounded-2xl p-5"
+        style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--card-border)',
+          boxShadow: 'var(--card-shadow)',
+        }}
       >
-        {filteredData.map((item, i) => {
-          const percentage = totalAllocation > 0 ? (item.allocation / totalAllocation) * 100 : 0;
-          const barColor = item.asset === 'Equity' ? 'bg-blue-500' : 'bg-green-500';
+        {/* Segmented bar */}
+        <div className="flex rounded-full overflow-hidden h-3 mb-4 gap-0.5">
+          {segments.map((item, i) => {
+            const pct = totalAllocation > 0 ? (item.allocation / totalAllocation) * 100 : 0;
+            const color = SEGMENT_COLORS[item.asset] ?? '#94A3B8';
+            return (
+              <motion.div
+                key={item.asset}
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.8, delay: i * 0.15, ease: 'easeOut' }}
+                style={{ background: color, minWidth: pct > 0 ? 4 : 0 }}
+              />
+            );
+          })}
+        </div>
 
-          return (
-            <div key={item.asset} className="flex flex-col gap-1.5">
-              <div className="flex justify-between items-end">
-                <span className="text-sm font-medium text-slate-200">{item.asset}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">
-                    {isPrivacyMode ? '₹***' : formatCurrency(item.allocation)}
+        {/* Legend */}
+        <div className="flex flex-wrap gap-x-5 gap-y-3">
+          {segments.map((item) => {
+            const pct = totalAllocation > 0 ? ((item.allocation / totalAllocation) * 100).toFixed(1) : '0.0';
+            const color = SEGMENT_COLORS[item.asset] ?? '#94A3B8';
+            return (
+              <div key={item.asset} className="flex items-center gap-2 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ background: color }} />
+                <div className="flex flex-col">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{item.asset}</span>
+                  <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>
+                    {isPrivacyMode ? '•••' : formatCrore(item.allocation)}
+                    <span className="text-xs font-normal ml-1" style={{ color: 'var(--text-muted)' }}>({pct}%)</span>
                   </span>
-                  <span className="text-sm font-bold text-white w-12 text-right">{percentage.toFixed(1)}%</span>
                 </div>
               </div>
-              <div className="w-full bg-slate-700/50 rounded-full h-2.5 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${percentage}%` }}
-                  transition={{ duration: 0.8, delay: i * 0.1 }}
-                  className={`${barColor} h-2.5 rounded-full`}
-                />
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </motion.div>
     </section>
   );

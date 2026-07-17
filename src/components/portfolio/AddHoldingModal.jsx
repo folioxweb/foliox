@@ -116,31 +116,56 @@ export default function AddHoldingModal({ isOpen, onClose }) {
   }
 }
 
-  const inputClasses = "w-full rounded-full bg-slate-800 p-3 text-white placeholder-slate-400 focus:outline-none transition";
-  const selectClasses = "w-full rounded-full bg-slate-800 p-3 text-white focus:outline-none transition appearance-none";
+  const inputStyle = {
+    background: 'var(--input-bg)',
+    border: '1px solid var(--input-border)',
+    color: 'var(--text)',
+    borderRadius: '9999px',
+    padding: '0.75rem 1.25rem',
+    outline: 'none',
+    transition: 'all 0.2s',
+    fontSize: '16px',
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    appearance: 'none',
+    backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'right 1rem center',
+    backgroundSize: '1.2rem',
+    paddingRight: '2.5rem',
+  };
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="p-6">
-        <h2 className="text-2xl font-bold text-white mb-6">Add Asset</h2>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text)' }}>Add Asset</h2>
 
+        {/* Dynamic Themeable Tabs */}
         <div className="grid grid-cols-4 gap-2 mb-6">
           {[
             { id: ASSET_TYPES.STOCK, label: "Stock" },
             { id: ASSET_TYPES.ETF, label: "ETF" },
             { id: ASSET_TYPES.MF, label: "MF" },
             { id: ASSET_TYPES.FD, label: "FD" },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setAssetType(tab.id)}
-              className={`rounded-full py-3 font-semibold transition ${
-                assetType === tab.id ? "bg-sky-600 text-white" : "bg-slate-800 text-slate-300"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+          ].map((tab) => {
+            const isActive = assetType === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setAssetType(tab.id)}
+                className="rounded-full py-3 font-semibold transition"
+                style={{
+                  background: isActive ? 'rgba(16,185,129,0.12)' : 'var(--sheet-btn-bg)',
+                  border: `1.5px solid ${isActive ? 'var(--emerald)' : 'var(--card-border)'}`,
+                  color: isActive ? 'var(--emerald)' : 'var(--text-2)',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         <div className="space-y-4">
@@ -150,7 +175,8 @@ export default function AddHoldingModal({ isOpen, onClose }) {
               placeholder="Symbol (e.g. HDFCBANK)"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-              className={inputClasses}
+              style={inputStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             />
           )}
 
@@ -165,17 +191,30 @@ export default function AddHoldingModal({ isOpen, onClose }) {
             }
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className={inputClasses}
+            style={inputStyle}
+            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
           />
 
           {assetType === ASSET_TYPES.FD ? (
-            <input
-              type="number"
-              placeholder="Principal Amount"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              className={inputClasses}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="number"
+                placeholder="Principal Amount"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                style={inputStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              />
+              <input
+                type="number"
+                step="0.01"
+                placeholder="Interest Rate (%)"
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value)}
+                style={inputStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              />
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-4">
               <input
@@ -183,25 +222,32 @@ export default function AddHoldingModal({ isOpen, onClose }) {
                 placeholder="Quantity"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
-                className={inputClasses}
+                style={inputStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               />
               <input
                 type="number"
                 placeholder="Avg. Price"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className={inputClasses}
+                style={inputStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               />
             </div>
           )}
 
           {assetType !== ASSET_TYPES.FD && (
-            <select value={confidence} onChange={(e) => setConfidence(e.target.value)} className={selectClasses}>
-              <option value="" disabled className="text-black">
+            <select
+              value={confidence}
+              onChange={(e) => setConfidence(e.target.value)}
+              style={selectStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+            >
+              <option value="" disabled style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
                 Conviction Level
               </option>
               {CONFIDENCE_OPTIONS.map((item) => (
-                <option key={item} value={item} className="text-black">
+                <option key={item} value={item} style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
                   {item}
                 </option>
               ))}
@@ -209,9 +255,14 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           )}
 
           {assetType === ASSET_TYPES.STOCK && (
-            <select value={sector} onChange={(e) => setSector(e.target.value)} className={selectClasses}>
+            <select
+              value={sector}
+              onChange={(e) => setSector(e.target.value)}
+              style={selectStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+            >
               {SECTORS.map((item) => (
-                <option key={item} value={item} className="text-black">
+                <option key={item} value={item} style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
                   {item}
                 </option>
               ))}
@@ -225,58 +276,71 @@ export default function AddHoldingModal({ isOpen, onClose }) {
                 placeholder="Fund Code"
                 value={fundCode}
                 onChange={(e) => setFundCode(e.target.value)}
-                className={inputClasses}
+                style={inputStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               />
               <input
                 type="text"
                 placeholder="MFAPI Code"
                 value={mfApiCode}
                 onChange={(e) => setMfApiCode(e.target.value)}
-                className={inputClasses}
+                style={inputStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               />
             </div>
           )}
 
           {assetType === ASSET_TYPES.FD && (
-            <>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-  <label className="block mb-1 text-sm text-slate-400">
-    Start Date
-  </label>
-
-  <input
-    type="date"
-    value={startDate}
-    onChange={(e) => setStartDate(e.target.value)}
-    className={inputClasses}
-  />
-</div>
-
-
-<div>
-  <label className="block mb-1 text-sm text-slate-400">
-    Maturity Date
-  </label>
-
-  <input
-    type="date"
-    value={maturityDate}
-    onChange={(e) => setMaturityDate(e.target.value)}
-    className={inputClasses}
-  />
-</div>
-            </>
+                <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  style={inputStyle}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+                />
+              </div>
+              <div>
+                <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                  Maturity Date
+                </label>
+                <input
+                  type="date"
+                  value={maturityDate}
+                  onChange={(e) => setMaturityDate(e.target.value)}
+                  style={inputStyle}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+                />
+              </div>
+            </div>
           )}
         </div>
 
+        {/* Actions buttons */}
         <div className="mt-8 flex gap-3">
-          <button onClick={onClose} className="flex-1 rounded-full bg-slate-700 py-3 text-white">
+          <button
+            onClick={onClose}
+            className="flex-1 rounded-full py-3 font-semibold transition hover:opacity-80"
+            style={{
+              background: 'var(--sheet-btn-bg)',
+              border: '1px solid var(--card-border)',
+              color: 'var(--text-2)',
+            }}
+          >
             Cancel
           </button>
           <button
             disabled={loading || !isFormValid}
             onClick={handleSave}
-            className="flex-1 rounded-full py-3 font-semibold text-white transition bg-gradient-to-r from-sky-600 to-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 rounded-full py-3 font-bold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: isFormValid ? 'var(--emerald)' : 'var(--card-border)',
+              boxShadow: isFormValid ? '0 4px 12px rgba(16,185,129,0.2)' : 'none',
+            }}
           >
             {loading ? "Adding..." : "Add Holding"}
           </button>

@@ -134,7 +134,7 @@ const Modal = ({ isOpen, onClose, children, className = '' }) => {
             tabIndex={-1}
             className={[
               'fixed bottom-0 left-0 right-0 z-50',
-              'bg-slate-900',
+              'bg-[var(--sheet-bg)] border-t border-[var(--card-border)]',
               'rounded-t-3xl',
               'max-h-[90vh] overflow-y-auto',
               'outline-none',
@@ -149,7 +149,7 @@ const Modal = ({ isOpen, onClose, children, className = '' }) => {
           >
             {/* ── Drag handle indicator ─────────────────────────────────── */}
             <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
-              <div className="h-1 w-10 rounded-full bg-slate-600" />
+              <div className="h-1 w-10 rounded-full bg-[var(--divider)]" />
             </div>
 
             {/* ── Content ───────────────────────────────────────────────── */}

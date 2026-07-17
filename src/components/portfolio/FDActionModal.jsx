@@ -65,39 +65,50 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
     }
   }
 
+  const inputStyle = {
+    background: 'var(--input-bg)',
+    border: '1px solid var(--input-border)',
+    color: 'var(--text)',
+    borderRadius: '9999px',
+    padding: '0.75rem 1.25rem',
+    outline: 'none',
+    transition: 'all 0.2s',
+    fontSize: '16px',
+  };
+
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="p-6">
-        <h2 className="text-2xl font-bold text-white mb-6">Manage Fixed Deposit</h2>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text)' }}>Manage Fixed Deposit</h2>
 
         {/* Action Tabs */}
         <div className="grid grid-cols-2 gap-2 mb-6">
-          <button
-            onClick={() => setAction(ACTIONS.UPDATE)}
-            className={`rounded-full py-3 font-semibold transition ${
-              action === ACTIONS.UPDATE
-                ? "bg-sky-600 text-white"
-                : "bg-slate-800 text-slate-300"
-            }`}
-          >
-            Update
-          </button>
-          <button
-            onClick={() => setAction(ACTIONS.DELETE)}
-            className={`rounded-full py-3 font-semibold transition ${
-              action === ACTIONS.DELETE
-                ? "bg-red-600 text-white"
-                : "bg-slate-800 text-slate-300"
-            }`}
-          >
-            Close FD
-          </button>
+          {[
+            { id: ACTIONS.UPDATE, label: "Update", activeColor: 'var(--emerald)', bg: 'rgba(16,185,129,0.12)' },
+            { id: ACTIONS.DELETE, label: "Close FD", activeColor: 'var(--loss)', bg: 'rgba(239,68,68,0.12)' },
+          ].map((tab) => {
+            const isActive = action === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setAction(tab.id)}
+                className="rounded-full py-3 font-semibold transition"
+                style={{
+                  background: isActive ? tab.bg : 'var(--sheet-btn-bg)',
+                  border: `1.5px solid ${isActive ? tab.activeColor : 'var(--card-border)'}`,
+                  color: isActive ? tab.activeColor : 'var(--text-2)',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Holding Info */}
-        <div className="mb-5">
-          <p className="text-sm text-slate-400">Holding</p>
-          <p className="text-white font-semibold">{holding?.name}</p>
+        <div className="mb-5 flex flex-col gap-0.5">
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Holding</p>
+          <p className="text-lg font-bold" style={{ color: 'var(--text)' }}>{holding?.name}</p>
         </div>
 
         {/* Form Inputs */}
@@ -107,7 +118,8 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
             value={bankName}
             onChange={(e) => setBankName(e.target.value)}
             placeholder="Bank Name"
-            className="w-full rounded-full bg-slate-800 p-3 text-white"
+            style={inputStyle}
+            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             disabled={action === ACTIONS.DELETE}
           />
           <input
@@ -115,7 +127,8 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
             value={principal}
             onChange={(e) => setPrincipal(e.target.value)}
             placeholder="Principal"
-            className="w-full rounded-full bg-slate-800 p-3 text-white"
+            style={inputStyle}
+            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             disabled={action === ACTIONS.DELETE}
           />
           <input
@@ -123,53 +136,63 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
             value={interestRate}
             onChange={(e) => setInterestRate(e.target.value)}
             placeholder="Interest Rate"
-            className="w-full rounded-full bg-slate-800 p-3 text-white"
+            style={inputStyle}
+            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             disabled={action === ACTIONS.DELETE}
           />
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full rounded-full bg-slate-800 p-3 text-white"
-            disabled={action === ACTIONS.DELETE}
-          />
-          <input
-            type="date"
-            value={maturityDate}
-            onChange={(e) => setMaturityDate(e.target.value)}
-            className="w-full rounded-full bg-slate-800 p-3 text-white"
-            disabled={action === ACTIONS.DELETE}
-          />
+          <div>
+            <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              style={inputStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              disabled={action === ACTIONS.DELETE}
+            />
+          </div>
+          <div>
+            <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              Maturity Date
+            </label>
+            <input
+              type="date"
+              value={maturityDate}
+              onChange={(e) => setMaturityDate(e.target.value)}
+              style={inputStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              disabled={action === ACTIONS.DELETE}
+            />
+          </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer actions */}
         <div className="mt-8 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-full bg-slate-700 py-3 text-white"
+            className="flex-1 rounded-full py-3 font-semibold transition hover:opacity-80"
+            style={{
+              background: 'var(--sheet-btn-bg)',
+              border: '1px solid var(--card-border)',
+              color: 'var(--text-2)',
+            }}
           >
             Cancel
           </button>
           <button
             disabled={
-  loading ||
-  (
-    action === ACTIONS.UPDATE &&
-    (
-      !bankName ||
-      principalValue <= 0 ||
-      rate <= 0 ||
-      !startDate ||
-      !maturityDate
-    )
-  )
-}
+              loading ||
+              (action === ACTIONS.UPDATE &&
+                (!bankName || principalValue <= 0 || rate <= 0 || !startDate || !maturityDate))
+            }
             onClick={handleContinue}
-            className={`flex-1 rounded-full py-3 font-semibold text-white transition ${
-              action === ACTIONS.UPDATE
-                ? "bg-gradient-to-r from-sky-600 to-sky-500"
-                : "bg-gradient-to-r from-red-600 to-red-500"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+            className="flex-1 rounded-full py-3 font-bold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              background: action === ACTIONS.UPDATE ? 'var(--emerald)' : 'var(--loss)',
+              boxShadow: 'none',
+            }}
           >
             {loading
               ? "Saving..."

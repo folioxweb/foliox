@@ -19,10 +19,11 @@ export default function FDCard({
   const { isPrivacyMode } = usePrivacy();
 
   const glassStyle = {
-    background: "rgba(255,255,255,0.05)",
+    background: "var(--card-bg)",
     backdropFilter: "blur(16px)",
     WebkitBackdropFilter: "blur(16px)",
-    border: "1px solid rgba(255,255,255,0.10)"
+    border: "1px solid var(--card-border)",
+    boxShadow: "var(--card-shadow)",
   };
 
   const Tag = onPress ? "button" : "article";
@@ -51,7 +52,7 @@ export default function FDCard({
 
         <div>
 
-          <div className="text-sm font-bold text-white">
+          <div className="text-sm font-bold text-[var(--text)]">
             {isPrivacyMode
               ? "Confidential FD"
               : name}
@@ -107,7 +108,7 @@ export default function FDCard({
         style={{
           height: 1,
           background:
-            "rgba(255,255,255,0.06)"
+            "var(--divider)"
         }}
       />
 
@@ -115,11 +116,11 @@ export default function FDCard({
 
         <div>
 
-          <div className="text-xs uppercase text-slate-500">
+          <div className="text-xs uppercase text-[var(--text-muted)]">
             Interest Earned
           </div>
 
-          <div className="text-sm font-bold text-green-500">
+          <div className="text-sm font-bold text-[var(--profit)]">
 
             {isPrivacyMode
               ? "₹***"
@@ -129,7 +130,7 @@ export default function FDCard({
 
         </div>
 
-        <div className="rounded-full bg-green-500/10 px-3 py-1 text-green-500 font-bold">
+        <div className="rounded-full px-3 py-1 font-bold" style={{ background: "rgba(34, 197, 94, 0.12)", color: "var(--profit)" }}>
 
           {interestRate}%
 
@@ -154,13 +155,13 @@ function Metric({
 
     <div>
 
-      <div className="text-xs uppercase text-slate-500">
+      <div className="text-xs uppercase text-[var(--text-muted)]">
 
         {label}
 
       </div>
 
-      <div className="text-sm font-semibold text-white">
+      <div className="text-sm font-semibold text-[var(--text)]">
 
         {value}
 

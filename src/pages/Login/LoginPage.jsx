@@ -32,30 +32,30 @@ export default function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F172A] flex items-center justify-center px-6">
-
+    <div className="min-h-screen flex items-center justify-center px-6" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
-
-        <div className="bg-slate-800 border border-slate-700 rounded-3xl p-8 shadow-2xl">
-
+        <div
+          className="rounded-3xl p-8 shadow-2xl"
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--card-border)',
+            boxShadow: 'var(--card-shadow)',
+          }}
+        >
           <div className="flex justify-center mb-6">
-
-            <div className="w-20 h-20 rounded-full bg-emerald-500/15 flex items-center justify-center">
-
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
               <ShieldCheck
                 size={38}
-                className="text-emerald-400"
+                style={{ color: 'var(--emerald)' }}
               />
-
             </div>
-
           </div>
 
-          <h1 className="text-3xl font-bold text-center text-white">
+          <h1 className="text-3xl font-bold text-center" style={{ color: 'var(--text)' }}>
             Equity Dashboard
           </h1>
 
-          <p className="text-center text-slate-400 mt-2 mb-8">
+          <p className="text-center mt-2 mb-8 text-sm" style={{ color: 'var(--text-muted)' }}>
             Private Portfolio Access
           </p>
 
@@ -63,12 +63,11 @@ export default function LoginPage({ onLogin }) {
             onSubmit={handleLogin}
             className="space-y-6"
           >
-
             <div className="relative">
-
               <Lock
                 size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute left-4 top-1/2 -translate-y-1/2"
+                style={{ color: 'var(--text-muted)' }}
               />
 
               <input
@@ -76,13 +75,20 @@ export default function LoginPage({ onLogin }) {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-full bg-slate-900 border border-slate-700 py-3 pl-12 pr-12 text-white outline-none focus:border-emerald-500 transition"
+                className="w-full rounded-full py-3 pl-12 pr-12 outline-none focus:ring-1 focus:ring-[var(--emerald)]"
+                style={{
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--input-border)',
+                  color: 'var(--text)',
+                  fontSize: '16px', // Prevents iOS Safari auto-zoom
+                }}
               />
 
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                className="absolute right-4 top-1/2 -translate-y-1/2 hover:opacity-80"
+                style={{ color: 'var(--text-muted)' }}
               >
                 {showPassword ? (
                   <EyeOff size={18} />
@@ -90,11 +96,10 @@ export default function LoginPage({ onLogin }) {
                   <Eye size={18} />
                 )}
               </button>
-
             </div>
 
             {error && (
-              <div className="text-red-400 text-sm text-center">
+              <div className="text-sm text-center font-semibold" style={{ color: 'var(--loss)' }}>
                 {error}
               </div>
             )}
@@ -102,21 +107,21 @@ export default function LoginPage({ onLogin }) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-full py-3 bg-gradient-to-r from-emerald-500 to-emerald-400 text-white font-semibold transition hover:opacity-90 disabled:opacity-60"
+              className="w-full rounded-full py-3 text-white font-bold transition hover:opacity-90 disabled:opacity-55"
+              style={{
+                background: 'var(--emerald)',
+                boxShadow: '0 4px 12px rgba(16,185,129,0.2)',
+              }}
             >
               {loading ? "Signing In..." : "Login"}
             </button>
-
           </form>
-
         </div>
 
-        <p className="text-center text-slate-500 text-xs mt-6">
+        <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
           Protected Portfolio • Authorized Access Only
         </p>
-
       </div>
-
     </div>
   );
 }

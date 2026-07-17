@@ -36,7 +36,17 @@ function PageFallback() {
 // ---------------------------------------------------------------------------
 function AppShell() {
   return (
-    <div className="relative flex h-[100svh] flex-col overflow-hidden bg-[#0F172A]">
+    <div className="relative flex h-[100svh] flex-col overflow-hidden bg-[var(--bg)]">
+      {/* Top safe-area status bar overlay to block scrolled content */}
+      <div
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+        style={{
+          height: 'env(safe-area-inset-top, 0px)',
+          background: 'var(--header-bg)',
+          transition: 'background-color 0.22s ease',
+        }}
+      />
+
       {/* Active page renders here */}
       <Suspense fallback={<PageFallback />}>
         <Outlet />

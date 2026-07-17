@@ -59,20 +59,24 @@ async function apiFetch(action) {
 
     clearTimeout(timer);
 
+    if (res.status === 401 || res.status === 403) {
+      logout("Your session has expired. Please sign in again.");
+      return null;
+    }
+
     const contentType = res.headers.get("content-type") || "";
 
     if (contentType.includes("application/json")) {
       const json = await res.json();
       if (
-  json.error &&
-  String(json.error).includes("Unauthorized")
-) {
-
-  logout("Your session has expired. Please sign in again.");
-return null;
-
-  
-}
+        json.error &&
+        (String(json.error).toLowerCase().includes("unauthorized") ||
+         String(json.error).toLowerCase().includes("expired") ||
+         String(json.error).toLowerCase().includes("invalid token"))
+      ) {
+        logout("Your session has expired. Please sign in again.");
+        return null;
+      }
 
       if (!res.ok) {
         throw {
@@ -145,10 +149,20 @@ async function apiPost(body) {
 
     clearTimeout(timer);
 
+    if (res.status === 401 || res.status === 403) {
+      logout("Your session has expired. Please sign in again.");
+      return null;
+    }
+
     const json = await res.json();
 
     // Handle expired session
-    if (json.error && String(json.error).includes("Unauthorized")) {
+    if (
+      json.error &&
+      (String(json.error).toLowerCase().includes("unauthorized") ||
+       String(json.error).toLowerCase().includes("expired") ||
+       String(json.error).toLowerCase().includes("invalid token"))
+    ) {
       logout("Your session has expired. Please sign in again.");
       return null;
     }

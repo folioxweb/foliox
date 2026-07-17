@@ -5,6 +5,7 @@ import HoldingsList from './HoldingsList';
 import DetailScreen from './DetailScreen';
 import { usePortfolio } from '../../context/PortfolioContext';
 import PrivacyToggle from '../../components/ui/PrivacyToggle';
+import { VIEW_MODES, VIEW_MODE_LABELS } from '../../components/cards/HoldingCard';
 import {
   ArrowDownAZ,
   ArrowUpDown,
@@ -16,6 +17,9 @@ import {
   TrendingUp,
   X,
   Search,
+  ChevronLeft,
+  ChevronRight,
+  LineChart,
 } from 'lucide-react';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -37,6 +41,7 @@ const SORT_OPTIONS = [
   { value: 'currentValue', label: 'Current Value', icon: Banknote },
   { value: 'investedValue', label: 'Invested Value', icon: Scale },
   { value: 'return', label: 'Returns', icon: TrendingUp },
+  { value: 'dayChange', label: 'Daily Change (%)', icon: LineChart },
   { value: 'weight', label: 'Weight', icon: ArrowUpDown },
   { value: 'name', label: 'Name', icon: ArrowDownAZ },
 ];
@@ -59,8 +64,16 @@ export default function PortfolioPage() {
   const [filterBy, setFilterBy] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [viewModeIndex, setViewModeIndex] = useState(0);
   const swipeStart = useRef(null);
   const searchInputRef = useRef(null);
+
+  const viewMode = VIEW_MODES[viewModeIndex];
+  const viewModeLabel = VIEW_MODE_LABELS[viewMode];
+
+  function cycleViewMode() {
+    setViewModeIndex((prev) => (prev + 1) % VIEW_MODES.length);
+  }
 
   const {
   state,
@@ -162,6 +175,8 @@ export default function PortfolioPage() {
         comparison =
           (a.investedValue ?? a.invested ?? a.principal ?? 0) -
           (b.investedValue ?? b.invested ?? b.principal ?? 0);
+      } else if (sortBy === 'dayChange') {
+        comparison = (a.dayChangePercent ?? a.dayChange ?? 0) - (b.dayChangePercent ?? b.dayChange ?? 0);
       } else if (sortBy === 'weight') {
         comparison = (a.portfolioWeight ?? a.weightage ?? 0) - (b.portfolioWeight ?? b.weightage ?? 0);
       } else {
@@ -180,9 +195,8 @@ export default function PortfolioPage() {
       ref={scrollRef}
       className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
       style={{
-        background: '#0F172A',
-        paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
-        paddingBottom: "1rem",
+        background: 'var(--bg)',
+        paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
       }}
       variants={pageVariants}
       initial="hidden"
@@ -192,91 +206,162 @@ export default function PortfolioPage() {
       onTouchEnd={handleTouchEnd}
       onTouchCancel={() => { swipeStart.current = null; }}
     >
-      {/* ── Page header ─────────────────────────────────────────────────── */}
-      <header className="px-4 pb-4" style={{ paddingBottom: '0px' }}>
-        <div className="flex items-center justify-between mb-4 h-10 relative overflow-hidden">
+      {/* ── Title row — scrolls away on scroll-up ────────────────────────── */}
+      <div
+        className="px-4"
+        style={{
+          paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
+          paddingBottom: '0.5rem',
+          background: 'var(--header-bg)',
+        }}
+      >
+        <div className="flex items-center justify-between h-10 relative">
           <AnimatePresence mode="wait">
             {!isSearchOpen ? (
               <motion.div
-                key="title"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="absolute left-0 flex items-center gap-2"
+                key="header-normal"
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="w-full flex items-center justify-between"
               >
-                <h1 className="text-2xl font-bold text-white">
-                  Portfolio
-                </h1>
-                <LoadingIndicator loading={refreshing} />
+                {/* Left: Title + Loading */}
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+                    Portfolio
+                  </h1>
+                  <LoadingIndicator loading={refreshing} />
+                </div>
+
+                {/* Right: Actions */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsSearchOpen(true)}
+                    className="rounded-full p-2 transition-colors hover:opacity-80"
+                    style={{ color: 'var(--text-muted)' }}
+                    aria-label="Search holdings"
+                  >
+                    <Search size={20} />
+                  </button>
+                  <button
+                    onClick={() => setAddHoldingOpen(true)}
+                    className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap"
+                    style={{ background: 'var(--emerald)' }}
+                  >
+                    + Add
+                  </button>
+                  <RefreshButton onRefresh={refreshAll} />
+                  <PrivacyToggle />
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
+                    style={{ border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--text-2)' }}
+                    aria-label="Settings"
+                  >
+                    <Settings size={20} />
+                  </button>
+                </div>
               </motion.div>
             ) : (
               <motion.div
-                key="search-input"
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: 'calc(100% - 165px)' }}
-                exit={{ opacity: 0, width: 0 }}
-                className="absolute left-0 right-24 flex items-center"
+                key="header-search"
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.15 }}
+                className="w-full flex items-center justify-between gap-3"
               >
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={`Search ${activeTab}...`}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-xl bg-slate-800 p-2 pl-3 pr-8 text-sm text-white focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-2.5 text-slate-400 hover:text-white"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
+                {/* Search Input Container */}
+                <div className="relative flex-1 flex items-center">
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={`Search ${activeTab}...`}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full rounded-xl py-1.5 pl-3 pr-8 text-base focus:outline-none focus:ring-1 focus:ring-[var(--emerald)]"
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--input-border)',
+                      color: 'var(--text)',
+                      fontSize: '16px', // Prevents iOS Safari auto-zoom
+                    }}
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 hover:opacity-80"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+
+                {/* Cancel Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setIsSearchOpen(false);
+                  }}
+                  className="text-sm font-semibold transition hover:opacity-80"
+                  style={{ color: 'var(--emerald)' }}
+                >
+                  Cancel
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
-
-          <div className="flex items-center gap-2 absolute right-0">
-             
-            <button
-              onClick={() => {
-                if (isSearchOpen) setSearchQuery('');
-                setIsSearchOpen(!isSearchOpen);
-              }}
-              className={`rounded-full p-2 transition-colors ${isSearchOpen ? 'bg-slate-800 text-emerald-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-              aria-label="Toggle search input"
-            >
-              {isSearchOpen ? <X size={20} /> : <Search size={20} />}
-            </button>
-            <button
-              onClick={() => setAddHoldingOpen(true)}
-              className="rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500"
-            >
-              + Add
-            </button>
-            <RefreshButton onRefresh={refreshAll} />
-            <PrivacyToggle />
-            <button
-    onClick={() => navigate("/settings")}
-    className="
-      flex h-9 w-9 items-center justify-center rounded-full border border-slate-700 bg-slate-800/70 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-    aria-label="Settings"
-  >
-    <Settings size={20} />
-  </button>
-          </div>
         </div>
+      </div>
 
+      {/* ── TabBar — sticks at top once title row scrolls away ───────────── */}
+      <div
+        className="z-20"
+        style={{
+          position: 'sticky',
+          top: 'env(safe-area-inset-top)',
+          background: 'var(--header-bg)',
+          borderBottom: '1px solid var(--header-border)',
+        }}
+      >
         <TabBar
           tabs={TAB_LABELS}
           activeTab={activeTab}
           onChange={handleTabChange}
         />
-      </header>
+      </div>
 
       {/* ── Holdings list ────────────────────────────────────────────────── */}
-      <section className="flex-1 px-4 pt-4" aria-label={`${activeTab} holdings`}>
+      <section className="flex-1 px-4 pt-2" aria-label={`${activeTab} holdings`}>
+        {/* View mode toggle row — matches Zerodha Sort / <> toggle */}
+        <div className="flex items-center justify-between mb-1 pb-2" style={{ borderBottom: '1px solid var(--divider)' }}>
+          {/* Sort button — tapping opens the sort/filter bottom sheet */}
+          <button
+            onClick={() => setShowSortFilter(true)}
+            aria-label="Open sort and filter"
+            className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-60"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            <span>Sort</span>
+            <SlidersHorizontal size={12} strokeWidth={2} />
+          </button>
+
+          {/* <> view mode toggle */}
+          <button
+            onClick={cycleViewMode}
+            aria-label={`Switch view mode, current: ${viewModeLabel}`}
+            className="flex items-center gap-1 text-xs font-medium transition-opacity active:opacity-60"
+            style={{ color: 'var(--text-2)', textDecoration: 'underline dotted', textUnderlineOffset: '3px' }}
+          >
+            <ChevronLeft size={12} strokeWidth={2.5} style={{ color: 'var(--text-muted)' }} />
+            <ChevronRight size={12} strokeWidth={2.5} style={{ color: 'var(--text-muted)' }} />
+            <span style={{ color: 'var(--text-2)' }}>{viewModeLabel}</span>
+          </button>
+        </div>
+
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, x: 12 }}
@@ -290,24 +375,12 @@ export default function PortfolioPage() {
             error={error}
             onRetry={handleRetry}
             onPress={handleHoldingPress}
+            viewMode={viewMode}
           />
         </motion.div>
       </section>
 
-      {/* ── Floating Solid High-Visibility FAB Button ────────────────────── */}
-      <button
-        onClick={() => setShowSortFilter(true)}
-        aria-expanded={showSortFilter}
-        aria-controls="asset-view-controls"
-        className="fixed right-6 bottom-24 z-30 flex h-14 w-14 items-center justify-center rounded-full border border-slate-700/60 bg-gradient-to-tr from-slate-800 to-slate-900 text-teal-400 shadow-2xl transition-transform active:scale-95 hover:border-emerald-500/50" style={{
-          bottom: 'calc(6rem + env(safe-area-inset-bottom))'
-        }}
-        aria-label="Open sorting and filters"
-      >
-        <SlidersHorizontal size={22} strokeWidth={2.5} />
-      </button>
-
-      {/* ── Floating Modern Bottom Sheet Panel ───────────────────────────── */}
+      {/* ── Sort / Filter Bottom Sheet ────────────────────────────────── */}
       <AnimatePresence>
         {showSortFilter && (
           <>
@@ -324,24 +397,27 @@ export default function PortfolioPage() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               id="asset-view-controls"
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl border-t border-slate-700/80 bg-slate-900 p-5 shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto"
               style={{
-                paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))'
+                background: 'var(--sheet-bg)',
+                borderTop: '1px solid var(--card-border)',
+                paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
               }}
             >
-              <div className="mx-auto mb-4 h-1 w-12 rounded-full bg-slate-700" />
+              <div className="mx-auto mb-4 h-1 w-12 rounded-full" style={{ background: 'var(--divider)' }} />
               <div className="mb-5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-400/10 text-emerald-400">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--emerald)' }}>
                     <ListFilter size={16} aria-hidden="true" />
                   </span>
-                  <h3 className="text-base font-bold text-white">Filters & Sorting</h3>
+                  <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>Filters &amp; Sorting</h3>
                 </div>
                 <button
                   type="button"
                   aria-label="Close view controls"
                   onClick={() => setShowSortFilter(false)}
-                  className="rounded-full bg-slate-800 p-1.5 text-slate-400 transition-colors hover:bg-slate-700 hover:text-white"
+                  className="rounded-full p-1.5 transition-colors hover:opacity-80"
+                  style={{ background: 'var(--sheet-btn-bg)', color: 'var(--text-muted)' }}
                 >
                   <X size={16} />
                 </button>
@@ -349,14 +425,19 @@ export default function PortfolioPage() {
 
               <div className="space-y-6">
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Sort by</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Sort by</p>
                   <div className="grid grid-cols-2 gap-2">
                     {SORT_OPTIONS.map(({ value, label, icon: Icon }) => (
                       <button
                         key={value}
                         onClick={() => setSortBy(value)}
                         aria-pressed={sortBy === value}
-                        className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-colors ${sortBy === value ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-300' : 'border-slate-700/60 bg-slate-800/40 text-slate-300 hover:border-slate-600'}`}
+                        className="flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-colors"
+                        style={{
+                          borderColor: sortBy === value ? 'rgba(16,185,129,0.5)' : 'var(--card-border)',
+                          background: sortBy === value ? 'rgba(16,185,129,0.1)' : 'var(--sheet-btn-bg)',
+                          color: sortBy === value ? 'var(--emerald)' : 'var(--text-2)',
+                        }}
                       >
                         <Icon size={15} aria-hidden="true" />
                         {label}
@@ -366,8 +447,8 @@ export default function PortfolioPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Order Direction</p>
-                  <div className="grid grid-cols-2 rounded-xl border border-slate-700 bg-slate-950/40 p-1">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Order Direction</p>
+                  <div className="grid grid-cols-2 rounded-xl p-1" style={{ border: '1px solid var(--card-border)', background: 'var(--input-bg)' }}>
                     {['desc', 'asc'].map(direction => {
                       const isDescending = direction === 'desc';
                       const label = sortBy === 'name'
@@ -378,7 +459,12 @@ export default function PortfolioPage() {
                           key={direction}
                           onClick={() => setSortDirection(direction)}
                           aria-pressed={sortDirection === direction}
-                          className={`rounded-lg px-3 py-2.5 text-xs font-bold transition-all ${sortDirection === direction ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-inner' : 'text-slate-400 border border-transparent hover:text-white'}`}
+                          className="rounded-lg px-3 py-2.5 text-xs font-bold transition-all"
+                          style={{
+                            background: sortDirection === direction ? 'rgba(16,185,129,0.15)' : 'transparent',
+                            color: sortDirection === direction ? 'var(--emerald)' : 'var(--text-muted)',
+                            border: sortDirection === direction ? '1px solid rgba(16,185,129,0.3)' : '1px solid transparent',
+                          }}
                         >
                           {label}
                         </button>
@@ -388,7 +474,7 @@ export default function PortfolioPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Filter returns</p>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Filter returns</p>
                   <div className="flex gap-2">
                     {[
                       { value: 'all', label: 'All Positions' },
@@ -399,7 +485,12 @@ export default function PortfolioPage() {
                         key={value}
                         onClick={() => setFilterBy(value)}
                         aria-pressed={filterBy === value}
-                        className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors ${filterBy === value ? 'border-emerald-400/70 bg-emerald-400/10 text-emerald-300' : 'border-slate-700/60 text-slate-300 hover:border-slate-600'}`}
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors"
+                        style={{
+                          borderColor: filterBy === value ? 'rgba(16,185,129,0.5)' : 'var(--card-border)',
+                          background: filterBy === value ? 'rgba(16,185,129,0.1)' : 'transparent',
+                          color: filterBy === value ? 'var(--emerald)' : 'var(--text-2)',
+                        }}
                       >
                         {Icon && <Icon size={14} aria-hidden="true" />}
                         {label}

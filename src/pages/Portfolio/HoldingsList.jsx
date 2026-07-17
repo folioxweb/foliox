@@ -35,8 +35,8 @@ function SkeletonCard() {
     <div
       className="rounded-[24px] px-4 py-4 shadow-lg space-y-3"
       style={{
-        background: 'rgba(255, 255, 255, 0.05)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'var(--card-bg)',
+        border: '1px solid var(--card-border)',
       }}
     >
       {/* Name + badge row */}
@@ -57,7 +57,7 @@ function SkeletonCard() {
       </div>
 
       {/* Divider */}
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ height: 1, background: 'var(--divider)' }} />
 
       {/* Return row */}
       <div className="flex items-center justify-between">
@@ -88,7 +88,7 @@ function SkeletonCard() {
  *
  * Requirements: 4.2, 4.7, 4.8
  */
-export default function HoldingsList({ holdings, loading, error, onRetry, onPress }) {
+export default function HoldingsList({ holdings, loading, error, onRetry, onPress, viewMode = 'currentInvested' }) {
   // ── Loading state ──────────────────────────────────────────────────────────
   if (loading && !holdings) {
     return (
@@ -112,7 +112,7 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
         aria-label="Error loading holdings"
         role="alert"
       >
-        <p className="text-sm font-medium" style={{ color: '#EF4444' }}>
+        <p className="text-sm font-medium" style={{ color: 'var(--loss)' }}>
           {error.message || 'Unable to load holdings. Please try again.'}
         </p>
         {onRetry && (
@@ -135,13 +135,13 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
       <section
         className="rounded-[24px] px-5 py-10 flex flex-col items-center gap-3 text-center"
         style={{
-          background: 'rgba(255, 255, 255, 0.03)',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
+          background: 'var(--card-bg)',
+          border: '1px solid var(--card-border)',
         }}
         aria-label="No holdings"
       >
-        <p className="text-base font-semibold text-white">No holdings found</p>
-        <p className="text-sm" style={{ color: '#64748B' }}>
+        <p className="text-base font-semibold text-[var(--text)]">No holdings found</p>
+        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
           Add holdings to your Google Sheet to see them here.
         </p>
       </section>
@@ -152,7 +152,6 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
   return (
     <motion.section
       aria-label="Holdings list"
-      className="space-y-4"
       variants={listVariants}
       initial="hidden"
       animate="visible"
@@ -163,17 +162,18 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
           variants={itemVariants}
         >
           {holding.assetType === "fds" ? (
-  <FDCard
-    holding={holding}
-    onPress={onPress ? () => onPress(holding) : undefined}
-  />
-) : (
-  <HoldingCard
-    holding={holding}
-    variant="full"
-    onPress={onPress ? () => onPress(holding) : undefined}
-  />
-)}
+            <FDCard
+              holding={holding}
+              onPress={onPress ? () => onPress(holding) : undefined}
+            />
+          ) : (
+            <HoldingCard
+              holding={holding}
+              variant="list"
+              viewMode={viewMode}
+              onPress={onPress ? () => onPress(holding) : undefined}
+            />
+          )}
         </motion.div>
       ))}
     </motion.section>

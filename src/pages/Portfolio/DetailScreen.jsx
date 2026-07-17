@@ -12,37 +12,58 @@ import FDActionModal from '../../components/portfolio/FDActionModal';
  * Mirrors the mapping used in HoldingCard for visual consistency.
  */
 const SECTOR_COLOR_MAP = {
-  Technology: 'blue',
-  'Financial Services': 'emerald',
-  Healthcare: 'teal',
-  Energy: 'orange',
-  Consumer: 'purple',
-  Automobile: 'yellow',
-  Infrastructure: 'gray',
-  Pharma: 'pink',
-  FMCG: 'orange',
-  Metals: 'gray',
-  Telecom: 'blue',
-  Realty: 'yellow',
-  Media: 'pink',
-  Utilities: 'teal',
-  ETF: 'orange',
-  'Mutual Fund': 'teal',
-  Debt: 'gray',
-  Hybrid: 'purple',
+  "Financial Services": "#3B82F6",
+  "Technology": "#6366F1",
+  "Energy": "#F59E0B",
+  "Consumer Cyclical": "#F97316",
+  "Healthcare": "#EF4444",
+  "Housing Finance": "#06B6D4",
+  "Communication Services": "#0EA5E9",
+  "Utilities": "#14B8A6",
+  "Real Estate": "#84CC16",
+  "Consumer Defensive": "#22C55E",
+  "Industrials": "#EAB308",
+  "Renewable Energy": "#10B981",
+  "Digital Advertising & Technology": "#8B5CF6",
+  "Basic Materials": "#78716C",
+  "Alcoholic Beverages": "#EC4899",
+  "Travel & Visa Services": "#A855F7",
+  "Industrial Machinery": "#64748B",
+  "Oil, Gas & Consumable Fuels": "#B45309",
+  "Automobile and Auto Components": "#0891B2",
+  "Power Financing": "#1D4ED8",
+  "Capital Goods": "#CA8A04",
+  "Fast Moving Consumer Goods": "#65A30D",
+  "Construction": "#D97706",
+  "Telecommunication": "#0284C7",
+  "Metals & Mining": "#71717A",
+  "Consumer Services": "#9333EA",
+  "Consumer Durables": "#2563EB",
+  "Power": "#0F766E",
+  "Services": "#DB2777",
+  "Chemicals": "#7C3AED",
+  "Construction Materials": "#A16207",
+  "Realty": "#65A30D",
+  "Media, Entertainment & Publication": "#C026D3",
+  "Textiles": "#E11D48",
+  "Diversified": "#6B7280",
+  "ETF": "#FACC15",
+  "Mutual Fund": "#06B6D4",
+  "Debt": "#475569",
+  "Hybrid": "#7C3AED"
 };
 
 function getSectorColor(sector) {
-  return SECTOR_COLOR_MAP[sector] ?? 'gray';
+  return SECTOR_COLOR_MAP[sector] ?? '#64748B';
 }
 
 /**
  * Maps confidence level to a Badge color and display color.
  */
 const CONFIDENCE_BADGE_COLOR = {
-  High: 'emerald',
-  Medium: 'yellow',
-  Low: 'red',
+  High: '#10B981',
+  Medium: '#F59E0B',
+  Low: '#EF4444',
 };
 
 /**
@@ -60,13 +81,13 @@ function InfoRow({ label, value, valueStyle = {} }) {
   return (
     <div
       className="flex items-center justify-between py-3"
-      style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ borderTop: '1px solid var(--divider)' }}
     >
-      <dt className="text-sm font-medium" style={{ color: '#94A3B8' }}>
+      <dt className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
         {label}
       </dt>
       <dd
-        className="text-sm font-semibold text-white text-right"
+        className="text-sm font-semibold text-[var(--text)] text-right"
         style={valueStyle}
       >
         {value ?? '—'}
@@ -117,7 +138,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
   if (!holding) {
     return (
       <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="px-4 pb-10 pt-2 text-center" style={{ color: '#94A3B8' }}>
+        <div className="px-4 pb-10 pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
           No holding selected.
         </div>
       </Modal>
@@ -157,7 +178,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
      );
 
   const isProfit = returnValue >= 0;
-  const pnlColor = isProfit ? '#22C55E' : '#EF4444';
+  const pnlColor = isProfit ? 'var(--profit)' : 'var(--loss)';
   const pnlBg = isProfit ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)';
   const labelStr = sector || category || '';
   const badgeColor = getSectorColor(labelStr);
@@ -192,7 +213,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
           className="px-4 pt-2 pb-4"
           style={{
             /* Glassmorphism header matches design system (Req 2.4) */
-            background: 'rgba(255, 255, 255, 0.03)',
+            background: 'var(--header-bg)',
           }}
         >
           {/* Close button + sector badge row */}
@@ -204,10 +225,10 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center justify-center rounded-full p-2 focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:outline-none"
+              className="flex items-center justify-center rounded-full p-2 focus-visible:ring-2 focus-visible:ring-[var(--emerald)] focus-visible:outline-none"
               style={{
-                background: 'rgba(255, 255, 255, 0.08)',
-                color: '#94A3B8',
+                background: 'var(--sheet-btn-bg)',
+                color: 'var(--text-muted)',
               }}
               aria-label="Close detail screen"
             >
@@ -222,13 +243,13 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
           </div>
 
           {/* Company / fund name — large (Req 5.1) */}
-          <h2 className="text-2xl font-bold text-white mb-1 leading-tight">
+          <h2 className="text-2xl font-bold mb-1 leading-tight text-[var(--text)]">
             {isPrivacyMode ? 'Confidential Asset' : name}
           </h2>
 
           {/* Current value — large display (Req 5.1) */}
           <p
-            className="text-3xl font-extrabold text-white mb-3"
+            className="text-3xl font-extrabold mb-3 text-[var(--text)]"
             style={{ letterSpacing: '-0.02em' }}
           >
             {isPrivacyMode ? '₹***' : formatCurrency(currentValue)}
@@ -256,7 +277,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
             {portfolioWeight != null && (
               <span
                 className="ml-auto text-sm font-semibold"
-                style={{ color: '#64748B' }}
+                style={{ color: 'var(--text-muted)' }}
               >
                 {portfolioWeight.toFixed(2)}% of portfolio
               </span>
@@ -267,7 +288,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
         {/* ── Divider ──────────────────────────────────────────────────── */}
         <div
           className="mx-4"
-          style={{ height: 1, background: 'rgba(255, 255, 255, 0.08)' }}
+          style={{ height: 1, background: 'var(--divider)' }}
           aria-hidden="true"
         />
 
@@ -279,7 +300,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
         <section className="px-4 pt-2" aria-label="Holding details">
           <h3
             className="text-xs font-semibold uppercase tracking-widest mb-1 pt-2"
-            style={{ color: '#475569' }}
+            style={{ color: 'var(--text-muted)' }}
           >
             Details
           </h3>
@@ -366,9 +387,9 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
     {confidenceLevel && (
       <div
         className="flex items-center justify-between py-3"
-        style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ borderTop: '1px solid var(--divider)' }}
       >
-        <dt className="text-sm font-medium" style={{ color: '#94A3B8' }}>
+        <dt className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
           Confidence Level
         </dt>
         <dd>
@@ -415,16 +436,10 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
   />
 ) : (
   <HoldingActionModal
-    holding={{
-      ...holding,
-      assetType:
-        holding.symbol
-          ? (category === "ETF" ? "etfs" : "stocks")
-          : "mutualFunds"
-    }}
-    isOpen={showHoldingAction}
-    onClose={() => setShowHoldingAction(false)}
-  />
+  holding={holding}
+  isOpen={showHoldingAction}
+  onClose={() => setShowHoldingAction(false)}
+/>
 )}
     </Modal>
   );
