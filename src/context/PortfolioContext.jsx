@@ -189,20 +189,21 @@ dispatch({
 
 
   const refreshAll = useCallback(async () => {
-  if (refreshInProgress.current) {
-    return;
-  }
-  refreshInProgress.current = true;
-  setRefreshing(true);
-  try {
-    await fetchDashboard();
-    await sleep(2000);
-    await fetchPortfolio();
-  } finally {
-    refreshInProgress.current = false;
-    setRefreshing(false);
-  }
-}, [fetchDashboard, fetchPortfolio]);
+    if (refreshInProgress.current) {
+      return;
+    }
+    refreshInProgress.current = true;
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchDashboard(),
+        fetchPortfolio(),
+      ]);
+    } finally {
+      refreshInProgress.current = false;
+      setRefreshing(false);
+    }
+  }, [fetchDashboard, fetchPortfolio]);
 
   const refreshLiveHoldings = useCallback(async () => {
   if (!isIndianMarketOpen()) return;

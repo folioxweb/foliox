@@ -14,7 +14,7 @@ import { AnimatePresence, motion } from 'framer-motion';
  * @param {React.ReactNode}   props.children - content rendered inside modal container
  * @param {string}            [props.className] - extra Tailwind classes for the container
  */
-const Modal = ({ isOpen, onClose, children, className = '' }) => {
+const Modal = ({ isOpen, onClose, children, className = '', transparent = false }) => {
   const containerRef = useRef(null);
   const previousFocusRef = useRef(null);
 
@@ -134,23 +134,25 @@ const Modal = ({ isOpen, onClose, children, className = '' }) => {
             tabIndex={-1}
             className={[
               'fixed bottom-0 left-0 right-0 z-50',
-              'bg-[var(--sheet-bg)] border-t border-[var(--card-border)]',
-              'rounded-t-3xl',
+              transparent ? '' : 'bg-[var(--sheet-bg)] border-t border-[var(--card-border)] rounded-t-3xl shadow-2xl',
               'max-h-[90vh] overflow-y-auto',
               'outline-none',
               className,
             ]
               .filter(Boolean)
               .join(' ')}
+            style={transparent ? { background: 'transparent', border: 'none', boxShadow: 'none' } : {}}
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
           >
             {/* ── Drag handle indicator ─────────────────────────────────── */}
-            <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
-              <div className="h-1 w-10 rounded-full bg-[var(--divider)]" />
-            </div>
+            {!transparent && (
+              <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+                <div className="h-1 w-10 rounded-full bg-[var(--divider)]" />
+              </div>
+            )}
 
             {/* ── Content ───────────────────────────────────────────────── */}
             {children}

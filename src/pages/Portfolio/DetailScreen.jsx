@@ -4,6 +4,7 @@ import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
+import { renderStockBadge } from '../../components/cards/HoldingCard';
 import { useState } from 'react';
 import HoldingActionModal from '../../components/portfolio/HoldingActionModal';
 import FDActionModal from '../../components/portfolio/FDActionModal';
@@ -161,6 +162,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
     confidenceLevel = confidence,
     buyPrice,
     avgPurchasePrice = buyPrice,
+    badge,
   } = holding;
   const isFD = holding.assetType === "fds";
 
@@ -188,7 +190,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
   const ariaLabel = `${name} details. Current value ${formatCurrency(currentValue)}, return ${formatPercent(returnPct)}.`;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose}>
+    <Modal isOpen={isOpen} onClose={onClose} transparent={true}>
       {/*
        * ── Draggable wrapper ────────────────────────────────────────────────
        * drag="y" restricts to vertical axis.
@@ -205,9 +207,13 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
         onDragEnd={handleDragEnd}
         aria-label={ariaLabel}
         role="region"
-        className="pb-10 cursor-grab active:cursor-grabbing"
+        className="pb-10 cursor-grab active:cursor-grabbing bg-[var(--sheet-bg)] border-t border-[var(--card-border)] rounded-t-3xl shadow-2xl"
         style={{ touchAction: 'pan-x' }}
       >
+        {/* ── Drag handle indicator inside the draggable card ── */}
+        <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
+          <div className="h-1 w-10 rounded-full bg-[var(--divider)]" />
+        </div>
         {/* ── Header (Req 5.1) ─────────────────────────────────────────── */}
         <header
           className="px-4 pt-2 pb-4"
@@ -243,9 +249,12 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
           </div>
 
           {/* Company / fund name — large (Req 5.1) */}
-          <h2 className="text-2xl font-bold mb-1 leading-tight text-[var(--text)]">
-            {isPrivacyMode ? 'Confidential Asset' : name}
-          </h2>
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h2 className="text-2xl font-bold leading-tight text-[var(--text)]">
+              {isPrivacyMode ? 'Confidential Asset' : name}
+            </h2>
+            {renderStockBadge(badge)}
+          </div>
 
           {/* Current value — large display (Req 5.1) */}
           <p

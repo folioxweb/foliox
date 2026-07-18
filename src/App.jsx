@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { PortfolioProvider } from './context/PortfolioContext';
@@ -101,9 +101,10 @@ function isStandaloneMode() {
 // ---------------------------------------------------------------------------
 // App root
 // ---------------------------------------------------------------------------
-export default function App() {
+function AppContent() {
   const [showBanner, setShowBanner] = useState(false);
   const [loggedIn, setLoggedIn] = useState(isLoggedIn());
+  const navigate = useNavigate();
 
   // Detect standalone mode on mount; show banner if running in browser.
   useEffect(() => {
@@ -115,7 +116,11 @@ export default function App() {
   // Listen for focus/visibility changes to sync login state across tabs
   useEffect(() => {
     const syncLoginState = () => {
-      setLoggedIn(isLoggedIn());
+      const isLog = isLoggedIn();
+      setLoggedIn(isLog);
+      if (!isLog) {
+        navigate('/', { replace: true });
+      }
     };
 
     window.addEventListener("focus", syncLoginState);
@@ -125,12 +130,13 @@ export default function App() {
       window.removeEventListener("focus", syncLoginState);
       document.removeEventListener("visibilitychange", syncLoginState);
     };
-  }, []);
+  }, [navigate]);
 
   // Listen for a custom app-wide logout event
   useEffect(() => {
     const handleLogout = () => {
       setLoggedIn(false);
+      navigate('/', { replace: true });
     };
 
     window.addEventListener("app-logout", handleLogout);
@@ -138,42 +144,46 @@ export default function App() {
     return () => {
       window.removeEventListener("app-logout", handleLogout);
     };
-  }, []);
+  }, [navigate]);
 
   if (!loggedIn) {
     return (
-      <ThemeProvider>
-        <LoginPage onLogin={() => setLoggedIn(true)} />
-      </ThemeProvider>
+      <LoginPage
+        onLogin={() => {
+          setLoggedIn(true);
+          navigate('/', { replace: true }); // Always redirect to dashboard on login
+        }}
+      />
     );
   }
 
   return (
-    /*
-     * Provider order (outer → inner):
-     * ThemeProvider  — applies dark/light class to <html>
-     * PortfolioProvider — all async data state
-     * PrivacyProvider — state for discrete masking mode
-     * BrowserRouter  — client-side routing with GitHub Pages basename
-     */
+    <>
+      {/* "Add to Home Screen" banner — only visible in non-standalone Safari */}
+      {showBanner && (
+        <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
+      )}
+
+      <Routes>
+        {/* AppShell wraps every route so BottomNav is always rendered */}
+        <Route element={<AppShell />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
+          <Route path="portfolio" element={<PortfolioPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+        </Route>
+      </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  return (
     <ThemeProvider>
       <PortfolioProvider>
         <PrivacyProvider>
           <BrowserRouter basename="/equity-dashboard/">
-            {/* "Add to Home Screen" banner — only visible in non-standalone Safari */}
-            {showBanner && (
-              <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
-            )}
-
-            <Routes>
-              {/* AppShell wraps every route so BottomNav is always rendered */}
-              <Route element={<AppShell />}>
-                <Route index element={<DashboardPage />} />
-                <Route path="analytics" element={<AnalyticsPage />} />
-                <Route path="portfolio" element={<PortfolioPage />} />
-                <Route path="settings" element={<SettingsPage />} />
-              </Route>
-            </Routes>
+            <AppContent />
           </BrowserRouter>
         </PrivacyProvider>
       </PortfolioProvider>

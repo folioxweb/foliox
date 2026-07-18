@@ -34,6 +34,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
   const [price, setPrice] = useState("");
   const [confidence, setConfidence] = useState("High");
   const [sector, setSector] = useState(SECTORS[0]);
+  const [badge, setBadge] = useState("");
   const [fundCode, setFundCode] = useState("");
   const [mfApiCode, setMfApiCode] = useState("");
   const [interestRate, setInterestRate] = useState("");
@@ -61,6 +62,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       setPrice("");
       setConfidence("High");
       setSector(SECTORS[0]);
+      setBadge("");
       setFundCode("");
       setMfApiCode("");
       setInterestRate("");
@@ -86,6 +88,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       payload.symbol = symbol.trim();
       payload.name = name.trim();
       payload.sector = sector;
+      payload.badge = badge;
     } else if (assetType === ASSET_TYPES.ETF) {
       payload.symbol = symbol.trim();
       payload.name = name.trim();
@@ -255,18 +258,37 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           )}
 
           {assetType === ASSET_TYPES.STOCK && (
-            <select
-              value={sector}
-              onChange={(e) => setSector(e.target.value)}
-              style={selectStyle}
-              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-            >
-              {SECTORS.map((item) => (
-                <option key={item} value={item} style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
-                  {item}
+            <>
+              <select
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                style={selectStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              >
+                {SECTORS.map((item) => (
+                  <option key={item} value={item} style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={badge}
+                onChange={(e) => setBadge(e.target.value)}
+                style={selectStyle}
+                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              >
+                <option value="" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
+                  No Badge (Default)
                 </option>
-              ))}
-            </select>
+                <option value="Longterm" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
+                  Longterm
+                </option>
+                <option value="Trade" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
+                  Trade
+                </option>
+              </select>
+            </>
           )}
 
           {assetType === ASSET_TYPES.MF && (

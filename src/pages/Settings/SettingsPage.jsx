@@ -6,11 +6,11 @@ import { logout } from '../../services/apiClient';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
 
-const APP_VERSION = '1.0.1';
+const APP_VERSION = '4.1.1';
 const BUILD_DATE = __BUILD_DATE__;
 const REACT_VERSION = __REACT_VERSION__;
 const VITE_VERSION = __VITE_VERSION__;
-const API_VERSION = 'Version 40 on 12 Jul 2026, 12:48 AM';
+const API_VERSION = 'Version 55 on 17 Jul 2026, 10:52 PM';
 
 function formatLastUpdated(date) {
   if (!date) return 'Never';

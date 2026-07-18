@@ -20,6 +20,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LineChart,
+  Shield,
+  Zap,
+  Tags,
 } from 'lucide-react';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -160,6 +163,13 @@ export default function PortfolioPage() {
       holdings = holdings.filter(h => (h.pnl ?? h.returnPct ?? h.interestEarned ?? 0) >= 0);
     } else if (filterBy === 'loss') {
       holdings = holdings.filter(h => (h.pnl ?? h.returnPct ?? h.interestEarned ?? 0) < 0);
+    } else if (filterBy === 'longterm') {
+      holdings = holdings.filter(h => {
+        const b = String(h.badge ?? '').toLowerCase().trim();
+        return b === 'longterm' || b === 'long-term';
+      });
+    } else if (filterBy === 'trade') {
+      holdings = holdings.filter(h => String(h.badge ?? '').toLowerCase().trim() === 'trade');
     }
 
     // 3. Sorting Engine
@@ -177,6 +187,8 @@ export default function PortfolioPage() {
           (b.investedValue ?? b.invested ?? b.principal ?? 0);
       } else if (sortBy === 'dayChange') {
         comparison = (a.dayChangePercent ?? a.dayChange ?? 0) - (b.dayChangePercent ?? b.dayChange ?? 0);
+      } else if (sortBy === 'badge') {
+        comparison = (a.badge ?? '').localeCompare(b.badge ?? '');
       } else if (sortBy === 'weight') {
         comparison = (a.portfolioWeight ?? a.weightage ?? 0) - (b.portfolioWeight ?? b.weightage ?? 0);
       } else {
@@ -474,25 +486,27 @@ export default function PortfolioPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Filter returns</p>
-                  <div className="flex gap-2">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Filter positions</p>
+                  <div className="grid grid-cols-2 gap-2">
                     {[
                       { value: 'all', label: 'All Positions' },
                       { value: 'profit', label: 'Profits Only', icon: TrendingUp },
                       { value: 'loss', label: 'Losses Only', icon: TrendingDown },
+                      { value: 'longterm', label: 'Longterm Only', icon: Shield },
+                      { value: 'trade', label: 'Trade Only', icon: Zap },
                     ].map(({ value, label, icon: Icon }) => (
                       <button
                         key={value}
                         onClick={() => setFilterBy(value)}
                         aria-pressed={filterBy === value}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border px-3 py-2.5 text-xs font-medium transition-colors"
+                        className="flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left text-xs font-medium transition-colors"
                         style={{
                           borderColor: filterBy === value ? 'rgba(16,185,129,0.5)' : 'var(--card-border)',
-                          background: filterBy === value ? 'rgba(16,185,129,0.1)' : 'transparent',
+                          background: filterBy === value ? 'rgba(16,185,129,0.1)' : 'var(--sheet-btn-bg)',
                           color: filterBy === value ? 'var(--emerald)' : 'var(--text-2)',
                         }}
                       >
-                        {Icon && <Icon size={14} aria-hidden="true" />}
+                        {Icon && <Icon size={15} aria-hidden="true" />}
                         {label}
                       </button>
                     ))}

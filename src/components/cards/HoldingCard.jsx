@@ -1,6 +1,7 @@
 import Badge from '../ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
+import { Shield, Zap } from 'lucide-react';
 
 /**
  * VIEW_MODES — the three display states driven by the <> toggle.
@@ -8,10 +9,10 @@ import { usePrivacy } from '../../context/PrivacyContext';
  *   'returns'          → P&L in ₹ (signed) + (Return %)
  *   'marketPrice1D'    → Current price per share + P&L % (proxy for 1D since API has no dailyChange)
  */
-export const VIEW_MODES = ['currentInvested', 'returns', 'marketPrice1D'];
+export const VIEW_MODES = ['returns', 'currentInvested', 'marketPrice1D'];
 export const VIEW_MODE_LABELS = {
-  currentInvested: 'Current (invested)',
   returns: 'Returns (%)',
+  currentInvested: 'Current (invested)',
   marketPrice1D: 'Market price (1D %)',
 };
 
@@ -75,6 +76,59 @@ const CONFIDENCE_COLOR = {
   Low: '#EF4444',
 };
 
+export const renderStockBadge = (badge) => {
+  if (!badge) return null;
+  const normalized = String(badge).toLowerCase().trim();
+  
+  if (normalized === 'longterm' || normalized === 'long-term') {
+    return (
+      <span
+        title="Longterm Position"
+        className="inline-flex items-center justify-center rounded-full p-1 whitespace-nowrap"
+        style={{
+          background: 'rgba(16, 185, 129, 0.12)',
+          color: 'var(--emerald)',
+          border: '1px solid rgba(16, 185, 129, 0.25)',
+          lineHeight: 1,
+        }}
+      >
+        <Shield size={10} aria-hidden="true" strokeWidth={2.5} />
+      </span>
+    );
+  }
+  
+  if (normalized === 'trade') {
+    return (
+      <span
+        title="Trade Position"
+        className="inline-flex items-center justify-center rounded-full p-1 whitespace-nowrap"
+        style={{
+          background: 'rgba(245, 158, 11, 0.12)',
+          color: '#D97706',
+          border: '1px solid rgba(245, 158, 11, 0.25)',
+          lineHeight: 1,
+        }}
+      >
+        <Zap size={10} aria-hidden="true" strokeWidth={2.5} />
+      </span>
+    );
+  }
+  
+  return (
+    <span
+      className="inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap"
+      style={{
+        background: 'var(--sheet-btn-bg)',
+        color: 'var(--text-muted)',
+        border: '1px solid var(--card-border)',
+        lineHeight: 1,
+      }}
+    >
+      {badge}
+    </span>
+  );
+};
+
 /**
  * HoldingCard — glassmorphism card for a single portfolio holding.
  *
@@ -110,6 +164,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, viewMo
     confidenceLevel = confidence,
     dayChange,
     dayChangePercent,
+    badge,
   } = holding;
 
   const { isPrivacyMode } = usePrivacy();
@@ -202,9 +257,12 @@ export default function HoldingCard({ holding, variant = 'full', onPress, viewMo
       >
         {/* Left: name + qty */}
         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-          <span className="text-sm font-semibold leading-tight truncate text-[var(--text)]">
-            {isPrivacyMode ? 'Confidential Asset' : name}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-semibold leading-tight truncate text-[var(--text)]">
+              {isPrivacyMode ? 'Confidential Asset' : name}
+            </span>
+            {renderStockBadge(badge)}
+          </div>
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {isPrivacyMode ? '*** shares' : `${quantity} ${quantity === 1 ? 'share' : 'shares'}`}
           </span>
@@ -279,9 +337,12 @@ export default function HoldingCard({ holding, variant = 'full', onPress, viewMo
       {/* ── Header row: name + sector badge ── */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex flex-col gap-1 min-w-0">
-          <span className="text-sm font-bold leading-tight truncate text-[var(--text)]">
-            {isPrivacyMode ? 'Confidential Asset' : name}
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-sm font-bold leading-tight truncate text-[var(--text)]">
+              {isPrivacyMode ? 'Confidential Asset' : name}
+            </span>
+            {renderStockBadge(badge)}
+          </div>
           {(sector || category) && (
             <Badge
               label={sector || category}
