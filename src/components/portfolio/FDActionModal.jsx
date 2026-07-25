@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePortfolio } from "../../context/PortfolioContext";
 import Modal from "../ui/Modal";
 
@@ -6,6 +6,96 @@ const ACTIONS = {
   UPDATE: "UPDATE",
   DELETE: "DELETE",
 };
+
+/**
+ * DateInput — custom date picker for iOS/Android PWA.
+ * Renders a styled display (formatted date + calendar icon) with
+ * an opacity-0 native date input stacked on top to open the system picker.
+ */
+function DateInput({ label, value, onChange, disabled, style: inputStyle }) {
+  const inputRef = useRef(null);
+
+  function formatDisplay(dateStr) {
+    if (!dateStr) return null;
+    try {
+      const [y, m, d] = dateStr.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]} ${y}`;
+    } catch { return dateStr; }
+  }
+
+  function openPicker() {
+    if (disabled || !inputRef.current) return;
+    try { inputRef.current.showPicker(); } catch { inputRef.current.focus(); }
+  }
+
+  return (
+    <div className="flex-1 min-w-0">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </p>
+      <div
+        onClick={openPicker}
+        style={{
+          ...inputStyle,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '6px',
+          borderRadius: '14px',
+          position: 'relative',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          padding: '0.65rem 0.9rem',
+        }}
+      >
+        <span style={{
+          color: value ? 'var(--text)' : 'var(--text-muted)',
+          fontSize: '13px',
+          lineHeight: 1.2,
+          flex: 1,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {value ? formatDisplay(value) : 'Select date'}
+        </span>
+        <svg
+          width="15" height="15"
+          viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <input
+          ref={inputRef}
+          type="date"
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          tabIndex={-1}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            width: '100%',
+            height: '100%',
+            cursor: 'pointer',
+            fontSize: '16px',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
 
 export default function FDActionModal({ holding, isOpen, onClose }) {
   const { updateFD, deleteFD } = usePortfolio();
@@ -122,48 +212,40 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
             className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             disabled={action === ACTIONS.DELETE}
           />
-          <input
-            type="number"
-            value={principal}
-            onChange={(e) => setPrincipal(e.target.value)}
-            placeholder="Principal"
-            style={inputStyle}
-            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-            disabled={action === ACTIONS.DELETE}
-          />
-          <input
-            type="number"
-            value={interestRate}
-            onChange={(e) => setInterestRate(e.target.value)}
-            placeholder="Interest Rate"
-            style={inputStyle}
-            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-            disabled={action === ACTIONS.DELETE}
-          />
-          <div>
-            <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-              Start Date
-            </label>
+          <div className="grid grid-cols-2 gap-3">
             <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              type="number"
+              value={principal}
+              onChange={(e) => setPrincipal(e.target.value)}
+              placeholder="Principal"
+              style={inputStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+              disabled={action === ACTIONS.DELETE}
+            />
+            <input
+              type="number"
+              value={interestRate}
+              onChange={(e) => setInterestRate(e.target.value)}
+              placeholder="Rate (%)"
               style={inputStyle}
               className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               disabled={action === ACTIONS.DELETE}
             />
           </div>
-          <div>
-            <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-              Maturity Date
-            </label>
-            <input
-              type="date"
+          <div className="flex gap-3">
+            <DateInput
+              label="Start Date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              disabled={action === ACTIONS.DELETE}
+              style={inputStyle}
+            />
+            <DateInput
+              label="Maturity Date"
               value={maturityDate}
               onChange={(e) => setMaturityDate(e.target.value)}
-              style={inputStyle}
-              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               disabled={action === ACTIONS.DELETE}
+              style={inputStyle}
             />
           </div>
         </div>

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import Skeleton from '../../components/ui/Skeleton';
 import { usePrivacy } from '../../context/PrivacyContext';
 
-const SEGMENT_COLORS = { Equity: '#6366F1', 'Cash/Debt': '#10B981', Debt: '#10B981' };
+const SEGMENT_COLORS = { Equity: '#6366F1', Cash: '#10B981', 'Cash/Debt': '#10B981', Debt: '#10B981', FD: '#F59E0B', 'Fixed Deposits': '#F59E0B' };
 
 const formatCrore = (val) => {
   if (!val) return '₹0';

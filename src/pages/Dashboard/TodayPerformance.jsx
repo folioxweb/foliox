@@ -32,15 +32,17 @@ export default function TodayPerformance({ data, loading }) {
   }
   if (!data) return null;
 
-  const gain = Number(data?.gain) || 0;
-  const gainPercent = Number(data?.gainPercent) || 0;
+  const actualData = data.data ? data.data : data;
+
+  const gain = Number(actualData?.gain) || 0;
+  const gainPercent = Number(actualData?.gainPercent) || 0;
   const isProfit = gain >= 0;
   const accentColor = isProfit ? 'var(--profit)' : 'var(--loss)';
 
   const assetRows = ASSET_META.map((m) => ({
     label: m.label,
-    gain: Number(data?.[m.gainKey]) || 0,
-    pct: Number(data?.[m.pctKey]) || 0,
+    gain: Number(actualData?.[m.gainKey]) || 0,
+    pct: Number(actualData?.[m.pctKey]) || 0,
     color: m.color,
   }));
   const maxGain = Math.max(...assetRows.map((r) => Math.abs(r.gain)), 1);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePortfolio } from "../../context/PortfolioContext";
 import Modal from "../ui/Modal";
 
@@ -24,6 +24,99 @@ const SECTORS = [
   "Media, Entertainment & Publication", "Textiles", "Diversified"
 ];
 
+/**
+ * DateInput — custom date picker for iOS/Android PWA.
+ * Shows a styled display (formatted date text + calendar icon).
+ * An opacity-0 native <input type="date"> overlaid on top handles
+ * taps and opens the system date picker — works on Safari/WebKit PWA.
+ */
+function DateInput({ label, value, onChange, disabled, style: inputStyle }) {
+  const inputRef = useRef(null);
+
+  function formatDisplay(dateStr) {
+    if (!dateStr) return null;
+    try {
+      const [y, m, d] = dateStr.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return `${parseInt(d, 10)} ${months[parseInt(m, 10) - 1]} ${y}`;
+    } catch { return dateStr; }
+  }
+
+  function openPicker() {
+    if (disabled || !inputRef.current) return;
+    try { inputRef.current.showPicker(); } catch { inputRef.current.focus(); }
+  }
+
+  return (
+    <div className="flex-1 min-w-0">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+        {label}
+      </p>
+      <div
+        onClick={openPicker}
+        style={{
+          ...inputStyle,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '6px',
+          borderRadius: '14px',
+          position: 'relative',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          opacity: disabled ? 0.5 : 1,
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          padding: '0.65rem 0.9rem',
+        }}
+      >
+        <span style={{
+          color: value ? 'var(--text)' : 'var(--text-muted)',
+          fontSize: '13px',
+          lineHeight: 1.2,
+          flex: 1,
+          minWidth: 0,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {value ? formatDisplay(value) : 'Select date'}
+        </span>
+        {/* Inline calendar SVG — always visible regardless of theme */}
+        <svg
+          width="15" height="15"
+          viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2.2"
+          strokeLinecap="round" strokeLinejoin="round"
+          style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+        >
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        {/* Invisible native date input — handles taps to open system picker */}
+        <input
+          ref={inputRef}
+          type="date"
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          tabIndex={-1}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            opacity: 0,
+            width: '100%',
+            height: '100%',
+            cursor: 'pointer',
+            fontSize: '16px',
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function AddHoldingModal({ isOpen, onClose }) {
   const [assetType, setAssetType] = useState(ASSET_TYPES.STOCK);
   const { addHolding } = usePortfolio();
@@ -32,8 +125,8 @@ export default function AddHoldingModal({ isOpen, onClose }) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
-  const [confidence, setConfidence] = useState("High");
-  const [sector, setSector] = useState(SECTORS[0]);
+  const [confidence, setConfidence] = useState("");
+  const [sector, setSector] = useState("");
   const [badge, setBadge] = useState("");
   const [fundCode, setFundCode] = useState("");
   const [mfApiCode, setMfApiCode] = useState("");
@@ -46,11 +139,11 @@ export default function AddHoldingModal({ isOpen, onClose }) {
 
   const isFormValid =
     assetType === ASSET_TYPES.STOCK
-      ? symbol.trim() && name.trim() && qty > 0 && avg > 0 && sector
+      ? symbol.trim() && name.trim() && qty > 0 && avg > 0 && sector && confidence && badge !== undefined
       : assetType === ASSET_TYPES.ETF
-      ? symbol.trim() && name.trim() && qty > 0 && avg > 0
+      ? symbol.trim() && name.trim() && qty > 0 && avg > 0 && confidence
       : assetType === ASSET_TYPES.MF
-      ? name.trim() && qty > 0 && avg > 0 && fundCode.trim() && mfApiCode.trim()
+      ? name.trim() && qty > 0 && avg > 0 && fundCode.trim() && mfApiCode.trim() && confidence
       : name.trim() && qty > 0 && Number(interestRate) > 0 && startDate && maturityDate;
 
   useEffect(() => {
@@ -60,8 +153,8 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       setName("");
       setQuantity("");
       setPrice("");
-      setConfidence("High");
-      setSector(SECTORS[0]);
+      setConfidence("");
+      setSector("");
       setBadge("");
       setFundCode("");
       setMfApiCode("");
@@ -243,10 +336,13 @@ export default function AddHoldingModal({ isOpen, onClose }) {
             <select
               value={confidence}
               onChange={(e) => setConfidence(e.target.value)}
-              style={selectStyle}
+              style={{
+                ...selectStyle,
+                color: confidence ? 'var(--text)' : 'var(--text-muted)',
+              }}
               className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             >
-              <option value="" disabled style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
+              <option value="" disabled style={{ background: 'var(--sheet-bg)', color: 'var(--text-muted)' }}>
                 Conviction Level
               </option>
               {CONFIDENCE_OPTIONS.map((item) => (
@@ -262,9 +358,15 @@ export default function AddHoldingModal({ isOpen, onClose }) {
               <select
                 value={sector}
                 onChange={(e) => setSector(e.target.value)}
-                style={selectStyle}
+                style={{
+                  ...selectStyle,
+                  color: sector ? 'var(--text)' : 'var(--text-muted)',
+                }}
                 className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               >
+                <option value="" disabled style={{ background: 'var(--sheet-bg)', color: 'var(--text-muted)' }}>
+                  Select Sector
+                </option>
                 {SECTORS.map((item) => (
                   <option key={item} value={item} style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
                     {item}
@@ -275,17 +377,23 @@ export default function AddHoldingModal({ isOpen, onClose }) {
               <select
                 value={badge}
                 onChange={(e) => setBadge(e.target.value)}
-                style={selectStyle}
+                style={{
+                  ...selectStyle,
+                  color: badge ? 'var(--text)' : 'var(--text-muted)',
+                }}
                 className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               >
-                <option value="" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
-                  No Badge (Default)
+                <option value="" disabled style={{ background: 'var(--sheet-bg)', color: 'var(--text-muted)' }}>
+                  Select Badge
                 </option>
                 <option value="Longterm" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
                   Longterm
                 </option>
                 <option value="Trade" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
                   Trade
+                </option>
+                <option value="None" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>
+                  No Badge
                 </option>
               </select>
             </>
@@ -313,31 +421,19 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           )}
 
           {assetType === ASSET_TYPES.FD && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  style={inputStyle}
-                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-                />
-              </div>
-              <div>
-                <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Maturity Date
-                </label>
-                <input
-                  type="date"
-                  value={maturityDate}
-                  onChange={(e) => setMaturityDate(e.target.value)}
-                  style={inputStyle}
-                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-                />
-              </div>
+            <div className="flex gap-3">
+              <DateInput
+                label="Start Date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                style={inputStyle}
+              />
+              <DateInput
+                label="Maturity Date"
+                value={maturityDate}
+                onChange={(e) => setMaturityDate(e.target.value)}
+                style={inputStyle}
+              />
             </div>
           )}
         </div>
@@ -358,9 +454,10 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           <button
             disabled={loading || !isFormValid}
             onClick={handleSave}
-            className="flex-1 rounded-full py-3 font-bold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 rounded-full py-3 font-bold transition disabled:cursor-not-allowed"
             style={{
-              background: isFormValid ? 'var(--emerald)' : 'var(--card-border)',
+              background: isFormValid ? 'var(--emerald)' : 'var(--divider)',
+              color: isFormValid ? '#ffffff' : 'var(--text-muted)',
               boxShadow: isFormValid ? '0 4px 12px rgba(16,185,129,0.2)' : 'none',
             }}
           >

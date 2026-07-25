@@ -108,15 +108,15 @@ const realMockApi = {
 
     return [
       { asset: "Equity", allocation: totalEquity },
-      { asset: "Cash/Debt", allocation: totalCashDebt },
-      { asset: "Total", allocation: totalEquity + totalCashDebt }
+      { asset: "FD", allocation: fCur },
+      { asset: "Cash", allocation: 12500 },
+      { asset: "Total", allocation: totalEquity + fCur + 12500 }
     ];
   },
 
   getOverallSectorAllocation: async () => {
     const s = await realMockApi.getStocks();
-    const m = await realMockApi.getMutualFunds();
-    const all = [...s, ...m];
+    const all = s;
 
     const sectorExposure = {};
     let totalExposure = 0;
@@ -147,7 +147,7 @@ const realMockApi = {
       allocation: totalCur > 0 ? (x.currentValue / totalCur) * 100 : 0
     }));
 
-    return result.sort((a, b) => b.exposure - a.exposure).slice(0, 5);
+    return result.sort((a, b) => b.exposure - a.exposure);
   },
 
   getDashboard: async () => {
@@ -156,10 +156,31 @@ const realMockApi = {
     const overallSectorAllocation = await realMockApi.getOverallSectorAllocation();
     const stocksAllocation = await realMockApi.getStocksAllocation();
 
-    const totalCur = overallInvestments.find(x => x.assetClass === 'Total')?.current ?? 0;
-    const totalInv = overallInvestments.find(x => x.assetClass === 'Total')?.invested ?? 0;
-    const todayChange = totalCur * 0.0084;
-    const todayChangePercent = 0.84;
+    const s = await realMockApi.getStocks();
+    const e = await realMockApi.getEtfs();
+    const m = await realMockApi.getMutualFunds();
+    const f = await realMockApi.getFDs();
+
+    const sumDayChange = (arr) => arr.reduce((acc, x) => acc + (x.dayChange ?? 0), 0);
+    const sumCurrentVal = (arr) => arr.reduce((acc, x) => acc + (x.currentValue ?? x.current ?? 0), 0);
+    const sumInvestedVal = (arr, valKey = 'investedValue') => arr.reduce((acc, x) => acc + (x[valKey] ?? x.invested ?? x.principal ?? 0), 0);
+
+    const stocksGain = sumDayChange(s);
+    const sCurVal = sumCurrentVal(s);
+    const stocksGainPercent = (sCurVal - stocksGain) > 0 ? (stocksGain / (sCurVal - stocksGain)) * 100 : 0;
+
+    const etfsGain = sumDayChange(e);
+    const eCurVal = sumCurrentVal(e);
+    const etfsGainPercent = (eCurVal - etfsGain) > 0 ? (etfsGain / (eCurVal - etfsGain)) * 100 : 0;
+
+    const mutualFundsGain = sumDayChange(m);
+    const mCurVal = sumCurrentVal(m);
+    const mutualFundsGainPercent = (mCurVal - mutualFundsGain) > 0 ? (mutualFundsGain / (mCurVal - mutualFundsGain)) * 100 : 0;
+
+    const totalGain = stocksGain + etfsGain + mutualFundsGain;
+    const totalCurrentVal = sCurVal + eCurVal + mCurVal + sumCurrentVal(f);
+    const totalInvVal = sumInvestedVal(s) + sumInvestedVal(e) + sumInvestedVal(m) + sumInvestedVal(f, 'principal');
+    const gainPercent = (totalCurrentVal - totalGain) > 0 ? (totalGain / (totalCurrentVal - totalGain)) * 100 : 0;
 
     return {
       overallInvestments,
@@ -167,10 +188,18 @@ const realMockApi = {
       overallSectorAllocation,
       stocksAllocation,
       todayPerformance: {
-        todayChange,
-        todayChangePercent,
-        totalCurrentValue: totalCur,
-        totalInvestedValue: totalInv
+        data: {
+          gain: totalGain,
+          gainPercent: gainPercent,
+          stocksGain,
+          stocksGainPercent,
+          etfsGain,
+          etfsGainPercent,
+          mutualFundsGain,
+          mutualFundsGainPercent,
+          totalCurrentValue: totalCurrentVal,
+          totalInvestedValue: totalInvVal
+        }
       }
     };
   },
@@ -266,6 +295,20 @@ const realMockApi = {
       mutualFunds.push(newAsset);
     } else if (payload.assetType === "etfs") {
       etfs.push(newAsset);
+    } else if (payload.assetType === "fds") {
+      const newFd = {
+        srNo: fds.length > 0 ? Math.max(...fds.map(x => x.srNo)) + 1 : 1,
+        name: payload.name,
+        principal: payload.quantity,
+        interestRate: payload.interestRate || 7.0,
+        currentValue: payload.quantity * 1.02,
+        maturityValue: payload.quantity * (1 + (payload.interestRate || 7.0) / 100),
+        interestEarned: payload.quantity * 0.02,
+        startDate: payload.startDate || new Date().toISOString(),
+        maturityDate: payload.maturityDate || new Date().toISOString(),
+        weightage: 2.0
+      };
+      fds.push(newFd);
     } else {
       stocks.push(newAsset);
     }

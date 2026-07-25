@@ -41,7 +41,8 @@
     "returnPct": 12.7,
     "portfolioWeight": 4.7,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 420
+    "avgPurchasePrice": 420,
+    "badge": "Longterm"
   },
   {
     "id": "stock-infosys",
@@ -55,7 +56,8 @@
     "returnPct": 8.89,
     "portfolioWeight": 6.5,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 1500
+    "avgPurchasePrice": 1500,
+    "badge": "Trade"
   },
   {
     "id": "stock-tcs",
@@ -99,7 +101,8 @@
     "returnPct": 6.67,
     "portfolioWeight": 6.4,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 750
+    "avgPurchasePrice": 750,
+    "badge": "Longterm"
   },
   {
     "id": "stock-bharti-airtel",
@@ -113,7 +116,8 @@
     "returnPct": 6.82,
     "portfolioWeight": 6.2,
     "confidenceLevel": "Medium",
-    "avgPurchasePrice": 1100
+    "avgPurchasePrice": 1100,
+    "badge": "Trade"
   },
   {
     "id": "stock-lt",
@@ -127,7 +131,8 @@
     "returnPct": -3.03,
     "portfolioWeight": 6.4,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 3300
+    "avgPurchasePrice": 3300,
+    "badge": "Longterm"
   },
   {
     "id": "stock-icici-bank",
@@ -141,7 +146,8 @@
     "returnPct": 11.22,
     "portfolioWeight": 7.2,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 980
+    "avgPurchasePrice": 980,
+    "badge": "Longterm"
   },
   {
     "id": "stock-axis-bank",
@@ -155,7 +161,8 @@
     "returnPct": 6.35,
     "portfolioWeight": 4.4,
     "confidenceLevel": "Medium",
-    "avgPurchasePrice": 1050
+    "avgPurchasePrice": 1050,
+    "badge": "Trade"
   },
   {
     "id": "stock-wipro",
@@ -169,7 +176,8 @@
     "returnPct": -7.99,
     "portfolioWeight": 3.5,
     "confidenceLevel": "Low",
-    "avgPurchasePrice": 480
+    "avgPurchasePrice": 480,
+    "badge": "Trade"
   },
   {
     "id": "stock-kotak",
@@ -183,7 +191,8 @@
     "returnPct": -2.86,
     "portfolioWeight": 4.5,
     "confidenceLevel": "Medium",
-    "avgPurchasePrice": 1750
+    "avgPurchasePrice": 1750,
+    "badge": "Longterm"
   },
   {
     "id": "stock-asian-paints",
@@ -197,7 +206,8 @@
     "returnPct": 7.02,
     "portfolioWeight": 4.0,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 2850
+    "avgPurchasePrice": 2850,
+    "badge": "Longterm"
   },
   {
     "id": "stock-hcltech",
@@ -211,6 +221,7 @@
     "returnPct": 5.93,
     "portfolioWeight": 4.7,
     "confidenceLevel": "High",
-    "avgPurchasePrice": 1350
+    "avgPurchasePrice": 1350,
+    "badge": "Trade"
   }
 ]

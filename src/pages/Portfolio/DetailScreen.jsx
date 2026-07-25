@@ -75,24 +75,53 @@ const CONFIDENCE_BADGE_COLOR = {
 const SWIPE_CLOSE_THRESHOLD = 100;
 
 /**
- * InfoRow — a single labelled data row rendered inside a `<dl>` element.
- * Uses `<dt>` for the label and `<dd>` for the value for semantic structure.
+ * FundamentalsRow — Groww-style row with two label→value pairs side-by-side.
+ * Matches the compact fundamentals table in stock-detail screens.
  */
-function InfoRow({ label, value, valueStyle = {} }) {
+function FundamentalsRow({ left, right }) {
   return (
     <div
-      className="flex items-center justify-between py-3"
-      style={{ borderTop: '1px solid var(--divider)' }}
+      className="flex items-center gap-2"
+      style={{ borderTop: '1px solid var(--divider)', paddingTop: 5, paddingBottom: 5 }}
     >
-      <dt className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-        {label}
-      </dt>
-      <dd
-        className="text-sm font-semibold text-[var(--text)] text-right"
-        style={valueStyle}
-      >
-        {value ?? '—'}
-      </dd>
+      {/* Left pair: label on far-left, value pushed to center */}
+      <div className="flex-1 flex items-center justify-between gap-1 min-w-0">
+        <dt
+          className="text-[11px] font-medium shrink-0"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {left.label}
+        </dt>
+        <dd
+          className="text-[13px] font-semibold text-right truncate"
+          style={{ color: 'var(--text)', ...left.style }}
+        >
+          {left.value ?? '—'}
+        </dd>
+      </div>
+
+      {/* Vertical divider between the two pairs */}
+      {right && (
+        <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--divider)', flexShrink: 0, margin: '0 2px' }} />
+      )}
+
+      {/* Right pair: label on left of right half, value on far-right */}
+      {right && (
+        <div className="flex-1 flex items-center justify-between gap-1 min-w-0">
+          <dt
+            className="text-[11px] font-medium shrink-0"
+            style={{ color: 'var(--text-muted)' }}
+          >
+            {right.label}
+          </dt>
+          <dd
+            className="text-[13px] font-semibold text-right truncate"
+            style={{ color: 'var(--text)', ...right.style }}
+          >
+            {right.value ?? '—'}
+          </dd>
+        </div>
+      )}
     </div>
   );
 }
@@ -163,7 +192,13 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
     buyPrice,
     avgPurchasePrice = buyPrice,
     badge,
+    // currentNAV is how MFs expose today's price; fall back to currentPrice for stocks/ETFs
+    currentNAV,
+    currentPrice: rawCurrentPrice,
   } = holding;
+
+  // Unified "today's price" — currentNAV for MFs, currentPrice for stocks/ETFs
+  const currentPrice = currentNAV ?? rawCurrentPrice;
   const isFD = holding.assetType === "fds";
 
   const { isPrivacyMode } = usePrivacy();
@@ -207,7 +242,7 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
         onDragEnd={handleDragEnd}
         aria-label={ariaLabel}
         role="region"
-        className="pb-10 cursor-grab active:cursor-grabbing bg-[var(--sheet-bg)] border-t border-[var(--card-border)] rounded-t-3xl shadow-2xl"
+        className="cursor-grab active:cursor-grabbing bg-[var(--sheet-bg)] border-t border-[var(--card-border)] rounded-t-3xl shadow-2xl"
         style={{ touchAction: 'pan-x' }}
       >
         {/* ── Drag handle indicator inside the draggable card ── */}
@@ -231,7 +266,8 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex items-center justify-center rounded-full p-2 focus-visible:ring-2 focus-visible:ring-[var(--emerald)] focus-visible:outline-none"
+              className="flex items-center justify-center rounded-full p-2 focus-visible:ring-2 focus-visible:ring-[var(--emerald)] focus-visible:outline-none
+              "
               style={{
                 background: 'var(--sheet-btn-bg)',
                 color: 'var(--text-muted)',
@@ -301,129 +337,116 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
           aria-hidden="true"
         />
 
-        {/* ── Info section (Req 5.2) ───────────────────────────────────── */}
-        {/*
-         * Uses semantic <section> + <dl>/<dt>/<dd> structure (Req 12.3).
-         * Each InfoRow renders a <dt> + <dd> pair inside the <dl>.
-         */}
-        <section className="px-4 pt-2" aria-label="Holding details">
-          <h3
-            className="text-xs font-semibold uppercase tracking-widest mb-1 pt-2"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            Details
-          </h3>
-
-          {/* dl wraps all dt/dd pairs for semantic key-value structure */}
+        {/* ── Info section ────────────────────────────────────────────── */}
+        <section className="px-4 pt-1 pb-2" aria-label="Holding details">
           <dl>
-           {isFD ? (
-  <>
-    <InfoRow
-      label="Principal"
-      value={isPrivacyMode ? "₹***" : formatCurrency(holding.principal)}
-    />
+          {isFD ? (
+            <>
+              <FundamentalsRow
+                left={{ label: 'Principal', value: isPrivacyMode ? '₹***' : formatCurrency(holding.principal) }}
+                right={{ label: 'Current Value', value: isPrivacyMode ? '₹***' : formatCurrency(holding.currentValue) }}
+              />
+              <FundamentalsRow
+                left={{ label: 'Interest Earned', value: isPrivacyMode ? '₹***' : formatCurrency(holding.interestEarned), style: { color: pnlColor } }}
+                right={{ label: 'Interest Rate', value: `${holding.interestRate}%` }}
+              />
+              <FundamentalsRow
+                left={{ label: 'Maturity Value', value: isPrivacyMode ? '₹***' : formatCurrency(holding.maturityValue) }}
+                right={{ label: 'Allocation', value: `${holding.weightage.toFixed(2)}%` }}
+              />
+              <FundamentalsRow
+                left={{ label: 'Start Date', value: new Date(holding.startDate).toLocaleDateString('en-IN') }}
+                right={{ label: 'Maturity Date', value: new Date(holding.maturityDate).toLocaleDateString('en-IN') }}
+              />
+            </>
+          ) : (
+            <>
+              {/* Row 1: Today's Price + Day Change */}
+              <FundamentalsRow
+                left={{
+                  label: holding.assetType === 'mutualFunds' ? 'Daily NAV' : "Today's Price",
+                  value: currentPrice != null
+                    ? (isPrivacyMode ? '₹***' : formatCurrency(currentPrice))
+                    : '—',
+                }}
+                right={
+                  holding.dayChange != null && holding.dayChangePercent != null
+                    ? {
+                        label: 'Day Change',
+                        value: isPrivacyMode
+                          ? '₹***'
+                          : `${Number(holding.dayChange) >= 0 ? '+' : ''}${Number(holding.dayChange).toFixed(2)} (${Number(holding.dayChangePercent).toFixed(2)}%)`,
+                        style: { color: Number(holding.dayChange) >= 0 ? 'var(--profit)' : 'var(--loss)' },
+                      }
+                    : { label: 'Return %', value: isPrivacyMode ? '***%' : formatPercent(returnPct), style: { color: pnlColor } }
+                }
+              />
 
-    <InfoRow
-      label="Current Value"
-      value={isPrivacyMode ? "₹***" : formatCurrency(holding.currentValue)}
-    />
+              {/* Row 2: Invested + Current Value */}
+              <FundamentalsRow
+                left={{ label: 'Invested', value: isPrivacyMode ? '₹***' : formatCurrency(investedValue) }}
+                right={{ label: 'Current Value', value: isPrivacyMode ? '₹***' : formatCurrency(currentValue) }}
+              />
 
-    <InfoRow
-      label="Interest Earned"
-      value={isPrivacyMode ? "₹***" : formatCurrency(holding.interestEarned)}
-      valueStyle={{ color: pnlColor }}
-    />
+              {/* Row 3: P&L + Returns */}
+              <FundamentalsRow
+                left={{
+                  label: 'P&L',
+                  value: `${isProfit && returnValue !== 0 ? '+' : ''}${isPrivacyMode ? '₹***' : formatCurrency(returnValue)}`,
+                  style: { color: pnlColor },
+                }}
+                right={{
+                  label: 'Returns',
+                  value: isPrivacyMode ? '***%' : formatPercent(returnPct),
+                  style: { color: pnlColor },
+                }}
+              />
 
-    <InfoRow
-      label="Interest Rate"
-      value={`${holding.interestRate}%`}
-    />
+              {/* Row 4: Quantity + Avg Buy Price */}
+              <FundamentalsRow
+                left={{
+                  label: 'Quantity',
+                  value: quantity != null ? (isPrivacyMode ? '***' : String(quantity)) : '—',
+                }}
+                right={{
+                  label: 'Avg Buy Price',
+                  value: avgPurchasePrice != null ? (isPrivacyMode ? '₹***' : formatCurrency(avgPurchasePrice)) : '—',
+                }}
+              />
 
-    <InfoRow
-      label="Start Date"
-      value={new Date(holding.startDate).toLocaleDateString("en-IN")}
-    />
-
-    <InfoRow
-      label="Maturity Date"
-      value={new Date(holding.maturityDate).toLocaleDateString("en-IN")}
-    />
-
-    <InfoRow
-      label="Maturity Value"
-      value={isPrivacyMode ? "₹***" : formatCurrency(holding.maturityValue)}
-    />
-
-    <InfoRow
-      label="Portfolio Allocation"
-      value={`${holding.weightage.toFixed(2)}%`}
-    />
-  </>
-) : (
-  <>
-    {/* Invested value (Req 5.2) */}
-    <InfoRow
-      label="Invested Value"
-      value={isPrivacyMode ? '₹***' : formatCurrency(investedValue)}
-    />
-
-    {/* Current value (Req 5.2) */}
-    <InfoRow
-      label="Current Value"
-      value={isPrivacyMode ? '₹***' : formatCurrency(currentValue)}
-    />
-
-    {/* Return ₹ and % (Req 5.2) */}
-    <InfoRow
-      label="Return"
-      value={`${isProfit && returnValue !== 0 ? '+' : ''}${isPrivacyMode ? '₹***' : formatCurrency(returnValue)} (${formatPercent(returnPct)})`}
-      valueStyle={{ color: pnlColor }}
-    />
-
-    {/* Quantity (Req 5.2) */}
-    <InfoRow
-      label="Quantity"
-      value={quantity != null ? (isPrivacyMode ? '***' : String(quantity)) : '—'}
-    />
-
-    {/* Average purchase price (Req 5.2) */}
-    <InfoRow
-      label="Avg Purchase Price"
-      value={avgPurchasePrice != null ? (isPrivacyMode ? '₹***' : formatCurrency(avgPurchasePrice)) : '—'}
-    />
-
-    {/* Confidence level badge (Req 5.2) */}
-    {confidenceLevel && (
-      <div
-        className="flex items-center justify-between py-3"
-        style={{ borderTop: '1px solid var(--divider)' }}
-      >
-        <dt className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
-          Confidence Level
-        </dt>
-        <dd>
-          <Badge
-            label={confidenceLevel}
-            color={confidenceBadgeColor}
-            className="font-semibold"
-          />
-        </dd>
-      </div>
-    )}
-
-    {/* Sector / category (Req 5.2) */}
-    {labelStr && (
-      <InfoRow
-        label="Sector / Category"
-        value={labelStr}
-      />
-    )}
-  </>
-)}
+              {/* Row 5: Conviction + Sector */}
+              <FundamentalsRow
+                left={{
+                  label: 'Conviction',
+                  value: confidenceLevel
+                    ? (
+                        <span
+                          style={{
+                            color: confidenceBadgeColor,
+                            background: `${confidenceBadgeColor}18`,
+                            border: `1px solid ${confidenceBadgeColor}40`,
+                            borderRadius: '9999px',
+                            padding: '1px 9px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            display: 'inline-block',
+                            lineHeight: '18px',
+                          }}
+                        >
+                          {confidenceLevel}
+                        </span>
+                      )
+                    : '—',
+                }}
+                right={labelStr ? { label: 'Sector', value: labelStr } : undefined}
+              />
+            </>
+          )}
           </dl>
         </section>
 
-        <div className="px-4 mt-8">
+
+        <div className="px-4 pt-3" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
           <button
             type="button"
             onClick={() => setShowHoldingAction(true)}
