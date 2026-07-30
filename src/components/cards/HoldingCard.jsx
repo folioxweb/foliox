@@ -1,7 +1,7 @@
 import Badge from '../ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
-import { Shield, Zap } from 'lucide-react';
+import { Shield, Zap, Newspaper, FileText } from 'lucide-react';
 
 /**
  * VIEW_MODES — the three display states driven by the <> toggle.
@@ -9,11 +9,11 @@ import { Shield, Zap } from 'lucide-react';
  *   'returns'          → P&L in ₹ (signed) + (Return %)
  *   'marketPrice1D'    → Current price per share + P&L % (proxy for 1D since API has no dailyChange)
  */
-export const VIEW_MODES = ['returns', 'currentInvested', 'marketPrice1D'];
+export const VIEW_MODES = ['marketPrice1D', 'currentInvested', 'returns'];
 export const VIEW_MODE_LABELS = {
-  returns: 'Returns (%)',
-  currentInvested: 'Current (invested)',
   marketPrice1D: 'Market price (1D %)',
+  currentInvested: 'Current (invested)',
+  returns: 'Returns (%)',
 };
 
 /**
@@ -146,7 +146,7 @@ export const renderStockBadge = (badge) => {
  * @param {() => void}              [onPress]   — callback; renders card as <button> when provided
  * @param {'currentInvested'|'returns'|'marketPrice1D'} [viewMode='currentInvested']
  */
-export default function HoldingCard({ holding, variant = 'full', onPress, viewMode = 'currentInvested' }) {
+export default function HoldingCard({ holding, variant = 'full', onPress, onNewsPress, onReportsPress, viewMode = 'currentInvested' }) {
   const {
     name,
     sector,
@@ -255,13 +255,49 @@ export default function HoldingCard({ holding, variant = 'full', onPress, viewMo
         className="w-full flex items-center justify-between gap-3 px-0 py-3 text-left"
         aria-label={ariaLabel}
       >
-        {/* Left: name + qty */}
+        {/* Left: name + qty + optional news icon */}
         <div className="flex flex-col gap-0.5 min-w-0 flex-1">
           <div className="flex items-center gap-1.5 min-w-0">
             <span className="text-sm font-semibold leading-tight truncate text-[var(--text)]">
               {isPrivacyMode ? 'Confidential Asset' : name}
             </span>
             {renderStockBadge(badge)}
+            {/* News icon — only rendered when the parent passes onNewsPress */}
+            {onNewsPress && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNewsPress(holding);
+                }}
+                aria-label={`News for ${name}`}
+                className="flex-shrink-0 inline-flex items-center justify-center rounded-full p-1 transition-opacity hover:opacity-70 active:opacity-50"
+                style={{
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                }}
+              >
+                <Newspaper size={13} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
+            {/* Reports icon — only rendered when the parent passes onReportsPress */}
+            {onReportsPress && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReportsPress(holding);
+                }}
+                aria-label={`Reports for ${name}`}
+                className="flex-shrink-0 inline-flex items-center justify-center rounded-full p-1 transition-opacity hover:opacity-70 active:opacity-50"
+                style={{
+                  color: 'var(--text-muted)',
+                  background: 'transparent',
+                }}
+              >
+                <FileText size={13} strokeWidth={2} aria-hidden="true" />
+              </button>
+            )}
           </div>
           <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
             {isPrivacyMode ? '*** shares' : `${quantity} ${quantity === 1 ? 'share' : 'shares'}`}

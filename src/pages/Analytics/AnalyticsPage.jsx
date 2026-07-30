@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { PieChart, BarChart2, Settings, TrendingUp } from 'lucide-react';
+import { PieChart, BarChart2, Settings, TrendingUp, Newspaper } from 'lucide-react';
+import { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import Skeleton from '../../components/ui/Skeleton';
 import PrivacyToggle from '../../components/ui/PrivacyToggle';
@@ -8,6 +9,7 @@ import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import { useNavigate } from 'react-router-dom';
 import { usePrivacy } from '../../context/PrivacyContext';
+import NewsPage from '../News/NewsPage';
 
 // ─── Palette & Helpers ────────────────────────────────────────────────────────
 
@@ -168,6 +170,7 @@ export default function AnalyticsPage() {
   const { state, refreshAll, refreshing } = usePortfolio();
   const scrollRef = usePageScrollRestoration('analytics');
   const navigate = useNavigate();
+  const [newsPageOpen, setNewsPageOpen] = useState(false);
   const { data: sectorData } = state.overallSectorAllocation;
   const { data: stocksData } = state.stocksAllocation;
 
@@ -198,6 +201,16 @@ export default function AnalyticsPage() {
           <LoadingIndicator loading={refreshing} />
         </div>
         <div className="flex items-center gap-2">
+          {/* Market News button */}
+          <button
+            id="analytics-news-btn"
+            onClick={() => setNewsPageOpen(true)}
+            className="relative rounded-full p-2 transition-colors hover:opacity-80"
+            style={{ color: 'var(--text-muted)' }}
+            aria-label="View market news"
+          >
+            <Newspaper size={20} />
+          </button>
           <RefreshButton onRefresh={refreshAll} />
           <PrivacyToggle />
           <button
@@ -226,6 +239,12 @@ export default function AnalyticsPage() {
           <FullStocksList data={stocksData} />
         </section>
       </div>
+
+      {/* Market News Overlay */}
+      <NewsPage
+        isOpen={newsPageOpen}
+        onClose={() => setNewsPageOpen(false)}
+      />
     </main>
   );
 }

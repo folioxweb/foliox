@@ -23,6 +23,7 @@ import {
   Shield,
   Zap,
   Tags,
+  Newspaper,
 } from 'lucide-react';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -30,6 +31,9 @@ import AddHoldingModal from "../../components/portfolio/AddHoldingModal";
 import LoadingIndicator from "../../components/ui/LoadingIndicator";
 import { Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import NewsPage from '../News/NewsPage';
+import StockNewsScreen from '../News/StockNewsScreen';
+import CompanyReportsScreen from '../News/CompanyReportsScreen';
 
 const TAB_CONFIG = [
   { label: 'Stocks', stateKey: 'stocks' },
@@ -41,10 +45,10 @@ const TAB_CONFIG = [
 const TAB_LABELS = TAB_CONFIG.map((t) => t.label);
 
 const SORT_OPTIONS = [
+  { value: 'dayChange', label: 'Daily Change (%)', icon: LineChart },
   { value: 'currentValue', label: 'Current Value', icon: Banknote },
   { value: 'investedValue', label: 'Invested Value', icon: Scale },
   { value: 'return', label: 'Returns', icon: TrendingUp },
-  { value: 'dayChange', label: 'Daily Change (%)', icon: LineChart },
   { value: 'weight', label: 'Weight', icon: ArrowUpDown },
   { value: 'name', label: 'Name', icon: ArrowDownAZ },
 ];
@@ -62,7 +66,7 @@ export default function PortfolioPage() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [addHoldingOpen, setAddHoldingOpen] = useState(false);
   const [showSortFilter, setShowSortFilter] = useState(false);
-  const [sortBy, setSortBy] = useState('currentValue');
+  const [sortBy, setSortBy] = useState('dayChange');
   const [sortDirection, setSortDirection] = useState('desc');
   const [filterBy, setFilterBy] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,6 +74,15 @@ export default function PortfolioPage() {
   const [viewModeIndex, setViewModeIndex] = useState(0);
   const swipeStart = useRef(null);
   const searchInputRef = useRef(null);
+
+  // News state
+  const [newsPageOpen, setNewsPageOpen] = useState(false);
+  const [stockNewsHolding, setStockNewsHolding] = useState(null);
+  const [stockNewsOpen, setStockNewsOpen] = useState(false);
+
+  // Reports state
+  const [stockReportsHolding, setStockReportsHolding] = useState(null);
+  const [stockReportsOpen, setStockReportsOpen] = useState(false);
 
   const viewMode = VIEW_MODES[viewModeIndex];
   const viewModeLabel = VIEW_MODE_LABELS[viewMode];
@@ -142,6 +155,26 @@ export default function PortfolioPage() {
     setTimeout(() => setSelectedHolding(null), 350);
   }
 
+  function handleStockNewsPress(holding) {
+    setStockNewsHolding(holding);
+    setStockNewsOpen(true);
+  }
+
+  function handleStockNewsClose() {
+    setStockNewsOpen(false);
+    setTimeout(() => setStockNewsHolding(null), 350);
+  }
+
+  function handleStockReportsPress(holding) {
+    setStockReportsHolding(holding);
+    setStockReportsOpen(true);
+  }
+
+  function handleStockReportsClose() {
+    setStockReportsOpen(false);
+    setTimeout(() => setStockReportsHolding(null), 350);
+  }
+
   const activeConfig = TAB_CONFIG.find((t) => t.label === activeTab);
   const activeSlice = activeConfig ? state[activeConfig.stateKey] : null;
   let holdings = activeSlice?.data ?? null;
@@ -186,7 +219,7 @@ export default function PortfolioPage() {
           (a.investedValue ?? a.invested ?? a.principal ?? 0) -
           (b.investedValue ?? b.invested ?? b.principal ?? 0);
       } else if (sortBy === 'dayChange') {
-        comparison = (a.dayChangePercent ?? a.dayChange ?? 0) - (b.dayChangePercent ?? b.dayChange ?? 0);
+        comparison = (a.dayChangePercent ?? a.dayChange ?? a.returnPct ?? 0) - (b.dayChangePercent ?? b.dayChange ?? b.returnPct ?? 0);
       } else if (sortBy === 'badge') {
         comparison = (a.badge ?? '').localeCompare(b.badge ?? '');
       } else if (sortBy === 'weight') {
@@ -256,6 +289,18 @@ export default function PortfolioPage() {
                   >
                     <Search size={20} />
                   </button>
+
+                  {/* All News button */}
+                  <button
+                    id="portfolio-news-btn"
+                    onClick={() => setNewsPageOpen(true)}
+                    className="relative rounded-full p-2 transition-colors hover:opacity-80"
+                    style={{ color: 'var(--text-muted)' }}
+                    aria-label="View market news"
+                  >
+                    <Newspaper size={20} />
+                  </button>
+
                   <button
                     onClick={() => setAddHoldingOpen(true)}
                     className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap"
@@ -387,6 +432,8 @@ export default function PortfolioPage() {
             error={error}
             onRetry={handleRetry}
             onPress={handleHoldingPress}
+            onNewsPress={activeTab === 'Stocks' ? handleStockNewsPress : undefined}
+            onReportsPress={activeTab === 'Stocks' ? handleStockReportsPress : undefined}
             viewMode={viewMode}
           />
         </motion.div>
@@ -528,6 +575,26 @@ export default function PortfolioPage() {
         holding={selectedHolding}
         isOpen={detailOpen}
         onClose={handleDetailClose}
+      />
+
+      {/* ── Stock News Screen (per-stock bottom sheet) ───────────────────── */}
+      <StockNewsScreen
+        holding={stockNewsHolding}
+        isOpen={stockNewsOpen}
+        onClose={handleStockNewsClose}
+      />
+
+      {/* ── Company Reports Screen (per-stock bottom sheet) ─────────────── */}
+      <CompanyReportsScreen
+        holding={stockReportsHolding}
+        isOpen={stockReportsOpen}
+        onClose={handleStockReportsClose}
+      />
+
+      {/* ── News Page (all news full-screen overlay) ─────────────────────── */}
+      <NewsPage
+        isOpen={newsPageOpen}
+        onClose={() => setNewsPageOpen(false)}
       />
     </motion.main>
   );

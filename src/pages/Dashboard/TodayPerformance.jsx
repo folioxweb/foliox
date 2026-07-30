@@ -5,13 +5,14 @@ import { usePrivacy } from '../../context/PrivacyContext';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 
 const ASSET_META = [
-  { label: 'Stocks',       gainKey: 'stocksGain',      pctKey: 'stocksGainPercent',      color: '#6366F1' },
-  { label: 'ETFs',         gainKey: 'etfsGain',        pctKey: 'etfsGainPercent',        color: '#F59E0B' },
+  { label: 'Stocks', gainKey: 'stocksGain', pctKey: 'stocksGainPercent', color: '#6366F1' },
+  { label: 'ETFs', gainKey: 'etfsGain', pctKey: 'etfsGainPercent', color: '#F59E0B' },
   { label: 'Mutual Funds', gainKey: 'mutualFundsGain', pctKey: 'mutualFundsGainPercent', color: '#06B6D4' },
 ];
 
 function MiniBar({ value, max, color }) {
-  const pct = max > 0 ? Math.min(Math.abs(value) / max, 1) * 100 : 0;
+  const rawPct = max > 0 ? Math.min(Math.abs(value) / max, 1) * 100 : 0;
+  const pct = value !== 0 ? Math.max(rawPct, 15) : 10;
   return (
     <div className="flex-1 rounded-full overflow-hidden" style={{ height: 3, background: 'var(--divider)' }}>
       <motion.div

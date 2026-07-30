@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, FileText } from 'lucide-react';
 import Modal from '../../components/ui/Modal';
 import Badge from '../../components/ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
@@ -8,6 +8,7 @@ import { renderStockBadge } from '../../components/cards/HoldingCard';
 import { useState } from 'react';
 import HoldingActionModal from '../../components/portfolio/HoldingActionModal';
 import FDActionModal from '../../components/portfolio/FDActionModal';
+import CompanyReportsScreen from '../News/CompanyReportsScreen';
 /**
  * Maps a sector/category string to a Badge color variant.
  * Mirrors the mapping used in HoldingCard for visual consistency.
@@ -198,11 +199,14 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
   } = holding;
 
   // Unified "today's price" — currentNAV for MFs, currentPrice for stocks/ETFs
-  const currentPrice = currentNAV ?? rawCurrentPrice;
+  // Fall back to (currentValue / quantity) if currentPrice or currentNAV is missing
+  const derivedPrice = (currentValue && quantity && quantity > 0) ? (currentValue / quantity) : undefined;
+  const currentPrice = currentNAV ?? rawCurrentPrice ?? derivedPrice;
   const isFD = holding.assetType === "fds";
 
   const { isPrivacyMode } = usePrivacy();
   const [showHoldingAction, setShowHoldingAction] = useState(false);
+  const [showReports, setShowReports] = useState(false);
 
    const returnValue = isFD
    ? holding.interestEarned
@@ -447,16 +451,43 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
 
 
         <div className="px-4 pt-3" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-          <button
-            type="button"
-            onClick={() => setShowHoldingAction(true)}
-            className="w-full rounded-2xl py-4 text-white font-semibold"
-            style={{
-              background: 'linear-gradient(135deg,#10B981,#059669)'
-            }}
-          >
-            {isFD ? "Update FD" : "Manage Position"}
-          </button>
+          {isFD ? (
+            /* FD: single full-width Update button */
+            <button
+              type="button"
+              onClick={() => setShowHoldingAction(true)}
+              className="w-full rounded-2xl py-4 text-white font-semibold"
+              style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
+            >
+              Update FD
+            </button>
+          ) : (
+            /* Stocks/ETFs/MFs: Manage + Reports side by side */
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowHoldingAction(true)}
+                className="flex-1 rounded-2xl py-4 text-white font-semibold"
+                style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
+              >
+                Manage Position
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowReports(true)}
+                className="flex items-center justify-center gap-1.5 rounded-2xl px-4 py-4 font-semibold transition-opacity hover:opacity-80"
+                style={{
+                  background: 'var(--sheet-btn-bg)',
+                  border: '1px solid var(--card-border)',
+                  color: 'var(--text-2)',
+                }}
+                aria-label="View company reports"
+              >
+                <FileText size={16} aria-hidden="true" />
+                <span className="text-sm">Reports</span>
+              </button>
+            </div>
+          )}
         </div>
       </motion.div>
 
@@ -473,6 +504,15 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
   onClose={() => setShowHoldingAction(false)}
 />
 )}
+
+  {/* Company Reports — only for stocks/ETFs/MFs */}
+  {!isFD && (
+    <CompanyReportsScreen
+      holding={holding}
+      isOpen={showReports}
+      onClose={() => setShowReports(false)}
+    />
+  )}
     </Modal>
   );
 }

@@ -40,11 +40,16 @@ export function logout(message = null) {
  * GET Request
  * -----------------------------------------
  */
-async function apiFetch(action) {
+async function apiFetch(action, extraParams = {}) {
   const separator = BASE_URL.includes("?") ? "&" : "?";
   const token = getToken();
+  // Build extra query params (e.g. symbol=, limit=)
+  const extras = Object.entries(extraParams)
+    .filter(([, v]) => v != null && v !== '')
+    .map(([k, v]) => `&${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('');
   const url =
-  `${BASE_URL}${separator}action=${encodeURIComponent(action)}&token=${encodeURIComponent(token || "")}&_=${Date.now()}`;
+  `${BASE_URL}${separator}action=${encodeURIComponent(action)}${extras}&token=${encodeURIComponent(token || "")}&_=${Date.now()}`;
   
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -123,9 +128,9 @@ async function apiFetch(action) {
  * POST Request
  * -----------------------------------------
  */
-async function apiPost(body) {
+async function apiPost(body, timeoutMs = TIMEOUT_MS) {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   // Automatically attach session token
   const payload = {
@@ -220,6 +225,20 @@ const realApi = {
   getEtfs: () => apiFetch("etfs"),
   getMutualFunds: () => apiFetch("mutualFunds"),
   getFDs: () => apiFetch("fds"),
+
+  // News API
+  // ?action=news                  → all latest news
+  // ?action=news&limit=N          → all news, capped at N items
+  // ?action=news&symbol=SYMBOL    → news for one stock
+  getNews: (limit) => apiFetch("news", limit ? { limit } : {}),
+  getStockNews: (symbol, limit) => apiFetch("news", { symbol, ...(limit ? { limit } : {}) }),
+
+  // Company Documents API
+  // ?action=companyDocuments&symbol=HDFCBANK
+  getCompanyDocuments: (symbol) => apiFetch("companyDocuments", { symbol }),
+
+  // AI Summary API — uses a 100s timeout to allow backend generation time
+  summarizeDocument: (documentId) => apiPost({ action: "summarizeDocument", documentId }, 100000),
 
   login: async (password) => {
   const data = await apiPost({

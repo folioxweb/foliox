@@ -88,7 +88,7 @@ function SkeletonCard() {
  *
  * Requirements: 4.2, 4.7, 4.8
  */
-export default function HoldingsList({ holdings, loading, error, onRetry, onPress, viewMode = 'currentInvested' }) {
+export default function HoldingsList({ holdings, loading, error, onRetry, onPress, onNewsPress, onReportsPress, viewMode = 'currentInvested' }) {
   // ── Loading state ──────────────────────────────────────────────────────────
   if (loading && !holdings) {
     return (
@@ -172,6 +172,8 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
               variant="list"
               viewMode={viewMode}
               onPress={onPress ? () => onPress(holding) : undefined}
+              onNewsPress={onNewsPress ? () => onNewsPress(holding) : undefined}
+              onReportsPress={onReportsPress ? () => onReportsPress(holding) : undefined}
             />
           )}
         </motion.div>
