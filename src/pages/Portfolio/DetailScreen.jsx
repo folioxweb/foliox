@@ -444,6 +444,20 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
                 }}
                 right={labelStr ? { label: 'Sector', value: labelStr } : undefined}
               />
+              
+              {/* Row 6: SIP Details (MFs only) */}
+              {holding.assetType === 'mutualFunds' && holding.sipEnabled && (
+                <FundamentalsRow
+                  left={{
+                    label: 'SIP Amount',
+                    value: holding.sipAmount ? (isPrivacyMode ? '₹***' : formatCurrency(holding.sipAmount)) : '—',
+                  }}
+                  right={{
+                    label: 'SIP Day',
+                    value: holding.sipDay ? `${holding.sipDay} of month` : '—',
+                  }}
+                />
+              )}
             </>
           )}
           </dl>
@@ -462,31 +476,15 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
               Update FD
             </button>
           ) : (
-            /* Stocks/ETFs/MFs: Manage + Reports side by side */
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setShowHoldingAction(true)}
-                className="flex-1 rounded-2xl py-4 text-white font-semibold"
-                style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
-              >
-                Manage Position
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowReports(true)}
-                className="flex items-center justify-center gap-1.5 rounded-2xl px-4 py-4 font-semibold transition-opacity hover:opacity-80"
-                style={{
-                  background: 'var(--sheet-btn-bg)',
-                  border: '1px solid var(--card-border)',
-                  color: 'var(--text-2)',
-                }}
-                aria-label="View company reports"
-              >
-                <FileText size={16} aria-hidden="true" />
-                <span className="text-sm">Reports</span>
-              </button>
-            </div>
+            /* Stocks/ETFs/MFs: full-width Manage button */
+            <button
+              type="button"
+              onClick={() => setShowHoldingAction(true)}
+              className="w-full rounded-2xl py-4 text-white font-semibold"
+              style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
+            >
+              Manage Position
+            </button>
           )}
         </div>
       </motion.div>

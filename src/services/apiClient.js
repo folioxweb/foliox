@@ -4,6 +4,7 @@
  */
 
 import { mockApi } from './mockClient.js';
+import { supabaseApi } from './supabaseClient.js';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const TIMEOUT_MS = 10000;
@@ -40,7 +41,7 @@ export function logout(message = null) {
  * GET Request
  * -----------------------------------------
  */
-async function apiFetch(action, extraParams = {}) {
+async function apiFetch(action, extraParams = {}, timeoutMs = TIMEOUT_MS) {
   const separator = BASE_URL.includes("?") ? "&" : "?";
   const token = getToken();
   // Build extra query params (e.g. symbol=, limit=)
@@ -52,7 +53,7 @@ async function apiFetch(action, extraParams = {}) {
   `${BASE_URL}${separator}action=${encodeURIComponent(action)}${extras}&token=${encodeURIComponent(token || "")}&_=${Date.now()}`;
   
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
@@ -230,8 +231,8 @@ const realApi = {
   // ?action=news                  → all latest news
   // ?action=news&limit=N          → all news, capped at N items
   // ?action=news&symbol=SYMBOL    → news for one stock
-  getNews: (limit) => apiFetch("news", limit ? { limit } : {}),
-  getStockNews: (symbol, limit) => apiFetch("news", { symbol, ...(limit ? { limit } : {}) }),
+  getNews: (limit) => apiFetch("news", limit ? { limit } : {}, 20000),
+  getStockNews: (symbol, limit) => apiFetch("news", { symbol, ...(limit ? { limit } : {}) }, 20000),
 
   // Company Documents API
   // ?action=companyDocuments&symbol=HDFCBANK
@@ -262,8 +263,26 @@ const realApi = {
   deleteFD: (payload) => apiPost({ action: "deleteFD", ...payload }),
 };
 
-export const api = import.meta.env.VITE_USE_MOCK === "true" ? mockApi : realApi;
+function getActiveApi() {
+  if (import.meta.env.VITE_USE_MOCK === "true") {
+    return mockApi;
+  }
+  
+  const storedTarget = localStorage.getItem("backend_target");
+  if (storedTarget === "SUPABASE") return supabaseApi;
+  if (storedTarget === "GAS") return realApi;
+  
+  if (import.meta.env.VITE_BACKEND_TARGET === "SUPABASE") {
+    return supabaseApi;
+  }
+  return realApi;
+}
+
+export const api = getActiveApi();
 
 export function isLoggedIn() {
+  if (getActiveApi() === supabaseApi) {
+    return true;
+  }
   return !!getToken();
 }

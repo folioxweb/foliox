@@ -66,10 +66,12 @@ export default function NewsCard({ article, showCompany = false }) {
     category,
   } = article;
 
+  const articleUrl = link || article.url;
+
   function handleClick(e) {
     e.stopPropagation();
-    if (link) {
-      window.open(link, '_blank', 'noopener,noreferrer');
+    if (articleUrl) {
+      window.open(articleUrl, '_blank', 'noopener,noreferrer');
     }
   }
 

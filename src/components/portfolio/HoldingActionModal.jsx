@@ -13,6 +13,9 @@ export default function HoldingActionModal({ holding, isOpen, onClose }) {
   const [action, setAction] = useState(ACTIONS.BUY);
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
+  const [sipEnabled, setSipEnabled] = useState(false);
+  const [sipAmount, setSipAmount] = useState("");
+  const [sipDay, setSipDay] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -20,6 +23,9 @@ export default function HoldingActionModal({ holding, isOpen, onClose }) {
       setAction(ACTIONS.BUY);
       setQuantity("");
       setPrice("");
+      setSipEnabled(false);
+      setSipAmount("");
+      setSipDay("");
       setLoading(false);
       return;
     }
@@ -28,6 +34,9 @@ export default function HoldingActionModal({ holding, isOpen, onClose }) {
 // BUY should start blank
 setQuantity("");
 setPrice("");
+setSipEnabled(false);
+setSipAmount("");
+setSipDay("");
   }, [isOpen, holding]);
 
   useEffect(() => {
@@ -36,24 +45,30 @@ setPrice("");
       case ACTIONS.BUY:
         setQuantity("");
         setPrice("");
+        setSipEnabled(false);
+        setSipAmount("");
+        setSipDay("");
         break;
       case ACTIONS.UPDATE:
         setQuantity(String(holding.quantity));
         setPrice(
-
           String(
-
             holding.buyPrice ??
-
             holding.price
-
           )
-
         );
+        if (holding.assetType === "mutualFunds") {
+          setSipEnabled(!!holding.sipEnabled);
+          setSipAmount(holding.sipAmount ? String(holding.sipAmount) : "");
+          setSipDay(holding.sipDay ? String(holding.sipDay) : "");
+        }
         break;
       case ACTIONS.SELL:
         setQuantity("");
         setPrice("");
+        setSipEnabled(false);
+        setSipAmount("");
+        setSipDay("");
         break;
     }
   }, [action, holding]);
@@ -66,11 +81,17 @@ setPrice("");
       setLoading(true);
       const payload = {
         assetType: holding.assetType,
+        ...(holding.assetId ? { assetId: holding.assetId } : {}),
         quantity: qty,
         price: avg
       };
       if (holding.assetType === "mutualFunds") {
         payload.name = holding.name;
+        if (action === ACTIONS.UPDATE) {
+          payload.sipEnabled = sipEnabled;
+          payload.sipAmount = sipEnabled ? Number(sipAmount) : 0;
+          payload.sipDay = sipEnabled ? Number(sipDay) : 0;
+        }
       } else {
         payload.symbol = holding.symbol;
       }
@@ -91,6 +112,9 @@ setPrice("");
       }
       setQuantity("");
       setPrice("");
+      setSipEnabled(false);
+      setSipAmount("");
+      setSipDay("");
       onClose();
     } catch (err) {
   console.log("ERROR OBJECT:", err);
@@ -205,6 +229,38 @@ setPrice("");
               className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             />
           )}
+          {action === ACTIONS.UPDATE && holding?.assetType === "mutualFunds" && (
+            <div className="flex flex-col gap-3 p-3 rounded-2xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+              <div className="flex items-center justify-between px-1">
+                <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>SIP Enabled</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" checked={sipEnabled} onChange={(e) => setSipEnabled(e.target.checked)} />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--emerald)]"></div>
+                </label>
+              </div>
+              {sipEnabled && (
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="number"
+                    placeholder="SIP Amount"
+                    value={sipAmount}
+                    onChange={(e) => setSipAmount(e.target.value)}
+                    style={inputStyle}
+                    className="w-full focus:ring-1 focus:ring-[var(--emerald)] text-sm px-3 py-2"
+                  />
+                  <input
+                    type="number"
+                    placeholder="SIP Day (1-30)"
+                    value={sipDay}
+                    onChange={(e) => setSipDay(e.target.value)}
+                    min="1" max="30"
+                    style={inputStyle}
+                    className="w-full focus:ring-1 focus:ring-[var(--emerald)] text-sm px-3 py-2"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Preview Panel */}
@@ -249,7 +305,12 @@ setPrice("");
             Cancel
           </button>
           <button
-            disabled={loading || qty <= 0 || (action !== ACTIONS.SELL && avg <= 0)}
+            disabled={
+              loading || 
+              qty <= 0 || 
+              (action !== ACTIONS.SELL && avg <= 0) ||
+              (action === ACTIONS.UPDATE && holding?.assetType === "mutualFunds" && sipEnabled && (Number(sipAmount) <= 0 || Number(sipDay) < 1 || Number(sipDay) > 30))
+            }
             onClick={handleContinue}
             className="flex-1 rounded-full py-3 font-bold text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
             style={{

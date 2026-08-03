@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { api } from '../../services/apiClient';
+import { usePortfolio } from '../../context/PortfolioContext';
 import AISummaryScreen from './AISummaryScreen';
 
 // ── Sort helper: announcementDate desc, then announcementTime desc ─────────
@@ -279,6 +280,8 @@ function DocRow({ doc, showBadge = true, onGenerateSummary }) {
  *   onClose  — dismiss callback
  */
 export default function CompanyReportsScreen({ holding, isOpen, onClose }) {
+  const { prefetchedDocs } = usePortfolio();
+
   const [docs, setDocs] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -309,6 +312,13 @@ export default function CompanyReportsScreen({ holding, isOpen, onClose }) {
 
   const displayName = holding?.company || holding?.name || symbol || '';
 
+  // Document types that have a reportingPeriod assigned by the backend
+  // but should NOT appear under Quarterly Results.
+  const QUARTERLY_EXCLUDED_TYPES = new Set([
+    'ANNUAL_REPORT',
+    'ANALYST_MEETING_INTIMATION',
+  ]);
+
   // 1. Annual Reports (documentType === 'ANNUAL_REPORT' AND non-blank reportingPeriod)
   const isAnnualReport = (d) =>
     (d.documentType || '').toUpperCase().trim() === 'ANNUAL_REPORT' &&
@@ -316,17 +326,16 @@ export default function CompanyReportsScreen({ holding, isOpen, onClose }) {
 
   const annualReports = (docs || []).filter(isAnnualReport);
 
-  // 2. Quarterly Results (has reportingPeriod AND NOT ANNUAL_REPORT)
-  const quarterly = (docs || []).filter(
-    (d) =>
-      d.reportingPeriod &&
-      d.reportingPeriod.trim() !== '' &&
-      (d.documentType || '').toUpperCase().trim() !== 'ANNUAL_REPORT'
-  );
+  // 2. Quarterly Results (has reportingPeriod AND not in the excluded set)
+  const isQuarterly = (d) =>
+    Boolean(d.reportingPeriod && d.reportingPeriod.trim() !== '') &&
+    !QUARTERLY_EXCLUDED_TYPES.has((d.documentType || '').toUpperCase().trim());
 
-  // 3. Other Documents (blank reportingPeriod)
+  const quarterly = (docs || []).filter(isQuarterly);
+
+  // 3. Other Documents — catch-all for everything not in Annual Reports or Quarterly
   const others = (docs || []).filter(
-    (d) => !d.reportingPeriod || d.reportingPeriod.trim() === ''
+    (d) => !isAnnualReport(d) && !isQuarterly(d)
   );
 
   // Group quarterly by period, sorted by ordinal descending

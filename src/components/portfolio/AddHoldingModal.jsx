@@ -134,6 +134,10 @@ export default function AddHoldingModal({ isOpen, onClose }) {
   const [startDate, setStartDate] = useState("");
   const [maturityDate, setMaturityDate] = useState("");
 
+  const [sipEnabled, setSipEnabled] = useState(false);
+  const [sipAmount, setSipAmount] = useState("");
+  const [sipDay, setSipDay] = useState("");
+
   const qty = parseFloat(quantity);
   const avg = parseFloat(price);
 
@@ -143,7 +147,8 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       : assetType === ASSET_TYPES.ETF
       ? symbol.trim() && name.trim() && qty > 0 && avg > 0 && confidence
       : assetType === ASSET_TYPES.MF
-      ? name.trim() && qty > 0 && avg > 0 && fundCode.trim() && mfApiCode.trim() && confidence
+      ? name.trim() && qty > 0 && avg > 0 && fundCode.trim() && mfApiCode.trim() && confidence &&
+        (!sipEnabled || (Number(sipAmount) > 0 && Number(sipDay) >= 1 && Number(sipDay) <= 30))
       : name.trim() && qty > 0 && Number(interestRate) > 0 && startDate && maturityDate;
 
   useEffect(() => {
@@ -161,6 +166,9 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       setInterestRate("");
       setStartDate("");
       setMaturityDate("");
+      setSipEnabled(false);
+      setSipAmount("");
+      setSipDay("");
     }
   }, [isOpen]);
 
@@ -189,6 +197,9 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       payload.name = name.trim();
       payload.fundCode = fundCode.trim();
       payload.mfApiCode = mfApiCode.trim();
+      payload.sipEnabled = sipEnabled;
+      payload.sipAmount = sipEnabled ? Number(sipAmount) : 0;
+      payload.sipDay = sipEnabled ? Number(sipDay) : 0;
     } else {
       payload.name = name.trim();
       payload.interestRate = Number(interestRate);
@@ -400,24 +411,56 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           )}
 
           {assetType === ASSET_TYPES.MF && (
-            <div className="grid grid-cols-2 gap-4">
-              <input
-                type="text"
-                placeholder="Fund Code"
-                value={fundCode}
-                onChange={(e) => setFundCode(e.target.value)}
-                style={inputStyle}
-                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-              />
-              <input
-                type="text"
-                placeholder="MFAPI Code"
-                value={mfApiCode}
-                onChange={(e) => setMfApiCode(e.target.value)}
-                style={inputStyle}
-                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-              />
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="Fund Code"
+                  value={fundCode}
+                  onChange={(e) => setFundCode(e.target.value)}
+                  style={inputStyle}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+                />
+                <input
+                  type="text"
+                  placeholder="MFAPI Code"
+                  value={mfApiCode}
+                  onChange={(e) => setMfApiCode(e.target.value)}
+                  style={inputStyle}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+                />
+              </div>
+              <div className="flex flex-col gap-3 mt-1 p-3 rounded-2xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>SIP Enabled</span>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={sipEnabled} onChange={(e) => setSipEnabled(e.target.checked)} />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[var(--emerald)]"></div>
+                  </label>
+                </div>
+                {sipEnabled && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      type="number"
+                      placeholder="SIP Amount"
+                      value={sipAmount}
+                      onChange={(e) => setSipAmount(e.target.value)}
+                      style={inputStyle}
+                      className="w-full focus:ring-1 focus:ring-[var(--emerald)] text-sm px-3 py-2"
+                    />
+                    <input
+                      type="number"
+                      placeholder="SIP Day (1-30)"
+                      value={sipDay}
+                      onChange={(e) => setSipDay(e.target.value)}
+                      min="1" max="30"
+                      style={inputStyle}
+                      className="w-full focus:ring-1 focus:ring-[var(--emerald)] text-sm px-3 py-2"
+                    />
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {assetType === ASSET_TYPES.FD && (

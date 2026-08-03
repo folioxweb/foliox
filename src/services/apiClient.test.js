@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.stubEnv('VITE_USE_MOCK', 'false');
+vi.stubEnv('VITE_BACKEND_TARGET', 'GAS');
 vi.stubEnv('VITE_API_BASE_URL', 'https://script.google.com/test/exec');
 
 describe('API Client', () => {
@@ -33,7 +34,7 @@ describe('API Client', () => {
       await api.getOverallInvestments();
 
       const [url, options] = fetchMock.mock.calls[0];
-      expect(url).toMatch(/^https:\/\/script\.google\.com\/test\/exec\?action=overallInvestments&_=/);
+      expect(url).toMatch(/^https:\/\/script\.google\.com\/test\/exec\?action=overallInvestments(&token=[^&]*)?&_=/);
       expect(options).toEqual(expect.objectContaining({
         signal: expect.any(AbortSignal),
         cache: 'no-store',
@@ -51,7 +52,7 @@ describe('API Client', () => {
       await api.getAssetAllocation();
 
       const [url, options] = fetchMock.mock.calls[0];
-      expect(url).toMatch(/^https:\/\/script\.google\.com\/test\/exec\?action=assetAllocation&_=/);
+      expect(url).toMatch(/^https:\/\/script\.google\.com\/test\/exec\?action=assetAllocation(&token=[^&]*)?&_=/);
       expect(options).toEqual(expect.objectContaining({
         signal: expect.any(AbortSignal),
         cache: 'no-store',

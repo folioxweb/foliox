@@ -736,6 +736,11 @@ const realMockApi = {
       h.currentValue = payload.quantity * (payload.price * 1.1);
       h.returnValue = h.currentValue - h.investedValue;
       h.returnPct = (h.returnValue / h.investedValue) * 100;
+      if (payload.assetType === "mutualFunds" && payload.sipEnabled !== undefined) {
+        h.sipEnabled = payload.sipEnabled;
+        h.sipAmount = payload.sipAmount;
+        h.sipDay = payload.sipDay;
+      }
     }
     return { success: true };
   },
@@ -776,6 +781,12 @@ const realMockApi = {
       confidenceLevel: payload.confidence || "High",
       sector: payload.sector || "Other"
     };
+
+    if (payload.assetType === "mutualFunds") {
+      newAsset.sipEnabled = payload.sipEnabled || false;
+      newAsset.sipAmount = payload.sipAmount || 0;
+      newAsset.sipDay = payload.sipDay || 0;
+    }
 
     if (payload.assetType === "mutualFunds") {
       mutualFunds.push(newAsset);

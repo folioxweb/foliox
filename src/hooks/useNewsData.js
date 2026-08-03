@@ -1,13 +1,12 @@
 /**
  * useNewsData — fetches news from the API.
  *
- * Sorting: publishedDate descending first, then publishedTime descending
- * within the same date (both are plain strings, e.g. "2026-07-27", "14:32:18").
- * String comparison works correctly for ISO date and HH:MM:SS time formats.
+ * Checks PortfolioContext for prefetched data first. If prefetched news is
+ * already available when the screen opens, it is used instantly with no
+ * loading state. For stock-specific news it filters the prefetched all-news
+ * array by symbol. The user can still hit Refresh to force a fresh API call.
  *
- * Endpoints used:
- *   All news  → ?action=news
- *   One stock → ?action=news&symbol=HDFCBANK   (NSE:/BSE: prefix stripped)
+ * Sorting: publishedDate descending first, then publishedTime descending.
  *
  * @param {'all'|'stock'} mode
  * @param {string|null}   symbol  — required when mode === 'stock'
@@ -17,6 +16,7 @@
  */
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../services/apiClient';
+import { usePortfolio } from '../context/PortfolioContext';
 
 /**
  * Sorts a news array: most-recent publishedDate first,
@@ -24,24 +24,44 @@ import { api } from '../services/apiClient';
  */
 function sortByDateThenTime(articles) {
   return [...articles].sort((a, b) => {
-    // Compare dates descending ("2026-07-27" > "2026-07-26" lexicographically)
     const dateCmp = (b.publishedDate || '').localeCompare(a.publishedDate || '');
     if (dateCmp !== 0) return dateCmp;
-    // Same date → compare times descending ("14:32:18" > "09:00:00")
     return (b.publishedTime || '').localeCompare(a.publishedTime || '');
   });
 }
 
 export function useNewsData(mode, symbol, enabled = true) {
-  const [news, setNews] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { prefetchedNews, prefetchedStockNews } = usePortfolio();
 
   // Strip any exchange prefix like "NSE:" or "BSE:" → "HDFCBANK"
   const cleanSymbol = symbol ? symbol.replace(/^[^:]+:/, '') : null;
 
+  // ── Seed from prefetch if available ──────────────────────────────────────
+  function getPrefetchedNews() {
+    if (mode === 'stock' && cleanSymbol) {
+      const stockPrefetched = prefetchedStockNews?.[cleanSymbol]?.data;
+      if (Array.isArray(stockPrefetched) && stockPrefetched.length > 0) {
+        return sortByDateThenTime(stockPrefetched);
+      }
+      return null;
+    }
+
+    const allPrefetched = prefetchedNews?.data;
+    if (Array.isArray(allPrefetched) && allPrefetched.length > 0) {
+      return sortByDateThenTime(allPrefetched);
+    }
+    return null;
+  }
+
+  const [localNews, setLocalNews] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Fallback to prefetched news if we haven't manually fetched yet
+  const prefetched = getPrefetchedNews();
+  const activeNews = localNews || prefetched;
+
   const fetchNews = useCallback(async () => {
-    // Don't fetch until the caller enables it (e.g. when the modal opens)
     if (!enabled) return;
 
     setLoading(true);
@@ -49,25 +69,26 @@ export function useNewsData(mode, symbol, enabled = true) {
     try {
       let data;
       if (mode === 'stock' && cleanSymbol) {
-        // Calls: ?action=news&symbol=HDFCBANK
         data = await api.getStockNews(cleanSymbol);
       } else {
-        // Calls: ?action=news
         data = await api.getNews();
       }
-      // Sort by publishedDate desc, then publishedTime desc
-      setNews(Array.isArray(data) ? sortByDateThenTime(data) : []);
+      setLocalNews(Array.isArray(data) ? sortByDateThenTime(data) : []);
     } catch (err) {
       setError(err?.message || 'Failed to load news');
-      setNews([]);
+      setLocalNews([]);
     } finally {
       setLoading(false);
     }
   }, [mode, cleanSymbol, enabled]);
 
   useEffect(() => {
+    // If we already have prefetched data or local data, skip the automatic fetch on open.
+    // The user can still manually refresh.
+    if (!enabled || (activeNews && activeNews.length > 0)) return;
     fetchNews();
-  }, [fetchNews]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, fetchNews]); // activeNews intentionally omitted to prevent re-fetching if data clears
 
-  return { news, loading, error, refresh: fetchNews };
+  return { news: activeNews, loading, error, refresh: fetchNews };
 }

@@ -86,6 +86,44 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* ── Backend Connection ──────────────────────────────────────────── */}
+        <section aria-label="Backend Connection" style={sectionStyle} className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Backend Connection</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Database size={20} className="text-indigo-400 flex-shrink-0" />
+              <div>
+                <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Active Backend</h3>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                  Toggle between Supabase (New) and Google Apps Script (Legacy).
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => { localStorage.setItem('backend_target', 'SUPABASE'); window.location.reload(); }}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition-all ${
+                localStorage.getItem('backend_target') === 'SUPABASE' || (!localStorage.getItem('backend_target') && import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE')
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-[var(--input-bg)] text-[var(--text-2)] hover:opacity-80'
+              }`}
+            >
+              Supabase
+            </button>
+            <button
+              onClick={() => { localStorage.setItem('backend_target', 'GAS'); window.location.reload(); }}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold transition-all ${
+                localStorage.getItem('backend_target') === 'GAS' || (!localStorage.getItem('backend_target') && import.meta.env.VITE_BACKEND_TARGET !== 'SUPABASE')
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-[var(--input-bg)] text-[var(--text-2)] hover:opacity-80'
+              }`}
+            >
+              GAS (Legacy)
+            </button>
+          </div>
+        </section>
+
         {/* ── Storage ─────────────────────────────────────────────────────── */}
         <section aria-label="Storage" style={sectionStyle} className="mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Storage</h2>

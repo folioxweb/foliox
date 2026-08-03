@@ -6,17 +6,22 @@ function emptySlice() {
   return { data: null, loading: false, error: null };
 }
 
+const PREFETCH_DELAY_MS = 2000;
+
 const initialState = {
   overallInvestments: emptySlice(),
   assetAllocation: emptySlice(),
   overallSectorAllocation: emptySlice(),
   stocksAllocation: emptySlice(),
-  todayPerformance: emptySlice(), 
+  todayPerformance: emptySlice(),
   stocks: emptySlice(),
   etfs: emptySlice(),
   mutualFunds: emptySlice(),
   fds: emptySlice(),
   lastUpdated: null,
+  // Prefetched secondary data
+  news: emptySlice(),
+  stockNews: {}, // { [SYMBOL]: { data: [], loading: false, error: null } }
 };
 
 const ENDPOINT_TO_KEY = {
@@ -70,6 +75,20 @@ function portfolioReducer(state, action) {
     case 'FETCH_ERROR':
       if (!key) return state;
       return { ...state, [key]: { ...state[key], loading: false, error: action.error } };
+
+    // ── Prefetch: all news ───────────────────────────────────────────────────
+    case 'NEWS_PREFETCH_SUCCESS':
+      return { ...state, news: { data: action.data, loading: false, error: null } };
+
+    // ── Prefetch: stock specific news ────────────────────────────────────────
+    case 'STOCK_NEWS_PREFETCH_SUCCESS':
+      return {
+        ...state,
+        stockNews: {
+          ...state.stockNews,
+          [action.symbol]: { data: action.data, loading: false, error: null },
+        },
+      };
 
     default:
       return state;
@@ -195,10 +214,24 @@ dispatch({
     refreshInProgress.current = true;
     setRefreshing(true);
     try {
-      await Promise.all([
+      const isSupabase = localStorage.getItem('backend_target') === 'SUPABASE' || (!localStorage.getItem('backend_target') && import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE');
+      const promises = [
         fetchDashboard(),
         fetchPortfolio(),
-      ]);
+      ];
+
+      // If Supabase, fire general news prefetch instantly in parallel
+      if (isSupabase) {
+        promises.push(
+          api.getNews().then(newsData => {
+            if (Array.isArray(newsData)) {
+              dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
+            }
+          }).catch(e => console.warn('[Prefetch] News failed silently:', e?.message))
+        );
+      }
+
+      await Promise.all(promises);
     } finally {
       refreshInProgress.current = false;
       setRefreshing(false);
@@ -206,15 +239,15 @@ dispatch({
   }, [fetchDashboard, fetchPortfolio]);
 
   const refreshLiveHoldings = useCallback(async () => {
-  if (!isIndianMarketOpen()) return;
-  if (liveRefreshInFlight.current) return;
-  liveRefreshInFlight.current = true;
-  try {
-    await refreshAll();
-  } finally {
-    liveRefreshInFlight.current = false;
-  }
-}, [refreshAll]);
+    if (!isIndianMarketOpen()) return;
+    if (liveRefreshInFlight.current) return;
+    liveRefreshInFlight.current = true;
+    try {
+      await refreshAll();
+    } finally {
+      liveRefreshInFlight.current = false;
+    }
+  }, [refreshAll]);
 
 
   const executeHoldingAction = useCallback(async (apiFn, payload) => {
@@ -237,11 +270,57 @@ dispatch({
   const updateFD = useCallback((payload) => executeHoldingAction(api.updateFD, payload), [executeHoldingAction]);
   const deleteFD = useCallback((payload) => executeHoldingAction(api.deleteFD, payload), [executeHoldingAction]);
 
+  // ── Prefetch news + stock news (fired 2s after startup load) ─────────────
+  const prefetchSecondaryData = useCallback((portfolioData) => {
+    // portfolioData is the current state snapshot at prefetch time
+    const isSupabase = localStorage.getItem('backend_target') === 'SUPABASE' || (!localStorage.getItem('backend_target') && import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE');
+
+    setTimeout(async () => {
+      // 1. Prefetch all news (fire-and-forget) - ONLY for GAS (Supabase fetches this concurrently in refreshAll)
+      if (!isSupabase) {
+        try {
+          const newsData = await api.getNews();
+          if (Array.isArray(newsData)) {
+            dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
+          }
+        } catch (e) {
+          // Silent — prefetch errors must never surface to the user
+          console.warn('[Prefetch] News failed silently:', e?.message);
+        }
+      }
+
+      // 2. Prefetch news for every stock + ETF symbol in parallel
+      const stockSymbols = (portfolioData?.stocks?.data || []).map((s) => s.symbol).filter(Boolean);
+      const etfSymbols  = (portfolioData?.etfs?.data  || []).map((e) => e.symbol).filter(Boolean);
+      const allSymbols  = [...new Set([...stockSymbols, ...etfSymbols])]
+        .map((s) => s.replace(/^[^:]+:/, '')); // strip NSE:/BSE: prefix
+
+      await Promise.allSettled(
+        allSymbols.map(async (symbol) => {
+          try {
+            const stockNews = await api.getStockNews(symbol);
+            if (Array.isArray(stockNews)) {
+              dispatch({ type: 'STOCK_NEWS_PREFETCH_SUCCESS', symbol, data: stockNews });
+            }
+          } catch (e) {
+            console.warn(`[Prefetch] Stock news for ${symbol} failed silently:`, e?.message);
+          }
+        })
+      );
+    }, PREFETCH_DELAY_MS);
+  }, []);
+
   useEffect(() => {
     let intervalId;
     let cancelled = false;
 
-    refreshAll().finally(() => {
+    refreshAll().then(() => {
+      if (!cancelled) {
+        // Kick off prefetch of news + company docs after primary data is loaded
+        prefetchSecondaryData(state);
+        intervalId = window.setInterval(refreshLiveHoldings, LIVE_REFRESH_INTERVAL_MS);
+      }
+    }).catch(() => {
       if (!cancelled) {
         intervalId = window.setInterval(refreshLiveHoldings, LIVE_REFRESH_INTERVAL_MS);
       }
@@ -251,7 +330,8 @@ dispatch({
       cancelled = true;
       if (intervalId) window.clearInterval(intervalId);
     };
-  }, [refreshAll, refreshLiveHoldings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount only
 
   // Optimized Cache Sync
   useEffect(() => {
@@ -296,6 +376,9 @@ dispatch({
     addHolding,
     updateFD,
     deleteFD,
+    // Prefetched secondary data
+    prefetchedNews: state.news,
+    prefetchedStockNews: state.stockNews,
   };
 
   return (
