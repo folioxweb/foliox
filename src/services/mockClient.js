@@ -833,6 +833,33 @@ const realMockApi = {
     await new Promise(resolve => setTimeout(resolve, MOCK_DELAY_MS));
     fds = fds.filter(x => x.srNo !== payload.srNo);
     return { success: true };
+  },
+
+  sendVoiceQuery: async (query) => {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const q = (query || "").toLowerCase();
+    if (q.includes("profit") || q.includes("pnl") || q.includes("portfolio")) {
+      return {
+        success: true,
+        intent: "PORTFOLIO_PNL",
+        speechText: "Your total portfolio value is ₹12,50,000 with a total profit of ₹2,45,000 (24.4%).",
+        data: { currentValue: 1250000, profit: 245000, returnPercentage: 24.4 }
+      };
+    }
+    if (q.includes("tata") || q.includes("hdfc") || q.includes("tcs") || q.includes("reliance") || q.includes("stock") || q.includes("price")) {
+      return {
+        success: true,
+        intent: "STOCK_PRICE",
+        speechText: "Tata Motors is currently trading at ₹1,020.50, up 1.85% today. Your total gain on this holding is ₹14,200.",
+        data: { symbol: "TATAMOTORS.NS", name: "Tata Motors", currentPrice: 1020.50, dayChangePercent: 1.85, pnl: 14200 }
+      };
+    }
+    return {
+      success: true,
+      intent: "PORTFOLIO_PNL",
+      speechText: "Your total portfolio is currently showing a net gain of ₹2,45,000 across all assets.",
+      data: null
+    };
   }
 };
 

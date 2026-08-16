@@ -146,13 +146,7 @@ export default function PortfolioPage() {
         assetType = "fds";
         break;
     }
-    setSelectedHolding({ ...holding, assetType });
-    setDetailOpen(true);
-  }
-
-  function handleDetailClose() {
-    setDetailOpen(false);
-    setTimeout(() => setSelectedHolding(null), 350);
+    navigate('/portfolio/holding-detail', { state: { holding: { ...holding, assetType } } });
   }
 
   function handleStockNewsPress(holding) {
@@ -570,12 +564,7 @@ export default function PortfolioPage() {
         onClose={() => setAddHoldingOpen(false)}
       />
 
-      {/* ── Detail Screen modal overlay ──────────────────────────────────── */}
-      <DetailScreen
-        holding={selectedHolding}
-        isOpen={detailOpen}
-        onClose={handleDetailClose}
-      />
+
 
       {/* ── Stock News Screen (per-stock bottom sheet) ───────────────────── */}
       <StockNewsScreen

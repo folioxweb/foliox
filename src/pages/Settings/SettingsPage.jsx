@@ -86,6 +86,40 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* ── Voice Assistant ──────────────────────────────────────────── */}
+        <section aria-label="Voice Assistant" style={sectionStyle} className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Voice Assistant</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" x2="12" y1="19" y2="22"/>
+              </svg>
+              <div>
+                <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Wake Word</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Listen continuously for "Hey Assistant"
+                </p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer"
+                checked={localStorage.getItem('wakeWordEnabled') === 'true'}
+                onChange={(e) => {
+                  localStorage.setItem('wakeWordEnabled', e.target.checked);
+                  window.dispatchEvent(new Event('wakeWordToggled'));
+                  // Force re-render to update toggle visually
+                  window.location.reload(); // Simple way to ensure everything syncs
+                }}
+              />
+              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+        </section>
+
         {/* ── Backend Connection ──────────────────────────────────────────── */}
         <section aria-label="Backend Connection" style={sectionStyle} className="mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Backend Connection</h2>

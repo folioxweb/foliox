@@ -102,36 +102,28 @@ html.light {
   --emerald:#059669;
 }
 
-/* ─── Base ──────────────────────────────────────────────────────────────────── */
-* { box-sizing: border-box; }
+/* ─── Hide TradingView Bottom-Left Canvas Watermark Logo Only ───────────────── */
+.tv-lightweight-charts-logo,
+[class*="tv-attr-logo"],
+div[ref] table td a,
+div[class*="chart"] table td a {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
 
-html, body {
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  position: fixed; /* Prevents viewport bounce/elastic scroll on iOS */
-  margin: 0;
+/* ─── Smooth Transitions & Touch Defaults ───────────────────────────────────── */
+* {
+  box-sizing: border-box;
 }
 
 body {
+  margin: 0;
+  padding: 0;
   background: var(--bg);
   color: var(--text);
-  transition: background 0.25s ease, color 0.25s ease;
+  font-family: var(--sans);
+  user-select: none;
+  -webkit-user-select: none;
 }
-
-#root {
-  min-height: 100vh;
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-}
-
-/* ─── Hide scrollbar ────────────────────────────────────────────────────────── */
-.hide-scrollbar::-webkit-scrollbar { display: none; }
-.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* ─── Smooth theme transitions on key elements ──────────────────────────────── */
-nav, header, main, section, div, button, input, span {
-  transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease, box-shadow 0.22s ease;
-}
-/* But don't animate transforms/opacity (interferes with framer-motion) */

@@ -241,6 +241,8 @@ const realApi = {
   // AI Summary API — uses a 100s timeout to allow backend generation time
   summarizeDocument: (documentId) => apiPost({ action: "summarizeDocument", documentId }, 100000),
 
+  sendVoiceQuery: (query) => apiPost({ action: "processVoiceQuery", query }, 20000),
+
   login: async (password) => {
   const data = await apiPost({
     action: "login",

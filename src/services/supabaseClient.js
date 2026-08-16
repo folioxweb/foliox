@@ -502,40 +502,40 @@ export const supabaseApi = {
   getCompanyDocuments: async (symbol) => {
     let query = supabase
       .from('company_documents')
-      .select('attachment_id, title, doc_type, reporting_period, pdf_url, announcement_date, ai_summary, ai_status, assets!inner(symbol, name)')
+      .select('attachment_id, symbol, scrip_code, company, announcement_date, announcement_time, reporting_period, document_type, title, original_title, pdf_url, attachment_name, retrieved_on, ai_summary_json, ai_status, ai_model, ai_generated_on')
       .order('announcement_date', { ascending: false });
 
     if (symbol) {
       const cleanSym = String(symbol).replace(/^(NSE:|BSE:)/i, '').replace(/(\.NS|\.BO)$/i, '');
-      query = query.ilike('assets.symbol', `%${cleanSym}%`);
+      query = query.ilike('symbol', `%${cleanSym}%`);
     }
 
     const { data, error } = await query;
     if (error) throw error;
 
     return (data || []).map(doc => {
-      const annDate = doc.announcement_date ? new Date(doc.announcement_date) : null;
-      const dateStr = annDate && !isNaN(annDate.getTime()) ? annDate.toISOString().split('T')[0] : '';
-      const timeStr = annDate && !isNaN(annDate.getTime()) ? annDate.toISOString().split('T')[1]?.split('.')[0] : '';
+      const dateStr = doc.announcement_date || '';
+      const timeStr = doc.announcement_time || '';
 
       return {
         attachmentId: doc.attachment_id,
         id: doc.attachment_id,
-        symbol: doc.assets?.symbol || symbol,
-        company: doc.assets?.name || '',
+        symbol: doc.symbol || symbol,
+        company: doc.company || '',
+        scripCode: doc.scrip_code || '',
         title: doc.title,
         headline: doc.title,
-        originalTitle: doc.title,
-        documentType: doc.doc_type,
-        category: doc.doc_type,
+        originalTitle: doc.original_title || doc.title,
+        documentType: doc.document_type,
+        category: doc.document_type,
         reportingPeriod: doc.reporting_period,
         pdfUrl: doc.pdf_url,
         announcementDate: dateStr,
         announcementTime: timeStr,
         date: dateStr,
-        aiSummary: doc.ai_summary,
+        aiSummary: doc.ai_summary_json,
         aiStatus: doc.ai_status,
-        analysis: doc.ai_summary || {}
+        analysis: doc.ai_summary_json || {}
       };
     });
   },
@@ -543,6 +543,14 @@ export const supabaseApi = {
   summarizeDocument: async (documentId) => {
     const { data, error } = await supabase.functions.invoke('generate-ai-summary', {
       body: { documentId }
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  sendVoiceQuery: async (query) => {
+    const { data, error } = await supabase.functions.invoke('process-voice-query', {
+      body: { query }
     });
     if (error) throw error;
     return data;

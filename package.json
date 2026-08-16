@@ -15,6 +15,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",
     "framer-motion": "^12.40.0",
+    "lightweight-charts": "^5.2.1",
     "lucide-react": "^1.21.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

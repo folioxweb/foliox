@@ -220,7 +220,6 @@ dispatch({
         fetchPortfolio(),
       ];
 
-      // If Supabase, fire general news prefetch instantly in parallel
       if (isSupabase) {
         promises.push(
           api.getNews().then(newsData => {
@@ -270,13 +269,13 @@ dispatch({
   const updateFD = useCallback((payload) => executeHoldingAction(api.updateFD, payload), [executeHoldingAction]);
   const deleteFD = useCallback((payload) => executeHoldingAction(api.deleteFD, payload), [executeHoldingAction]);
 
-  // ── Prefetch news + stock news (fired 2s after startup load) ─────────────
+  // ── Prefetch main news (fired 2s after startup load) ─────────────
   const prefetchSecondaryData = useCallback((portfolioData) => {
     // portfolioData is the current state snapshot at prefetch time
     const isSupabase = localStorage.getItem('backend_target') === 'SUPABASE' || (!localStorage.getItem('backend_target') && import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE');
 
     setTimeout(async () => {
-      // 1. Prefetch all news (fire-and-forget) - ONLY for GAS (Supabase fetches this concurrently in refreshAll)
+      // 1. Prefetch main news (fire-and-forget) - ONLY for GAS
       if (!isSupabase) {
         try {
           const newsData = await api.getNews();
@@ -284,7 +283,6 @@ dispatch({
             dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
           }
         } catch (e) {
-          // Silent — prefetch errors must never surface to the user
           console.warn('[Prefetch] News failed silently:', e?.message);
         }
       }
@@ -303,7 +301,7 @@ dispatch({
               dispatch({ type: 'STOCK_NEWS_PREFETCH_SUCCESS', symbol, data: stockNews });
             }
           } catch (e) {
-            console.warn(`[Prefetch] Stock news for ${symbol} failed silently:`, e?.message);
+            console.warn(`[Prefetch] News for ${symbol} failed:`, e?.message);
           }
         })
       );

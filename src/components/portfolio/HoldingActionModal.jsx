@@ -224,7 +224,11 @@ setSipDay("");
               type="number"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="Average Price"
+              placeholder={
+                holding?.assetType === "mutualFunds"
+                  ? (action === ACTIONS.UPDATE ? "Avg NAV" : "Buy NAV")
+                  : (action === ACTIONS.UPDATE ? "Average Price" : "Buy Price")
+              }
               style={inputStyle}
               className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             />

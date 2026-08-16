@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChevronDownIcon, FileText } from 'lucide-react';
-import Modal from '../../components/ui/Modal';
+import { ArrowLeft, FileText } from 'lucide-react';
 import Badge from '../../components/ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
@@ -9,10 +8,9 @@ import { useState } from 'react';
 import HoldingActionModal from '../../components/portfolio/HoldingActionModal';
 import FDActionModal from '../../components/portfolio/FDActionModal';
 import CompanyReportsScreen from '../News/CompanyReportsScreen';
-/**
- * Maps a sector/category string to a Badge color variant.
- * Mirrors the mapping used in HoldingCard for visual consistency.
- */
+import CandlestickChart from '../../components/charts/CandlestickChart';
+import { useLocation, useNavigate } from 'react-router-dom';
+
 const SECTOR_COLOR_MAP = {
   "Financial Services": "#3B82F6",
   "Technology": "#6366F1",
@@ -59,65 +57,46 @@ function getSectorColor(sector) {
   return SECTOR_COLOR_MAP[sector] ?? '#64748B';
 }
 
-/**
- * Maps confidence level to a Badge color and display color.
- */
 const CONFIDENCE_BADGE_COLOR = {
   High: '#10B981',
   Medium: '#F59E0B',
   Low: '#EF4444',
 };
 
-/**
- * Swipe threshold in pixels — if the user drags downward more than this,
- * the modal closes. The reverse animation plays independently (handled by
- * Modal / AnimatePresence) regardless of whether onClose ultimately succeeds.
- */
-const SWIPE_CLOSE_THRESHOLD = 100;
-
-/**
- * FundamentalsRow — Groww-style row with two label→value pairs side-by-side.
- * Matches the compact fundamentals table in stock-detail screens.
- */
 function FundamentalsRow({ left, right }) {
   return (
     <div
       className="flex items-center gap-2"
-      style={{ borderTop: '1px solid var(--divider)', paddingTop: 5, paddingBottom: 5 }}
+      style={{ borderTop: '1px solid var(--divider)', paddingTop: 8, paddingBottom: 8 }}
     >
-      {/* Left pair: label on far-left, value pushed to center */}
       <div className="flex-1 flex items-center justify-between gap-1 min-w-0">
         <dt
-          className="text-[11px] font-medium shrink-0"
-          style={{ color: 'var(--text-muted)' }}
+          className="text-[11px] font-medium shrink-0 text-[var(--text-muted)]"
         >
           {left.label}
         </dt>
         <dd
-          className="text-[13px] font-semibold text-right truncate"
-          style={{ color: 'var(--text)', ...left.style }}
+          className="text-[13px] font-semibold text-right truncate text-[var(--text)]"
+          style={left.style}
         >
           {left.value ?? '—'}
         </dd>
       </div>
 
-      {/* Vertical divider between the two pairs */}
       {right && (
         <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--divider)', flexShrink: 0, margin: '0 2px' }} />
       )}
 
-      {/* Right pair: label on left of right half, value on far-right */}
       {right && (
         <div className="flex-1 flex items-center justify-between gap-1 min-w-0">
           <dt
-            className="text-[11px] font-medium shrink-0"
-            style={{ color: 'var(--text-muted)' }}
+            className="text-[11px] font-medium shrink-0 text-[var(--text-muted)]"
           >
             {right.label}
           </dt>
           <dd
-            className="text-[13px] font-semibold text-right truncate"
-            style={{ color: 'var(--text)', ...right.style }}
+            className="text-[13px] font-semibold text-right truncate text-[var(--text)]"
+            style={right.style}
           >
             {right.value ?? '—'}
           </dd>
@@ -127,52 +106,36 @@ function FundamentalsRow({ left, right }) {
   );
 }
 
-/**
- * DetailScreen — modal overlay for a single holding's full details.
- *
- * Uses the `<Modal>` slide-up component as the backdrop and container.
- * Dismissible via:
- *   - the close / chevron-down button in the header (Req 5.3)
- *   - backdrop click or Escape key (handled by Modal internally) (Req 5.3)
- *   - programmatic `onClose` call (Req 5.3)
- *   - downward swipe gesture powered by Framer Motion `drag` (Req 5.3)
- *
- * The reverse animation (slide-down exit) is handled by AnimatePresence
- * inside `<Modal>` and plays independently of whether dismissal succeeds.
- *
- * Accessible from both PortfolioPage HoldingCard and DashboardPage TopHoldings
- * (Req 5.4).
- *
- * Props:
- *   holding  — full Holding object (id, name, sector, category, quantity,
- *              investedValue, currentValue, returnValue, returnPct,
- *              portfolioWeight, confidenceLevel?, avgPurchasePrice?)
- *   isOpen   — boolean controlling visibility
- *   onClose  — function called to close the screen
- *
- * Requirements: 5.1, 5.2, 5.3, 5.4
- */
-export default function DetailScreen({ holding, isOpen, onClose }) {
-  // ── Swipe-to-dismiss via Framer Motion drag (Req 5.3) ────────────────────
-  // drag="y"               — constrain dragging to vertical axis
-  // dragConstraints top=0  — prevent dragging upward
-  // onDragEnd              — check velocity/offset; close if threshold exceeded
-  function handleDragEnd(_event, info) {
-    // info.offset.y  — total displacement in px (positive = downward)
-    // info.velocity.y — velocity in px/s (positive = downward)
-    if (info.offset.y > SWIPE_CLOSE_THRESHOLD || info.velocity.y > 400) {
-      onClose?.();
-    }
-  }
+export default function DetailScreen({ holding: propHolding }) {
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Guard: render empty shell so AnimatePresence can still animate out
+  const holding = propHolding || location.state?.holding;
+
+  const { isPrivacyMode } = usePrivacy();
+  const [showHoldingAction, setShowHoldingAction] = useState(false);
+  const [showReports, setShowReports] = useState(false);
+
   if (!holding) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <div className="px-4 pb-10 pt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-          No holding selected.
+      <div
+        className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--bg)] px-4 pb-28 text-[var(--text)]"
+        style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top, 24px))' }}
+      >
+        <div className="flex items-center mb-6">
+          <button
+            type="button"
+            onClick={() => navigate('/portfolio')}
+            className="flex items-center justify-center rounded-full p-2.5 bg-[var(--sheet-btn-bg)] text-[var(--text)] hover:bg-[var(--card-border)] transition-colors"
+            aria-label="Back to Portfolio"
+          >
+            <ArrowLeft size={20} />
+          </button>
         </div>
-      </Modal>
+        <div className="text-center py-16 text-[var(--text-muted)] text-sm font-medium">
+          No holding details selected.
+        </div>
+      </div>
     );
   }
 
@@ -193,157 +156,125 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
     buyPrice,
     avgPurchasePrice = buyPrice,
     badge,
-    // currentNAV is how MFs expose today's price; fall back to currentPrice for stocks/ETFs
     currentNAV,
     currentPrice: rawCurrentPrice,
+    dayChange: rawDayChange,
+    dayChangePercent: rawDayChangePercent,
   } = holding;
 
-  // Unified "today's price" — currentNAV for MFs, currentPrice for stocks/ETFs
-  // Fall back to (currentValue / quantity) if currentPrice or currentNAV is missing
   const derivedPrice = (currentValue && quantity && quantity > 0) ? (currentValue / quantity) : undefined;
-  const currentPrice = currentNAV ?? rawCurrentPrice ?? derivedPrice;
+  const todayPrice = currentNAV ?? rawCurrentPrice ?? derivedPrice ?? 0;
+
+  const dayChangeVal = rawDayChange != null ? Number(rawDayChange) : 0;
+  const dayChangePct = rawDayChangePercent != null ? Number(rawDayChangePercent) : 0;
+  const isDayProfit = dayChangeVal >= 0;
+  const dayPnlColor = isDayProfit ? 'var(--profit)' : 'var(--loss)';
+  const dayPnlBg = isDayProfit ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+
   const isFD = holding.assetType === "fds";
+  const isMF = holding.assetType === "mutualFunds" || holding.assetType === "mutual_funds" || holding.category === "Mutual Fund";
+  const isStockOrETF = !isFD && !isMF;
 
-  const { isPrivacyMode } = usePrivacy();
-  const [showHoldingAction, setShowHoldingAction] = useState(false);
-  const [showReports, setShowReports] = useState(false);
-
-   const returnValue = isFD
-   ? holding.interestEarned
-   : (
-       holding.returnValue !== undefined
-         ? holding.returnValue
-         : (currentValue && investedValue
-            ? currentValue - investedValue
-            : 0)
-     );
+  const returnValue = isFD
+    ? holding.interestEarned
+    : (
+        holding.returnValue !== undefined
+          ? holding.returnValue
+          : (currentValue && investedValue
+             ? currentValue - investedValue
+             : 0)
+      );
 
   const isProfit = returnValue >= 0;
   const pnlColor = isProfit ? 'var(--profit)' : 'var(--loss)';
-  const pnlBg = isProfit ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)';
   const labelStr = sector || category || '';
   const badgeColor = getSectorColor(labelStr);
   const confidenceBadgeColor = CONFIDENCE_BADGE_COLOR[confidenceLevel] ?? 'gray';
 
-  // Comprehensive aria-label summarising the screen for screen-readers
-  const ariaLabel = `${name} details. Current value ${formatCurrency(currentValue)}, return ${formatPercent(returnPct)}.`;
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} transparent={true}>
-      {/*
-       * ── Draggable wrapper ────────────────────────────────────────────────
-       * drag="y" restricts to vertical axis.
-       * dragConstraints={{ top: 0 }} prevents upward drag.
-       * dragElastic={0.2} gives a slight rubber-band feel when hitting top.
-       * onDragEnd checks displacement/velocity and fires onClose if threshold
-       * is exceeded. The exit animation is driven by AnimatePresence inside
-       * <Modal> and plays independently of the drag outcome (Req 5.3).
-       */}
-      <motion.div
-        drag="y"
-        dragConstraints={{ top: 0 }}
-        dragElastic={{ top: 0.2, bottom: 0 }}
-        onDragEnd={handleDragEnd}
-        aria-label={ariaLabel}
-        role="region"
-        className="cursor-grab active:cursor-grabbing bg-[var(--sheet-bg)] border-t border-[var(--card-border)] rounded-t-3xl shadow-2xl"
-        style={{ touchAction: 'pan-x' }}
-      >
-        {/* ── Drag handle indicator inside the draggable card ── */}
-        <div className="flex justify-center pt-3 pb-1" aria-hidden="true">
-          <div className="h-1 w-10 rounded-full bg-[var(--divider)]" />
-        </div>
-        {/* ── Header (Req 5.1) ─────────────────────────────────────────── */}
-        <header
-          className="px-4 pt-2 pb-4"
-          style={{
-            /* Glassmorphism header matches design system (Req 2.4) */
-            background: 'var(--header-bg)',
-          }}
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12 }}
+      transition={{ duration: 0.25, ease: 'easeOut' }}
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--bg)] px-3 sm:px-4 pb-28 text-[var(--text)] font-sans"
+      style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top, 24px))' }}
+    >
+      {/* ── Top Header Navigation Bar (Notch Safe Padding) ────────────────────── */}
+      <header className="flex items-center justify-between pb-3 border-b border-[var(--card-border)] mb-4">
+        <button
+          type="button"
+          onClick={() => navigate('/portfolio')}
+          className="flex items-center gap-2 rounded-xl px-3 py-2 bg-[var(--sheet-btn-bg)] text-[var(--text)] font-semibold text-xs hover:bg-[var(--card-border)] transition-all shadow-sm"
+          aria-label="Back to Portfolio"
         >
-          {/* Close button + sector badge row */}
-          <div className="flex items-center justify-between mb-4">
-            {/*
-             * Back / close button — ChevronDown icon (Req 5.3).
-             * aria-label required for accessibility (Req 12.1).
-             */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex items-center justify-center rounded-full p-2 focus-visible:ring-2 focus-visible:ring-[var(--emerald)] focus-visible:outline-none
-              "
-              style={{
-                background: 'var(--sheet-btn-bg)',
-                color: 'var(--text-muted)',
-              }}
-              aria-label="Close detail screen"
-            >
-              <ChevronDownIcon size={20} aria-hidden="true" />
-            </button>
+          <ArrowLeft size={18} />
+          <span>Portfolio</span>
+        </button>
 
-            {/* Sector / category badge */}
-             <Badge
-  label={isFD ? "Fixed Deposit" : labelStr}
-  color={isFD ? "teal" : badgeColor}
- />
-          </div>
+        <Badge
+          label={isFD ? "Fixed Deposit" : labelStr}
+          color={isFD ? "teal" : badgeColor}
+        />
+      </header>
 
-          {/* Company / fund name — large (Req 5.1) */}
-          <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h2 className="text-2xl font-bold leading-tight text-[var(--text)]">
-              {isPrivacyMode ? 'Confidential Asset' : name}
-            </h2>
-            {renderStockBadge(badge)}
-          </div>
+      {/* ── Stock Name & Today's Live Price / Returns (Clean Android Typography) ── */}
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <h1 className="text-xl sm:text-2xl font-extrabold leading-tight text-[var(--text)] font-sans">
+            {isPrivacyMode ? 'Confidential Asset' : name}
+          </h1>
+          {renderStockBadge(badge)}
+        </div>
 
-          {/* Current value — large display (Req 5.1) */}
+        {/* Today's Market Price (Clean App Typography) */}
+        <div className="flex items-baseline gap-2 sm:gap-3 mb-1.5 flex-wrap">
           <p
-            className="text-3xl font-extrabold mb-3 text-[var(--text)]"
-            style={{ letterSpacing: '-0.02em' }}
+            className="text-2xl sm:text-3xl font-extrabold text-[var(--text)] tracking-tight font-sans"
           >
-            {isPrivacyMode ? '₹***' : formatCurrency(currentValue)}
+            {isPrivacyMode ? '₹***' : formatCurrency(todayPrice)}
           </p>
 
-          {/* P&L row — absolute ₹ P&L + return % + allocation % (Req 5.1) */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* Absolute P&L */}
-            <span className="text-base font-bold" style={{ color: pnlColor }}>
-              {isProfit && returnValue !== 0 ? '+' : ''}
-              {isPrivacyMode ? '₹***' : formatCurrency(returnValue)}
-            </span>
-
-            {/* Return % badge */}
+          {/* Today's Gain / Loss & Percentage Return Badge */}
+          {(dayChangeVal !== 0 || dayChangePct !== 0) && (
             <span
-              className="text-sm font-bold px-2.5 py-0.5 rounded-full"
-              style={{ color: pnlColor, background: pnlBg }}
+              className="text-xs font-extrabold px-2.5 py-0.5 rounded-full font-sans flex items-center gap-1"
+              style={{ color: dayPnlColor, background: dayPnlBg }}
             >
-               {isFD
-   ? `${holding.interestRate}%`
- : formatPercent(returnPct)}
+              <span>{isDayProfit ? '+' : ''}{isPrivacyMode ? '₹***' : dayChangeVal.toFixed(2)}</span>
+              <span>({isDayProfit ? '+' : ''}{dayChangePct.toFixed(2)}%)</span>
+              <span className="text-[10px] opacity-75 uppercase font-bold">1D</span>
             </span>
+          )}
+        </div>
 
-            {/* Allocation % (Req 5.1) */}
-            {portfolioWeight != null && (
-              <span
-                className="ml-auto text-sm font-semibold"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                {portfolioWeight.toFixed(2)}% of portfolio
-              </span>
-            )}
+        {/* Allocation percentage */}
+        {portfolioWeight != null && (
+          <div className="flex items-center justify-end text-xs font-semibold text-[var(--text-muted)]">
+            <span>{portfolioWeight.toFixed(2)}% of portfolio</span>
           </div>
-        </header>
+        )}
+      </div>
 
-        {/* ── Divider ──────────────────────────────────────────────────── */}
-        <div
-          className="mx-4"
-          style={{ height: 1, background: 'var(--divider)' }}
-          aria-hidden="true"
-        />
+      {/* ── Groww Interactive Stock Chart ────────────────────────── */}
+      {isStockOrETF && (
+        <div className="mb-4">
+          <CandlestickChart
+            symbol={holding.symbol || holding.name}
+            stockName={holding.name}
+            currentPrice={todayPrice}
+            height={260}
+          />
+        </div>
+      )}
 
-        {/* ── Info section ────────────────────────────────────────────── */}
-        <section className="px-4 pt-1 pb-2" aria-label="Holding details">
-          <dl>
+      {/* ── Fundamentals & Position Details ────────────────────────── */}
+      <section className="rounded-2xl p-4 mb-4 border border-[var(--card-border)] bg-[var(--card-bg)] shadow-md" aria-label="Holding details">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">
+          Asset Fundamentals & Position Details
+        </h2>
+
+        <dl>
           {isFD ? (
             <>
               <FundamentalsRow
@@ -365,34 +296,31 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
             </>
           ) : (
             <>
-              {/* Row 1: Today's Price + Day Change */}
               <FundamentalsRow
                 left={{
                   label: holding.assetType === 'mutualFunds' ? 'Daily NAV' : "Today's Price",
-                  value: currentPrice != null
-                    ? (isPrivacyMode ? '₹***' : formatCurrency(currentPrice))
+                  value: todayPrice > 0
+                    ? (isPrivacyMode ? '₹***' : formatCurrency(todayPrice))
                     : '—',
                 }}
                 right={
-                  holding.dayChange != null && holding.dayChangePercent != null
+                  dayChangeVal !== 0 || dayChangePct !== 0
                     ? {
                         label: 'Day Change',
                         value: isPrivacyMode
                           ? '₹***'
-                          : `${Number(holding.dayChange) >= 0 ? '+' : ''}${Number(holding.dayChange).toFixed(2)} (${Number(holding.dayChangePercent).toFixed(2)}%)`,
-                        style: { color: Number(holding.dayChange) >= 0 ? 'var(--profit)' : 'var(--loss)' },
+                          : `${isDayProfit ? '+' : ''}${dayChangeVal.toFixed(2)} (${dayChangePct.toFixed(2)}%)`,
+                        style: { color: dayPnlColor },
                       }
                     : { label: 'Return %', value: isPrivacyMode ? '***%' : formatPercent(returnPct), style: { color: pnlColor } }
                 }
               />
 
-              {/* Row 2: Invested + Current Value */}
               <FundamentalsRow
                 left={{ label: 'Invested', value: isPrivacyMode ? '₹***' : formatCurrency(investedValue) }}
                 right={{ label: 'Current Value', value: isPrivacyMode ? '₹***' : formatCurrency(currentValue) }}
               />
 
-              {/* Row 3: P&L + Returns */}
               <FundamentalsRow
                 left={{
                   label: 'P&L',
@@ -406,19 +334,17 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
                 }}
               />
 
-              {/* Row 4: Quantity + Avg Buy Price */}
               <FundamentalsRow
                 left={{
                   label: 'Quantity',
                   value: quantity != null ? (isPrivacyMode ? '***' : String(quantity)) : '—',
                 }}
                 right={{
-                  label: 'Avg Buy Price',
+                  label: holding.assetType === 'mutualFunds' ? 'Avg NAV' : 'Avg Buy Price',
                   value: avgPurchasePrice != null ? (isPrivacyMode ? '₹***' : formatCurrency(avgPurchasePrice)) : '—',
                 }}
               />
 
-              {/* Row 5: Conviction + Sector */}
               <FundamentalsRow
                 left={{
                   label: 'Conviction',
@@ -445,7 +371,6 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
                 right={labelStr ? { label: 'Sector', value: labelStr } : undefined}
               />
               
-              {/* Row 6: SIP Details (MFs only) */}
               {holding.assetType === 'mutualFunds' && holding.sipEnabled && (
                 <FundamentalsRow
                   left={{
@@ -460,57 +385,53 @@ export default function DetailScreen({ holding, isOpen, onClose }) {
               )}
             </>
           )}
-          </dl>
-        </section>
+        </dl>
+      </section>
 
+      {/* ── Manage Position Action Button ────────────────────────── */}
+      <div className="pt-2">
+        {isFD ? (
+          <button
+            type="button"
+            onClick={() => setShowHoldingAction(true)}
+            className="w-full rounded-2xl py-4 text-white font-bold shadow-lg transition-transform active:scale-[0.99]"
+            style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
+          >
+            Update FD
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowHoldingAction(true)}
+            className="w-full rounded-2xl py-4 text-white font-bold shadow-lg transition-transform active:scale-[0.99]"
+            style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
+          >
+            Manage Position
+          </button>
+        )}
+      </div>
 
-        <div className="px-4 pt-3" style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
-          {isFD ? (
-            /* FD: single full-width Update button */
-            <button
-              type="button"
-              onClick={() => setShowHoldingAction(true)}
-              className="w-full rounded-2xl py-4 text-white font-semibold"
-              style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
-            >
-              Update FD
-            </button>
-          ) : (
-            /* Stocks/ETFs/MFs: full-width Manage button */
-            <button
-              type="button"
-              onClick={() => setShowHoldingAction(true)}
-              className="w-full rounded-2xl py-4 text-white font-semibold"
-              style={{ background: 'linear-gradient(135deg,#10B981,#059669)' }}
-            >
-              Manage Position
-            </button>
-          )}
-        </div>
-      </motion.div>
+      {isFD ? (
+        <FDActionModal
+          holding={holding}
+          isOpen={showHoldingAction}
+          onClose={() => setShowHoldingAction(false)}
+        />
+      ) : (
+        <HoldingActionModal
+          holding={holding}
+          isOpen={showHoldingAction}
+          onClose={() => setShowHoldingAction(false)}
+        />
+      )}
 
-  {isFD ? (
-  <FDActionModal
-    holding={holding}
-    isOpen={showHoldingAction}
-    onClose={() => setShowHoldingAction(false)}
-  />
-) : (
-  <HoldingActionModal
-  holding={holding}
-  isOpen={showHoldingAction}
-  onClose={() => setShowHoldingAction(false)}
-/>
-)}
-
-  {/* Company Reports — only for stocks/ETFs/MFs */}
-  {!isFD && (
-    <CompanyReportsScreen
-      holding={holding}
-      isOpen={showReports}
-      onClose={() => setShowReports(false)}
-    />
-  )}
-    </Modal>
+      {!isFD && (
+        <CompanyReportsScreen
+          holding={holding}
+          isOpen={showReports}
+          onClose={() => setShowReports(false)}
+        />
+      )}
+    </motion.div>
   );
 }

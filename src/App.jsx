@@ -10,11 +10,12 @@ import LoginPage from "./pages/Login/LoginPage";
 import { isLoggedIn } from "./services/apiClient";
 
 // ---------------------------------------------------------------------------
-// Lazy page imports — each page becomes its own bundle chunk (Requirement 11.7)
+// Lazy page imports — each page becomes its own bundle chunk
 // ---------------------------------------------------------------------------
 const DashboardPage  = lazy(() => import('./pages/Dashboard/DashboardPage'));
 const AnalyticsPage  = lazy(() => import('./pages/Analytics/AnalyticsPage'));
 const PortfolioPage  = lazy(() => import('./pages/Portfolio/PortfolioPage'));
+const DetailScreen   = lazy(() => import('./pages/Portfolio/DetailScreen'));
 const SettingsPage   = lazy(() => import('./pages/Settings/SettingsPage'));
 
 // ---------------------------------------------------------------------------
@@ -31,13 +32,15 @@ function PageFallback() {
   );
 }
 
+import VoiceAssistant from './components/VoiceAssistant';
+
 // ---------------------------------------------------------------------------
 // AppShell — wraps every page; renders active page via <Outlet> + <BottomNav>
 // ---------------------------------------------------------------------------
 function AppShell() {
   return (
     <div className="relative flex h-[100svh] flex-col overflow-hidden bg-[var(--bg)]">
-      {/* Top safe-area status bar overlay to block scrolled content */}
+      {/* Top safe-area status bar overlay */}
       <div
         className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
         style={{
@@ -52,16 +55,17 @@ function AppShell() {
         <Outlet />
       </Suspense>
 
-      {/* BottomNav is always visible outside the page outlet (Requirement 1.1) */}
+      {/* BottomNav is always visible outside the page outlet */}
       <BottomNav />
+      
+      {/* Global Voice Assistant Component */}
+      <VoiceAssistant />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
 // "Add to Home Screen" banner
-// Shown when the user opens the app in Safari browser (not standalone mode).
-// Requirements: 10.6
 // ---------------------------------------------------------------------------
 function AddToHomeScreenBanner({ onDismiss }) {
   return (
@@ -89,7 +93,7 @@ function AddToHomeScreenBanner({ onDismiss }) {
 }
 
 // ---------------------------------------------------------------------------
-// Standalone mode detection (Requirement 10.6)
+// Standalone mode detection
 // ---------------------------------------------------------------------------
 function isStandaloneMode() {
   return (
@@ -151,7 +155,7 @@ function AppContent() {
       <LoginPage
         onLogin={() => {
           setLoggedIn(true);
-          navigate('/', { replace: true }); // Always redirect to dashboard on login
+          navigate('/', { replace: true });
         }}
       />
     );
@@ -159,7 +163,7 @@ function AppContent() {
 
   return (
     <>
-      {/* "Add to Home Screen" banner — only visible in non-standalone Safari */}
+      {/* "Add to Home Screen" banner */}
       {showBanner && (
         <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
       )}
@@ -170,6 +174,8 @@ function AppContent() {
           <Route index element={<DashboardPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
+          <Route path="portfolio/holding-detail" element={<DetailScreen />} />
+          <Route path="holding-detail" element={<DetailScreen />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
