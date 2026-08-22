@@ -3,7 +3,7 @@ import { Lock, Eye, EyeOff, KeyRound, CheckCircle2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SetNewPasswordModal({ isOpen, onClose }) {
-  const { updatePassword, setIsPasswordRecovery } = useAuth();
+  const { updatePassword, setIsPasswordRecovery, isPasswordRecovery, signOut } = useAuth();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -13,7 +13,12 @@ export default function SetNewPasswordModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  function handleClose() {
+  async function handleClose() {
+    if (isPasswordRecovery) {
+      // Arrived via recovery link: cancel must sign out and clear hash to prevent bypassing password reset
+      await signOut();
+      window.history.replaceState(null, '', window.location.pathname);
+    }
     setIsPasswordRecovery(false);
     if (onClose) onClose();
   }
