@@ -106,6 +106,8 @@ export function AuthProvider({ children }) {
     });
     if (error) throw error;
     setIsPasswordRecovery(false);
+    // Clear recovery hash from URL bar
+    window.history.replaceState(null, '', window.location.pathname);
     return data;
   };
 
