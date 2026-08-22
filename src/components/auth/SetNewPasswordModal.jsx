@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, KeyRound, CheckCircle2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function SetNewPasswordModal({ isOpen, onClose }) {
@@ -12,6 +12,11 @@ export default function SetNewPasswordModal({ isOpen, onClose }) {
   const [success, setSuccess] = useState(false);
 
   if (!isOpen) return null;
+
+  function handleClose() {
+    setIsPasswordRecovery(false);
+    if (onClose) onClose();
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -45,13 +50,24 @@ export default function SetNewPasswordModal({ isOpen, onClose }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
       <div
-        className="w-full max-w-sm rounded-3xl p-6 shadow-2xl transition-all"
+        className="w-full max-w-sm rounded-3xl p-6 shadow-2xl transition-all relative"
         style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--card-border)',
           boxShadow: 'var(--card-shadow)',
         }}
       >
+        {/* Top-right close button */}
+        <button
+          type="button"
+          onClick={handleClose}
+          className="absolute right-4 top-4 p-1.5 rounded-full transition hover:opacity-80"
+          style={{ color: 'var(--text-muted)' }}
+          aria-label="Close"
+        >
+          <X size={18} />
+        </button>
+
         <div className="flex justify-center mb-4">
           <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
             <KeyRound size={28} style={{ color: 'var(--emerald)' }} />
@@ -117,14 +133,28 @@ export default function SetNewPasswordModal({ isOpen, onClose }) {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-2xl py-2.5 text-white text-sm font-bold transition hover:opacity-90 disabled:opacity-50 mt-2"
-              style={{ background: 'var(--emerald)' }}
-            >
-              {loading ? 'Saving...' : 'Update Password'}
-            </button>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="flex-1 rounded-2xl py-2.5 text-xs font-semibold transition hover:opacity-80 text-center"
+                style={{
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--card-border)',
+                  color: 'var(--text-2)',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 rounded-2xl py-2.5 text-white text-xs font-bold transition hover:opacity-90 disabled:opacity-50 text-center"
+                style={{ background: 'var(--emerald)' }}
+              >
+                {loading ? 'Saving...' : 'Update Password'}
+              </button>
+            </div>
           </form>
         )}
       </div>
