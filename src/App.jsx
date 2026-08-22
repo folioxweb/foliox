@@ -50,6 +50,17 @@ function AppShell() {
   );
 }
 
+// -------------------------------------------
+// Initial Auth Loading Screen
+// ---------------------------------------------------------------------------
+function AuthLoadingScreen() {
+  return (
+    <div className="flex h-[100svh] w-full flex-col items-center justify-center bg-[var(--bg)]">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // "Add to Home Screen" banner
 // ---------------------------------------------------------------------------
@@ -118,7 +129,7 @@ function AppContent() {
   }, [navigate, signOut]);
 
   if (loading) {
-    return <PageFallback />;
+    return <AuthLoadingScreen />;
   }
 
   if (!isLoggedIn) {
