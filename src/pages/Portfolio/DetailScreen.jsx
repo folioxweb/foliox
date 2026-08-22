@@ -4,12 +4,13 @@ import Badge from '../../components/ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
 import { renderStockBadge } from '../../components/cards/HoldingCard';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import HoldingActionModal from '../../components/portfolio/HoldingActionModal';
 import FDActionModal from '../../components/portfolio/FDActionModal';
 import CompanyReportsScreen from '../News/CompanyReportsScreen';
 import CandlestickChart from '../../components/charts/CandlestickChart';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { usePortfolio } from '../../context/PortfolioContext';
 
 const SECTOR_COLOR_MAP = {
   "Financial Services": "#3B82F6",
@@ -109,8 +110,26 @@ function FundamentalsRow({ left, right }) {
 export default function DetailScreen({ holding: propHolding }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { state } = usePortfolio();
 
-  const holding = propHolding || location.state?.holding;
+  const initialHolding = propHolding || location.state?.holding;
+
+  // Resolve the latest live holding from PortfolioContext whenever it updates
+  const liveHolding = useMemo(() => {
+    if (!initialHolding) return null;
+    const typeKey = initialHolding.assetType || (initialHolding.category === 'Mutual Fund' ? 'mutualFunds' : 'stocks');
+    const list = state[typeKey]?.data;
+    if (!Array.isArray(list)) return null;
+
+    return list.find(h =>
+      (h.assetId && initialHolding.assetId && h.assetId === initialHolding.assetId) ||
+      (h.symbol && initialHolding.symbol && h.symbol.toUpperCase() === initialHolding.symbol.toUpperCase()) ||
+      (h.name && initialHolding.name && h.name.toLowerCase() === initialHolding.name.toLowerCase()) ||
+      (h.srNo && initialHolding.srNo && h.srNo === initialHolding.srNo)
+    );
+  }, [state, initialHolding]);
+
+  const holding = liveHolding ? { ...initialHolding, ...liveHolding, assetType: initialHolding.assetType } : initialHolding;
 
   const { isPrivacyMode } = usePrivacy();
   const [showHoldingAction, setShowHoldingAction] = useState(false);

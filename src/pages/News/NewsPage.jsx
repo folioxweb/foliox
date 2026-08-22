@@ -259,10 +259,10 @@ export default function NewsPage({ isOpen, onClose }) {
                 <div className="flex flex-col items-center gap-4 px-8 py-16 text-center">
                   <Inbox size={40} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
                   <p className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-                    No news available
+                    No news for your portfolio
                   </p>
                   <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Check back later for the latest market updates.
+                    Articles and updates will appear here for stocks in your active holdings.
                   </p>
                 </div>
               )}

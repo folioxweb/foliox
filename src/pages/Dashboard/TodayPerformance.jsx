@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, Clock, Activity } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { usePrivacy } from '../../context/PrivacyContext';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
@@ -12,13 +12,13 @@ const ASSET_META = [
 
 function MiniBar({ value, max, color }) {
   const rawPct = max > 0 ? Math.min(Math.abs(value) / max, 1) * 100 : 0;
-  const pct = value !== 0 ? Math.max(rawPct, 15) : 10;
+  const pct = value !== 0 ? Math.max(rawPct, 12) : 8;
   return (
-    <div className="flex-1 rounded-full overflow-hidden" style={{ height: 3, background: 'var(--divider)' }}>
+    <div className="flex-1 rounded-full overflow-hidden" style={{ height: 4, background: 'var(--divider)' }}>
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${pct}%` }}
-        transition={{ duration: 0.7, ease: 'easeOut' }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
         style={{ height: '100%', background: color, borderRadius: 99 }}
       />
     </div>
@@ -29,7 +29,11 @@ export default function TodayPerformance({ data, loading }) {
   const { isPrivacyMode } = usePrivacy();
 
   if (loading && !data) {
-    return <section className="mb-5"><Skeleton width="100%" height={220} rounded="xl" /></section>;
+    return (
+      <section className="mb-5">
+        <Skeleton width="100%" height={200} rounded="xl" />
+      </section>
+    );
   }
   if (!data) return null;
 
@@ -50,66 +54,72 @@ export default function TodayPerformance({ data, loading }) {
 
   return (
     <section className="mb-5">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.06 }}
-        className="relative overflow-hidden rounded-2xl p-5 shadow-lg"
+      <div
+        className="relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-200"
         style={{
           background: 'var(--card-bg)',
-          border: `1px solid ${isProfit ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)'}`,
-          boxShadow: 'var(--card-shadow)',
+          border: '1px solid var(--card-border)',
+          boxShadow: 'var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.06))',
         }}
       >
-        {/* Accent left bar */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: accentColor }} />
-
         <div className="relative z-10">
-          {/* Header row */}
-          <div className="flex items-center justify-between mb-4">
+          {/* Header Row */}
+          <div className="flex items-center justify-between pb-3 mb-3 border-b" style={{ borderColor: 'var(--divider)' }}>
             <div className="flex items-center gap-2">
-              <Clock size={13} style={{ color: 'var(--text-muted)' }} />
-              <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
-                Today's P&amp;L
+              <Activity size={15} className="text-indigo-600 dark:text-indigo-400" />
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-2)]">
+                Today's Market Breakdown
               </span>
             </div>
             <span
-              className="text-xs font-bold px-2 py-0.5 rounded-full"
+              className="text-[11px] font-extrabold px-2.5 py-0.5 rounded-full tabular-nums"
               style={{
                 background: isProfit ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)',
                 color: accentColor,
               }}
             >
-              {isProfit}{formatPercent(gainPercent)}
+              {isProfit ? '+' : ''}{formatPercent(gainPercent)}
             </span>
           </div>
 
-          {/* Hero gain */}
-          <div className="flex items-baseline gap-2 mb-5">
-            {isProfit
-              ? <TrendingUp size={18} style={{ color: accentColor, flexShrink: 0 }} />
-              : <TrendingDown size={18} style={{ color: accentColor, flexShrink: 0 }} />}
-            <span className="text-3xl font-bold tracking-tight" style={{ color: accentColor }}>
-              {isPrivacyMode ? '₹••••••' : `${gain >= 0 ? '+' : ''}${formatCurrency(gain)}`}
-            </span>
+          {/* Hero Gain Display */}
+          <div className="flex items-baseline justify-between mb-4">
+            <div>
+              <span className="text-[10px] font-semibold text-[var(--text-2)] uppercase tracking-wider block">
+                Total Day's Gain / Loss
+              </span>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                {isProfit ? (
+                  <TrendingUp size={20} style={{ color: accentColor }} />
+                ) : (
+                  <TrendingDown size={20} style={{ color: accentColor }} />
+                )}
+                <span className="text-2xl sm:text-3xl font-extrabold tracking-tight tabular-nums" style={{ color: accentColor }}>
+                  {isPrivacyMode ? '₹ ••••••' : `${gain >= 0 ? '+' : ''}${formatCurrency(gain)}`}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Asset breakdown */}
+          {/* Asset Class Gain Breakdown */}
           <div className="space-y-3">
             {assetRows.map((row) => {
               const rowIsProfit = row.gain >= 0;
               return (
-                <div key={row.label} className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between">
+                <div key={row.label} className="p-2.5 rounded-xl transition-colors" style={{ background: 'var(--input-bg)' }}>
+                  <div className="flex items-center justify-between mb-1.5">
                     <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ background: row.color }} />
-                      <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>{row.label}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold" style={{ color: rowIsProfit ? 'var(--profit)' : 'var(--loss)' }}>
-                        {isPrivacyMode ? '₹•••' : `${row.gain >= 0 ? '+' : ''}${formatCurrency(row.gain)}`}
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: row.color }} />
+                      <span className="text-xs font-bold" style={{ color: 'var(--text)' }}>
+                        {row.label}
                       </span>
-                      <span className="text-xs w-12 text-right" style={{ color: 'var(--text-muted)' }}>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-right">
+                      <span className="text-xs font-bold tabular-nums" style={{ color: rowIsProfit ? 'var(--profit)' : 'var(--loss)' }}>
+                        {isPrivacyMode ? '₹ •••' : `${row.gain >= 0 ? '+' : ''}${formatCurrency(row.gain)}`}
+                      </span>
+                      <span className="text-[11px] font-semibold w-12 text-right text-[var(--text-2)] tabular-nums">
                         {formatPercent(row.pct)}
                       </span>
                     </div>
@@ -120,7 +130,7 @@ export default function TodayPerformance({ data, loading }) {
             })}
           </div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

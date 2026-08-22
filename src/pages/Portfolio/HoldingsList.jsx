@@ -7,21 +7,13 @@ import Button from '../../components/ui/Button';
 // ── Animation variants ───────────────────────────────────────────────────────
 
 const listVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.06,
-    },
-  },
+  hidden: { opacity: 1 },
+  visible: { opacity: 1 },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.3, ease: 'easeOut' },
-  },
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0 },
 };
 
 // ── SkeletonCard ─────────────────────────────────────────────────────────────

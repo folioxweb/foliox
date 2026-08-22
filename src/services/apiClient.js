@@ -263,6 +263,21 @@ const realApi = {
   addHolding: (payload) => apiPost({ action: "addHolding", ...payload }),
   updateFD: (payload) => apiPost({ action: "updateFD", ...payload }),
   deleteFD: (payload) => apiPost({ action: "deleteFD", ...payload }),
+
+  // Watchlist & Paper Trading
+  searchNseStocks: (query) => supabaseApi.searchNseStocks(query),
+  getWatchlist: () => supabaseApi.getWatchlist(),
+  addWatchlistItem: (payload) => supabaseApi.addWatchlistItem(payload),
+  removeWatchlistItem: (payload) => supabaseApi.removeWatchlistItem(payload),
+  getPaperPortfolio: () => supabaseApi.getPaperPortfolio(),
+  addPaperHolding: (payload) => supabaseApi.addPaperHolding(payload),
+  sellPaperHolding: (payload) => supabaseApi.sellPaperHolding(payload),
+  updatePaperCapital: (payload) => supabaseApi.updatePaperCapital(payload),
+  resetPaperPortfolio: () => supabaseApi.resetPaperPortfolio(),
+
+  // Mainboard IPO API
+  getIpos: () => supabaseApi.getIpos(),
+  getIpoById: (id) => supabaseApi.getIpoById(id),
 };
 
 function getActiveApi() {
@@ -284,7 +299,7 @@ export const api = getActiveApi();
 
 export function isLoggedIn() {
   if (getActiveApi() === supabaseApi) {
-    return true;
+    return Object.keys(localStorage).some(k => k.startsWith('sb-') && k.endsWith('-auth-token'));
   }
   return !!getToken();
 }

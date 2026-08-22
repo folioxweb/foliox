@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Info, Database, Trash2, Shield, LogOut, Palette } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
+import { useAuth } from '../../context/AuthContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import { logout } from '../../services/apiClient';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
 
-const APP_VERSION = '4.1.1';
+const APP_VERSION = '4.2.0';
 const BUILD_DATE = __BUILD_DATE__;
 const REACT_VERSION = __REACT_VERSION__;
 const VITE_VERSION = __VITE_VERSION__;
@@ -20,10 +21,41 @@ function formatLastUpdated(date) {
 }
 
 export default function SettingsPage() {
-  const { state } = usePortfolio();
+  const { state, updatePaperCapital, resetPaperPortfolio } = usePortfolio();
+  const { user, signOut } = useAuth();
   const { mode } = useTheme();
   const scrollRef = usePageScrollRestoration('settings');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [paperCapital, setPaperCapital] = useState('5000000');
+  const [updatingCap, setUpdatingCap] = useState(false);
+
+  useEffect(() => {
+    const initCap = state.paperTrade?.data?.summary?.initialCapital;
+    if (initCap) setPaperCapital(String(initCap));
+  }, [state.paperTrade]);
+
+  async function handleUpdateCapital() {
+    try {
+      setUpdatingCap(true);
+      await updatePaperCapital({ initialCapital: Number(paperCapital) });
+      alert('Paper trading capital updated successfully!');
+    } catch (err) {
+      alert(err.message || 'Failed to update paper capital');
+    } finally {
+      setUpdatingCap(false);
+    }
+  }
+
+  async function handleResetPaper() {
+    if (window.confirm('Are you sure you want to reset all paper trades and restore cash to initial capital?')) {
+      try {
+        await resetPaperPortfolio();
+        alert('Paper portfolio reset successfully.');
+      } catch (err) {
+        alert(err.message || 'Failed to reset paper portfolio');
+      }
+    }
+  }
 
   const lastUpdated = formatLastUpdated(state.lastUpdated);
 
@@ -52,6 +84,12 @@ export default function SettingsPage() {
     window.location.reload();
   }
 
+  async function handleLogoutConfirm() {
+    setShowLogoutDialog(false);
+    await signOut();
+    logout();
+  }
+
   return (
     <>
       <main
@@ -68,6 +106,28 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>Settings</h1>
         </div>
+
+        {/* ── User Account ────────────────────────────────────────────────── */}
+        {user?.email && (
+          <section aria-label="Account" style={sectionStyle} className="mb-4">
+            <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Account</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                  <UserCheck size={20} className="text-emerald-400" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold truncate max-w-[200px]" style={{ color: 'var(--text)' }}>
+                    {user.email}
+                  </h3>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--emerald)' }}>
+                    Authenticated via Supabase
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ── Appearance ──────────────────────────────────────────────────── */}
         <section aria-label="Appearance" style={sectionStyle} className="mb-4">
@@ -111,8 +171,7 @@ export default function SettingsPage() {
                 onChange={(e) => {
                   localStorage.setItem('wakeWordEnabled', e.target.checked);
                   window.dispatchEvent(new Event('wakeWordToggled'));
-                  // Force re-render to update toggle visually
-                  window.location.reload(); // Simple way to ensure everything syncs
+                  window.location.reload();
                 }}
               />
               <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
@@ -129,7 +188,7 @@ export default function SettingsPage() {
               <div>
                 <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Active Backend</h3>
                 <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                  Toggle between Supabase (New) and Google Apps Script (Legacy).
+                  Toggle between Supabase and Google Apps Script (Legacy).
                 </p>
               </div>
             </div>
@@ -158,6 +217,50 @@ export default function SettingsPage() {
           </div>
         </section>
 
+        {/* ── Paper Trading Settings ────────────────────────────────────────── */}
+        <section aria-label="Paper Trading Settings" style={sectionStyle} className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Paper Trading Config</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Briefcase size={20} className="text-emerald-400 flex-shrink-0" />
+              <div>
+                <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Virtual Capital</h3>
+                <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--text-2)' }}>
+                  Set your initial virtual delivery balance for paper trades.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            <input
+              type="number"
+              placeholder="5000000"
+              value={paperCapital}
+              onChange={(e) => setPaperCapital(e.target.value)}
+              className="w-full rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--emerald)]"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text)', fontSize: '15px' }}
+            />
+            <button
+              onClick={handleUpdateCapital}
+              disabled={updatingCap}
+              className="w-full rounded-xl py-2.5 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-50 text-center"
+              style={{ background: 'var(--emerald)' }}
+            >
+              {updatingCap ? 'Saving...' : 'Update Capital'}
+            </button>
+            <button
+              type="button"
+              onClick={handleResetPaper}
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-2 text-xs font-semibold transition hover:opacity-80 text-center"
+              style={{ border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)', color: 'var(--loss)' }}
+            >
+              <Trash2 size={14} />
+              Reset Paper Trading Portfolio
+            </button>
+          </div>
+        </section>
+
         {/* ── Storage ─────────────────────────────────────────────────────── */}
         <section aria-label="Storage" style={sectionStyle} className="mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Storage</h2>
@@ -166,7 +269,7 @@ export default function SettingsPage() {
             <div className="flex-1 min-w-0">
               <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Local Cache</h3>
               <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                Portfolio data is stored locally for faster startup. Clearing resets to fresh server data.
+                Portfolio data is cached locally for faster startup.
               </p>
               <div className="mt-3 flex items-center justify-between rounded-xl px-3 py-2" style={{ background: 'var(--input-bg)' }}>
                 <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Last Updated</span>
@@ -191,9 +294,9 @@ export default function SettingsPage() {
           <div className="flex items-start gap-3">
             <Shield size={20} className="mt-1 text-amber-400 flex-shrink-0" />
             <div>
-              <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Logout</h3>
+              <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Session</h3>
               <p className="mt-1 text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
-                End your current session. You'll need to sign in again to access your portfolio.
+                End your active authenticated session.
               </p>
             </div>
           </div>
@@ -204,7 +307,7 @@ export default function SettingsPage() {
             style={{ border: '1px solid rgba(245,158,11,0.3)', background: 'rgba(245,158,11,0.08)', color: '#F59E0B' }}
           >
             <LogOut size={16} />
-            Logout
+            Sign Out
           </button>
         </section>
 
@@ -225,7 +328,7 @@ export default function SettingsPage() {
               ['Build Date', BUILD_DATE],
               ['React', REACT_VERSION],
               ['Vite', VITE_VERSION],
-              ['Powered By', 'Google Apps Script'],
+              ['Backend', import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE' ? 'Supabase (PostgreSQL)' : 'Google Apps Script'],
               ['Hosting', 'GitHub Pages'],
               ['Developer', 'Parth Deshmukh'],
             ].map(([label, value]) => (
@@ -242,9 +345,9 @@ export default function SettingsPage() {
             className="w-[90%] max-w-sm rounded-3xl p-6 shadow-2xl"
             style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
           >
-            <h3 className="text-lg font-bold" style={{ color: 'var(--text)' }}>Logout?</h3>
+            <h3 className="text-lg font-bold" style={{ color: 'var(--text)' }}>Sign Out?</h3>
             <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--text-2)' }}>
-              You will need to sign in again to access your portfolio.
+              You will need to sign in again with your email and password to access your portfolio.
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -255,10 +358,10 @@ export default function SettingsPage() {
                 Cancel
               </button>
               <button
-                onClick={() => logout()}
+                onClick={handleLogoutConfirm}
                 className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
               >
-                Logout
+                Sign Out
               </button>
             </div>
           </div>

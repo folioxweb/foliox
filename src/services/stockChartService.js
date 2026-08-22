@@ -226,3 +226,32 @@ export async function fetchStockCandlesticks(symbol, rangeKey = '1D', basePrice 
   // 3. Fallback to simulated OHLC
   return generateFallbackOHLC(basePrice, rangeKey);
 }
+
+/**
+ * Fetch real-time market price for a symbol
+ */
+export async function fetchLiveStockPrice(symbol) {
+  if (!symbol) return null;
+  const ySymbol = toYahooSymbol(symbol);
+
+  try {
+    const directUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySymbol)}?interval=1d`;
+    const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
+
+    const res = await fetch(corsProxyUrl).catch(() => fetch(directUrl));
+    if (res.ok) {
+      const json = await res.json();
+      const meta = json?.chart?.result?.[0]?.meta;
+      if (meta && meta.regularMarketPrice !== undefined) {
+        return {
+          price: Number(meta.regularMarketPrice),
+          prevClose: Number(meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice)
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('Live price fetch fallback error:', err.message);
+  }
+  return null;
+}
+

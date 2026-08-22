@@ -201,14 +201,25 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
 
   /* ─── LIST VARIANT (Zerodha-style row) ──────────────────────────────── */
   if (variant === 'list') {
-    const Tag = onPress ? 'button' : 'article';
+    const Tag = 'div';
     const listRowStyle = {
       background: 'transparent',
       borderBottom: '1px solid var(--divider)',
       cursor: onPress ? 'pointer' : 'default',
     };
-    const tagProps = Tag === 'button'
-      ? { type: 'button', onClick: onPress, style: listRowStyle }
+    const tagProps = onPress
+      ? {
+          role: 'button',
+          tabIndex: 0,
+          onClick: onPress,
+          onKeyDown: (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onPress();
+            }
+          },
+          style: listRowStyle,
+        }
       : { style: listRowStyle };
 
     // Right-side content changes with viewMode

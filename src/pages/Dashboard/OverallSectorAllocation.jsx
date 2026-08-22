@@ -17,9 +17,14 @@ export default function OverallSectorAllocation({ data, loading }) {
   if (loading && !data) {
     return <section className="mb-5"><Skeleton width="100%" height={200} rounded="xl" /></section>;
   }
-  if (!data) return null;
+  if (!data || !Array.isArray(data) || data.length === 0) return null;
 
-  const sorted = [...data].sort((a, b) => b.allocation - a.allocation);
+  const sorted = [...data].map(d => ({
+    ...d,
+    allocation: Number(d.allocation ?? d.currentAllocation ?? 0),
+    exposure: Number(d.exposure ?? d.total_exposure ?? 0)
+  })).sort((a, b) => b.allocation - a.allocation);
+
   const top5 = sorted.slice(0, 5);
   const othersAllocation = sorted.slice(5).reduce((s, d) => s + d.allocation, 0);
   const othersExposure = sorted.slice(5).reduce((s, d) => s + d.exposure, 0);
@@ -32,9 +37,7 @@ export default function OverallSectorAllocation({ data, loading }) {
       <p className="text-xs font-semibold uppercase tracking-widest mb-3 px-1" style={{ color: 'var(--text-muted)' }}>
         Sector Exposure
       </p>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
         className="rounded-2xl p-5 space-y-4"
         style={{
           background: 'var(--card-bg)',
@@ -70,7 +73,7 @@ export default function OverallSectorAllocation({ data, loading }) {
             </div>
           );
         })}
-      </motion.div>
+      </div>
     </section>
   );
 }

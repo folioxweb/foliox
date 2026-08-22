@@ -1,16 +1,19 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, BarChart2, Briefcase } from 'lucide-react';
+import { Home, BarChart2, Briefcase, Eye, TrendingUp, Flame } from 'lucide-react';
 
 /**
- * BottomNav — fixed bottom navigation bar with three tabs.
+ * BottomNav — fixed bottom navigation bar with six tabs.
  * Uses CSS variables for bg/border/text so it adapts to dark & light mode.
  */
 
 const TABS = [
-  { path: '/',          icon: Home,     label: 'Dashboard' },
-  { path: '/portfolio', icon: Briefcase,label: 'Assets'    },
-  { path: '/analytics', icon: BarChart2, label: 'Analytics' },
+  { path: '/',           icon: Home,       label: 'Dashboard'  },
+  { path: '/portfolio',  icon: Briefcase,  label: 'Assets'     },
+  { path: '/ipo',        icon: Flame,      label: 'IPO'        },
+  { path: '/watchlist',  icon: Eye,        label: 'Watchlist'  },
+  { path: '/paper-trade',icon: TrendingUp, label: 'Paper'      },
+  { path: '/analytics',  icon: BarChart2,  label: 'Analytics'  },
 ];
 
 const BottomNav = () => {

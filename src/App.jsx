@@ -1,38 +1,26 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { PortfolioProvider } from './context/PortfolioContext';
 import { PrivacyProvider } from './context/PrivacyContext';
 import BottomNav from './components/navigation/BottomNav';
-import Skeleton from './components/ui/Skeleton';
 import LoginPage from "./pages/Login/LoginPage";
-import { isLoggedIn } from "./services/apiClient";
-
-// ---------------------------------------------------------------------------
-// Lazy page imports — each page becomes its own bundle chunk
-// ---------------------------------------------------------------------------
-const DashboardPage  = lazy(() => import('./pages/Dashboard/DashboardPage'));
-const AnalyticsPage  = lazy(() => import('./pages/Analytics/AnalyticsPage'));
-const PortfolioPage  = lazy(() => import('./pages/Portfolio/PortfolioPage'));
-const DetailScreen   = lazy(() => import('./pages/Portfolio/DetailScreen'));
-const SettingsPage   = lazy(() => import('./pages/Settings/SettingsPage'));
-
-// ---------------------------------------------------------------------------
-// Page-level Suspense fallback
-// ---------------------------------------------------------------------------
-function PageFallback() {
-  return (
-    <div className="flex flex-col gap-4 px-4 pt-6 pb-24" role="status" aria-label="Loading page…">
-      <Skeleton height={48} rounded="xl" />
-      <Skeleton height={200} rounded="card" />
-      <Skeleton height={120} rounded="card" />
-      <Skeleton height={80} rounded="card" />
-    </div>
-  );
-}
-
 import VoiceAssistant from './components/VoiceAssistant';
+
+// ---------------------------------------------------------------------------
+// Direct page imports for instantaneous tab switching without Suspense flash
+// ---------------------------------------------------------------------------
+import DashboardPage from './pages/Dashboard/DashboardPage';
+import AnalyticsPage from './pages/Analytics/AnalyticsPage';
+import PortfolioPage from './pages/Portfolio/PortfolioPage';
+import WatchlistPage from './pages/Watchlist/WatchlistPage';
+import PaperTradePage from './pages/PaperTrade/PaperTradePage';
+import DetailScreen from './pages/Portfolio/DetailScreen';
+import SettingsPage from './pages/Settings/SettingsPage';
+import IpoListPage from './pages/IPO/IpoListPage';
+import IpoDetailPage from './pages/IPO/IpoDetailPage';
 
 // ---------------------------------------------------------------------------
 // AppShell — wraps every page; renders active page via <Outlet> + <BottomNav>
@@ -50,10 +38,8 @@ function AppShell() {
         }}
       />
 
-      {/* Active page renders here */}
-      <Suspense fallback={<PageFallback />}>
-        <Outlet />
-      </Suspense>
+      {/* Active page renders instantly without Suspense delay */}
+      <Outlet />
 
       {/* BottomNav is always visible outside the page outlet */}
       <BottomNav />
@@ -106,8 +92,8 @@ function isStandaloneMode() {
 // App root
 // ---------------------------------------------------------------------------
 function AppContent() {
+  const { isLoggedIn, loading, signOut } = useAuth();
   const [showBanner, setShowBanner] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(isLoggedIn());
   const navigate = useNavigate();
 
   // Detect standalone mode on mount; show banner if running in browser.
@@ -117,29 +103,10 @@ function AppContent() {
     }
   }, []);
 
-  // Listen for focus/visibility changes to sync login state across tabs
-  useEffect(() => {
-    const syncLoginState = () => {
-      const isLog = isLoggedIn();
-      setLoggedIn(isLog);
-      if (!isLog) {
-        navigate('/', { replace: true });
-      }
-    };
-
-    window.addEventListener("focus", syncLoginState);
-    document.addEventListener("visibilitychange", syncLoginState);
-
-    return () => {
-      window.removeEventListener("focus", syncLoginState);
-      document.removeEventListener("visibilitychange", syncLoginState);
-    };
-  }, [navigate]);
-
-  // Listen for a custom app-wide logout event
+  // Listen for a custom app-wide logout event (for legacy or external calls)
   useEffect(() => {
     const handleLogout = () => {
-      setLoggedIn(false);
+      signOut();
       navigate('/', { replace: true });
     };
 
@@ -148,13 +115,16 @@ function AppContent() {
     return () => {
       window.removeEventListener("app-logout", handleLogout);
     };
-  }, [navigate]);
+  }, [navigate, signOut]);
 
-  if (!loggedIn) {
+  if (loading) {
+    return <PageFallback />;
+  }
+
+  if (!isLoggedIn) {
     return (
       <LoginPage
         onLogin={() => {
-          setLoggedIn(true);
           navigate('/', { replace: true });
         }}
       />
@@ -174,8 +144,12 @@ function AppContent() {
           <Route index element={<DashboardPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="portfolio" element={<PortfolioPage />} />
+          <Route path="watchlist" element={<WatchlistPage />} />
+          <Route path="paper-trade" element={<PaperTradePage />} />
           <Route path="portfolio/holding-detail" element={<DetailScreen />} />
           <Route path="holding-detail" element={<DetailScreen />} />
+          <Route path="ipo" element={<IpoListPage />} />
+          <Route path="ipo/:id" element={<IpoDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
@@ -186,13 +160,15 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <PortfolioProvider>
-        <PrivacyProvider>
-          <BrowserRouter basename="/equity-dashboard/">
-            <AppContent />
-          </BrowserRouter>
-        </PrivacyProvider>
-      </PortfolioProvider>
+      <AuthProvider>
+        <PortfolioProvider>
+          <PrivacyProvider>
+            <BrowserRouter basename="/foliox/">
+              <AppContent />
+            </BrowserRouter>
+          </PrivacyProvider>
+        </PortfolioProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

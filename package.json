@@ -1,5 +1,6 @@
 {
-  "name": "equity-dashboard",
+  "name": "foliox",
+  "homepage": "https://folioxweb.github.io/foliox",
   "private": true,
   "version": "1.0.0",
   "type": "module",

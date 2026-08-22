@@ -54,14 +54,16 @@ const SORT_OPTIONS = [
 ];
 
 const pageVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
+  hidden: { opacity: 1, y: 0 },
+  visible: { opacity: 1, y: 0 },
 };
 
 export default function PortfolioPage() {
   const scrollRef = usePageScrollRestoration('portfolio');
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState(TAB_LABELS[0]);
+  const [activeTab, setActiveTab] = useState(() => {
+    return sessionStorage.getItem('portfolio_active_tab') || TAB_LABELS[0];
+  });
   const [selectedHolding, setSelectedHolding] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [addHoldingOpen, setAddHoldingOpen] = useState(false);
@@ -106,6 +108,7 @@ export default function PortfolioPage() {
 
   function handleTabChange(tab) {
     setActiveTab(tab);
+    sessionStorage.setItem('portfolio_active_tab', tab);
   }
 
   function handleTouchStart(event) {
@@ -266,38 +269,36 @@ export default function PortfolioPage() {
                 className="w-full flex items-center justify-between"
               >
                 {/* Left: Title + Loading */}
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>
+                <div className="flex items-center gap-1.5 min-w-0 shrink">
+                  <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text)' }}>
                     Portfolio
                   </h1>
                   <LoadingIndicator loading={refreshing} />
                 </div>
 
                 {/* Right: Actions */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => setIsSearchOpen(true)}
-                    className="rounded-full p-2 transition-colors hover:opacity-80"
+                    className="rounded-full p-1.5 transition-colors hover:opacity-80"
                     style={{ color: 'var(--text-muted)' }}
                     aria-label="Search holdings"
                   >
-                    <Search size={20} />
+                    <Search size={18} />
                   </button>
 
-                  {/* All News button */}
                   <button
-                    id="portfolio-news-btn"
                     onClick={() => setNewsPageOpen(true)}
-                    className="relative rounded-full p-2 transition-colors hover:opacity-80"
+                    className="rounded-full p-1.5 transition-colors hover:opacity-80"
                     style={{ color: 'var(--text-muted)' }}
-                    aria-label="View market news"
+                    aria-label="Market news"
                   >
-                    <Newspaper size={20} />
+                    <Newspaper size={18} />
                   </button>
 
                   <button
                     onClick={() => setAddHoldingOpen(true)}
-                    className="rounded-full px-3.5 py-1.5 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap"
+                    className="rounded-full px-2.5 py-1 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap"
                     style={{ background: 'var(--emerald)' }}
                   >
                     + Add
@@ -306,11 +307,11 @@ export default function PortfolioPage() {
                   <PrivacyToggle />
                   <button
                     onClick={() => navigate('/settings')}
-                    className="flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
+                    className="flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
                     style={{ border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--text-2)' }}
                     aria-label="Settings"
                   >
-                    <Settings size={20} />
+                    <Settings size={18} />
                   </button>
                 </div>
               </motion.div>

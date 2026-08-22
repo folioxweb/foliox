@@ -17,9 +17,13 @@ export default function StocksAllocation({ data, loading }) {
   if (loading && !data) {
     return <section className="mb-5"><Skeleton width="100%" height={280} rounded="xl" /></section>;
   }
-  if (!data) return null;
+  if (!data || !Array.isArray(data) || data.length === 0) return null;
 
-  const topStocks = data.slice(0, 7);
+  const topStocks = data.slice(0, 7).map(s => ({
+    ...s,
+    allocation: Number(s.allocation ?? s.currentAllocation ?? 0),
+    exposure: Number(s.exposure ?? s.total_exposure ?? 0)
+  }));
   const maxExposure = Math.max(...topStocks.map((s) => s.exposure), 1);
 
   return (
@@ -27,9 +31,7 @@ export default function StocksAllocation({ data, loading }) {
       <p className="text-xs font-semibold uppercase tracking-widest mb-3 px-1" style={{ color: 'var(--text-muted)' }}>
         Top Holdings by Exposure
       </p>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
         className="rounded-2xl overflow-hidden"
         style={{
           background: 'var(--card-bg)',
@@ -81,7 +83,7 @@ export default function StocksAllocation({ data, loading }) {
             </div>
           );
         })}
-      </motion.div>
+      </div>
     </section>
   );
 }

@@ -5,7 +5,7 @@ import pkg from './package.json' with { type: 'json' };
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/equity-dashboard/',
+  base: '/foliox/',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
     __REACT_VERSION__: JSON.stringify(
@@ -45,13 +45,13 @@ export default defineConfig({
         'icons.svg',
       ],
       manifest: {
-        name: 'Equity Dashboard',
-        short_name: 'Equity',
+        name: 'Foliox',
+        short_name: 'Foliox',
         description: 'Premium portfolio management Progressive Web App',
         theme_color: '#0F172A',
         background_color: '#0F172A',
         display: 'standalone',
-        start_url: '/equity-dashboard/',
+        start_url: '/foliox/',
         icons: [
           {
             src: 'equity-dashboard-icon-192.png',
