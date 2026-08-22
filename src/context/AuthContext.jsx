@@ -79,9 +79,13 @@ export function AuthProvider({ children }) {
   };
 
   const signUpWithEmail = async (email, password) => {
+    const baseUrl = `${window.location.origin}${import.meta.env.BASE_URL || '/foliox/'}`;
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
-      password
+      password,
+      options: {
+        emailRedirectTo: baseUrl,
+      },
     });
     if (error) throw error;
     return data;
