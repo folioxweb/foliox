@@ -231,7 +231,7 @@ export default function OverallInvestments({ data, loading }) {
                         className="text-[11px] font-bold tabular-nums"
                         style={{ color: itemIsProfit ? 'var(--profit)' : 'var(--loss)' }}
                       >
-                        {itemIsProfit ? '+' : ''}{formatPercent(item.returnPercentage)}
+                        {formatPercent(item.returnPercentage)}
                       </span>
                     </div>
                   </div>

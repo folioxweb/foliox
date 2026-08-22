@@ -80,11 +80,11 @@ export default function LoginPage({ onLogin }) {
           </div>
 
           <h1 className="text-3xl font-bold text-center" style={{ color: 'var(--text)' }}>
-            Equity Dashboard
+            Foliox
           </h1>
 
           <p className="text-center mt-2 mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-            {isSignUp ? "Create Portfolio Account" : "Sign In to Your Portfolio"}
+            {isSignUp ? "Create Account" : "Wealth Tracker"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">

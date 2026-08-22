@@ -44,8 +44,8 @@ function AppShell() {
       {/* BottomNav is always visible outside the page outlet */}
       <BottomNav />
       
-      {/* Global Voice Assistant Component */}
-      <VoiceAssistant />
+      {/* Global Voice Assistant Component (commented out for now) */}
+      {/* <VoiceAssistant /> */}
     </div>
   );
 }

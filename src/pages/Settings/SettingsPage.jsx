@@ -146,7 +146,8 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* ── Voice Assistant ──────────────────────────────────────────── */}
+        {/* ── Voice Assistant (commented out for now) ──────────────────────────────────────────── */}
+        {/*
         <section aria-label="Voice Assistant" style={sectionStyle} className="mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Voice Assistant</h2>
           <div className="flex items-center justify-between">
@@ -178,8 +179,10 @@ export default function SettingsPage() {
             </label>
           </div>
         </section>
+        */}
 
-        {/* ── Backend Connection ──────────────────────────────────────────── */}
+        {/* ── Backend Connection (commented out for now) ──────────────────────────────────────────── */}
+        {/*
         <section aria-label="Backend Connection" style={sectionStyle} className="mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Backend Connection</h2>
           <div className="flex items-center justify-between">
@@ -216,6 +219,7 @@ export default function SettingsPage() {
             </button>
           </div>
         </section>
+        */}
 
         {/* ── Paper Trading Settings ────────────────────────────────────────── */}
         <section aria-label="Paper Trading Settings" style={sectionStyle} className="mb-4">
@@ -311,7 +315,8 @@ export default function SettingsPage() {
           </button>
         </section>
 
-        {/* ── About ───────────────────────────────────────────────────────── */}
+        {/* ── About / App Info (commented out for now) ───────────────────────────────────────── */}
+        {/*
         <section aria-label="About" style={{ ...sectionStyle, gap: 0 }}>
           <div className="flex items-center gap-3 mb-4">
             <Info size={20} className="text-sky-400 flex-shrink-0" />
@@ -336,6 +341,7 @@ export default function SettingsPage() {
             ))}
           </div>
         </section>
+        */}
       </main>
 
       {/* Logout Dialog */}

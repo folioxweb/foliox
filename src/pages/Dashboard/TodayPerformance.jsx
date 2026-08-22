@@ -78,7 +78,7 @@ export default function TodayPerformance({ data, loading }) {
                 color: accentColor,
               }}
             >
-              {isProfit ? '+' : ''}{formatPercent(gainPercent)}
+              {formatPercent(gainPercent)}
             </span>
           </div>
 
