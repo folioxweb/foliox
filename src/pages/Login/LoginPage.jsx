@@ -4,8 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/apiClient";
 
 export default function LoginPage({ onLogin }) {
-  const { signInWithEmail, signUpWithEmail, resetPasswordForEmail } = useAuth();
-  const [view, setView] = useState('signin'); // 'signin' | 'signup' | 'forgot'
+  const { signInWithEmail, signUpWithEmail, resetPasswordForEmail, authError, setAuthError } = useAuth();
+  const [view, setView] = useState(authError ? 'forgot' : 'signin'); // 'signin' | 'signup' | 'forgot'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +19,7 @@ export default function LoginPage({ onLogin }) {
     e.preventDefault();
     setError("");
     setSuccessMsg("");
+    if (setAuthError) setAuthError(null);
 
     if (isSupabase && !email.trim()) {
       setError("Please enter your email address.");
@@ -192,14 +193,19 @@ export default function LoginPage({ onLogin }) {
               </div>
             )}
 
-            {error && (
-              <div className="text-sm text-center font-semibold py-1.5 px-3 rounded-xl" style={{ color: 'var(--loss)', background: 'rgba(239,68,68,0.08)' }}>
-                {error}
+            {(error || authError) && (
+              <div className="text-sm text-center font-semibold py-2 px-3 rounded-xl space-y-1" style={{ color: 'var(--loss)', background: 'rgba(239,68,68,0.08)' }}>
+                <p>{error || authError}</p>
+                {authError && (
+                  <p className="text-xs font-normal opacity-85">
+                    Reset links expire quickly or become invalid if a newer link was requested.
+                  </p>
+                )}
               </div>
             )}
 
             {successMsg && (
-              <div className="text-sm text-center font-semibold py-1.5 px-3 rounded-xl" style={{ color: 'var(--emerald)', background: 'rgba(16,185,129,0.08)' }}>
+              <div className="text-sm text-center font-semibold py-2 px-3 rounded-xl" style={{ color: 'var(--emerald)', background: 'rgba(16,185,129,0.08)' }}>
                 {successMsg}
               </div>
             )}
