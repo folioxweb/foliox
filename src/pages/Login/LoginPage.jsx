@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Lock, Mail, Eye, EyeOff, ShieldCheck, UserPlus, LogIn } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff, ShieldCheck, UserPlus, LogIn, KeyRound, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/apiClient";
 
 export default function LoginPage({ onLogin }) {
-  const { signInWithEmail, signUpWithEmail } = useAuth();
-  const [isSignUp, setIsSignUp] = useState(false);
+  const { signInWithEmail, signUpWithEmail, resetPasswordForEmail } = useAuth();
+  const [view, setView] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -25,6 +25,19 @@ export default function LoginPage({ onLogin }) {
       return;
     }
 
+    if (view === 'forgot') {
+      try {
+        setLoading(true);
+        await resetPasswordForEmail(email);
+        setSuccessMsg("Reset link sent! Please check your email inbox to reset your password.");
+      } catch (err) {
+        setError(err.message || "Failed to send password reset email.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (!password.trim()) {
       setError("Please enter your password.");
       return;
@@ -34,11 +47,11 @@ export default function LoginPage({ onLogin }) {
       setLoading(true);
 
       if (isSupabase) {
-        if (isSignUp) {
+        if (view === 'signup') {
           const data = await signUpWithEmail(email, password);
           if (data?.user && !data?.session) {
             setSuccessMsg("Account created! Please check your email to confirm your account before logging in.");
-            setIsSignUp(false);
+            setView('signin');
           } else {
             if (onLogin) onLogin();
           }
@@ -52,7 +65,7 @@ export default function LoginPage({ onLogin }) {
         if (onLogin) onLogin();
       }
     } catch (err) {
-      const msg = err.message || (isSignUp ? "Registration failed." : "Invalid email or password.");
+      const msg = err.message || (view === 'signup' ? "Registration failed." : "Invalid email or password.");
       setError(msg);
     } finally {
       setLoading(false);
@@ -72,10 +85,11 @@ export default function LoginPage({ onLogin }) {
         >
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: 'rgba(16,185,129,0.12)' }}>
-              <ShieldCheck
-                size={38}
-                style={{ color: 'var(--emerald)' }}
-              />
+              {view === 'forgot' ? (
+                <KeyRound size={38} style={{ color: 'var(--emerald)' }} />
+              ) : (
+                <ShieldCheck size={38} style={{ color: 'var(--emerald)' }} />
+              )}
             </div>
           </div>
 
@@ -84,11 +98,15 @@ export default function LoginPage({ onLogin }) {
           </h1>
 
           <p className="text-center mt-2 mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
-            {isSignUp ? "Create Account" : "Wealth Tracker"}
+            {view === 'signup'
+              ? "Create Account"
+              : view === 'forgot'
+              ? "Reset Your Password"
+              : "Wealth Tracker"}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Field (for Supabase Auth) */}
+            {/* Email Field */}
             {isSupabase && (
               <div className="relative">
                 <Mail
@@ -114,53 +132,74 @@ export default function LoginPage({ onLogin }) {
               </div>
             )}
 
-            {/* Password Field */}
-            <div className="relative">
-              <Lock
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2"
-                style={{ color: 'var(--text-muted)' }}
-              />
+            {/* Password Field (Only for Sign In & Sign Up) */}
+            {view !== 'forgot' && (
+              <div>
+                <div className="relative">
+                  <Lock
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2"
+                    style={{ color: 'var(--text-muted)' }}
+                  />
 
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder={isSupabase ? (isSignUp ? "Create Password (min 6 chars)" : "Password") : "Password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete={isSignUp ? "new-password" : "current-password"}
-                required
-                className="w-full rounded-full py-3 pl-12 pr-12 outline-none focus:ring-1 focus:ring-[var(--emerald)] transition"
-                style={{
-                  background: 'var(--input-bg)',
-                  border: '1px solid var(--input-border)',
-                  color: 'var(--text)',
-                  fontSize: '16px',
-                }}
-              />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    placeholder={isSupabase ? (view === 'signup' ? "Create Password (min 6 chars)" : "Password") : "Password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete={view === 'signup' ? "new-password" : "current-password"}
+                    required
+                    className="w-full rounded-full py-3 pl-12 pr-12 outline-none focus:ring-1 focus:ring-[var(--emerald)] transition"
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: '1px solid var(--input-border)',
+                      color: 'var(--text)',
+                      fontSize: '16px',
+                    }}
+                  />
 
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 hover:opacity-80"
-                style={{ color: 'var(--text-muted)' }}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff size={18} />
-                ) : (
-                  <Eye size={18} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 hover:opacity-80"
+                    style={{ color: 'var(--text-muted)' }}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff size={18} />
+                    ) : (
+                      <Eye size={18} />
+                    )}
+                  </button>
+                </div>
+
+                {isSupabase && view === 'signin' && (
+                  <div className="text-right mt-1.5 px-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setView('forgot');
+                        setError("");
+                        setSuccessMsg("");
+                      }}
+                      className="text-xs font-semibold hover:underline"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                 )}
-              </button>
-            </div>
+              </div>
+            )}
 
             {error && (
-              <div className="text-sm text-center font-semibold py-1 px-2 rounded-lg" style={{ color: 'var(--loss)', background: 'rgba(239,68,68,0.08)' }}>
+              <div className="text-sm text-center font-semibold py-1.5 px-3 rounded-xl" style={{ color: 'var(--loss)', background: 'rgba(239,68,68,0.08)' }}>
                 {error}
               </div>
             )}
 
             {successMsg && (
-              <div className="text-sm text-center font-semibold py-1 px-2 rounded-lg" style={{ color: 'var(--emerald)', background: 'rgba(16,185,129,0.08)' }}>
+              <div className="text-sm text-center font-semibold py-1.5 px-3 rounded-xl" style={{ color: 'var(--emerald)', background: 'rgba(16,185,129,0.08)' }}>
                 {successMsg}
               </div>
             )}
@@ -176,10 +215,15 @@ export default function LoginPage({ onLogin }) {
             >
               {loading ? (
                 "Processing..."
-              ) : isSignUp ? (
+              ) : view === 'signup' ? (
                 <>
                   <UserPlus size={18} />
                   <span>Create Account</span>
+                </>
+              ) : view === 'forgot' ? (
+                <>
+                  <KeyRound size={18} />
+                  <span>Send Reset Link</span>
                 </>
               ) : (
                 <>
@@ -190,21 +234,36 @@ export default function LoginPage({ onLogin }) {
             </button>
           </form>
 
-          {/* Toggle between Sign In and Sign Up for Supabase */}
+          {/* Bottom navigation links */}
           {isSupabase && (
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError("");
-                  setSuccessMsg("");
-                }}
-                className="text-xs font-semibold hover:underline transition"
-                style={{ color: 'var(--emerald)' }}
-              >
-                {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Create one"}
-              </button>
+            <div className="mt-6 text-center space-y-2">
+              {view === 'forgot' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView('signin');
+                    setError("");
+                    setSuccessMsg("");
+                  }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold hover:underline transition"
+                  style={{ color: 'var(--emerald)' }}
+                >
+                  <ArrowLeft size={14} /> Back to Sign In
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setView(view === 'signup' ? 'signin' : 'signup');
+                    setError("");
+                    setSuccessMsg("");
+                  }}
+                  className="text-xs font-semibold hover:underline transition"
+                  style={{ color: 'var(--emerald)' }}
+                >
+                  {view === 'signup' ? "Already have an account? Sign In" : "Don't have an account? Create one"}
+                </button>
+              )}
             </div>
           )}
         </div>

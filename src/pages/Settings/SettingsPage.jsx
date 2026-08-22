@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck } from 'lucide-react';
+import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { useAuth } from '../../context/AuthContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import { logout } from '../../services/apiClient';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
+import SetNewPasswordModal from '../../components/auth/SetNewPasswordModal';
 
 const APP_VERSION = '4.2.0';
 const BUILD_DATE = __BUILD_DATE__;
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const { mode } = useTheme();
   const scrollRef = usePageScrollRestoration('settings');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [paperCapital, setPaperCapital] = useState('5000000');
   const [updatingCap, setUpdatingCap] = useState(false);
 
@@ -126,6 +128,20 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setShowChangePasswordModal(true)}
+              className="mt-1 flex items-center justify-center gap-2 rounded-xl py-2 px-3 text-xs font-semibold transition hover:opacity-80"
+              style={{
+                background: 'var(--input-bg)',
+                border: '1px solid var(--card-border)',
+                color: 'var(--text)',
+              }}
+            >
+              <KeyRound size={14} className="text-emerald-400" />
+              Change Password
+            </button>
           </section>
         )}
 
@@ -373,6 +389,12 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Change Password Modal */}
+      <SetNewPasswordModal
+        isOpen={showChangePasswordModal}
+        onClose={() => setShowChangePasswordModal(false)}
+      />
     </>
   );
 }

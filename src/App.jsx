@@ -21,6 +21,7 @@ import DetailScreen from './pages/Portfolio/DetailScreen';
 import SettingsPage from './pages/Settings/SettingsPage';
 import IpoListPage from './pages/IPO/IpoListPage';
 import IpoDetailPage from './pages/IPO/IpoDetailPage';
+import SetNewPasswordModal from './components/auth/SetNewPasswordModal';
 
 // ---------------------------------------------------------------------------
 // AppShell — wraps every page; renders active page via <Outlet> + <BottomNav>
@@ -103,7 +104,7 @@ function isStandaloneMode() {
 // App root
 // ---------------------------------------------------------------------------
 function AppContent() {
-  const { isLoggedIn, loading, signOut } = useAuth();
+  const { isLoggedIn, loading, signOut, isPasswordRecovery, setIsPasswordRecovery } = useAuth();
   const [showBanner, setShowBanner] = useState(false);
   const navigate = useNavigate();
 
@@ -134,11 +135,17 @@ function AppContent() {
 
   if (!isLoggedIn) {
     return (
-      <LoginPage
-        onLogin={() => {
-          navigate('/', { replace: true });
-        }}
-      />
+      <>
+        <LoginPage
+          onLogin={() => {
+            navigate('/', { replace: true });
+          }}
+        />
+        <SetNewPasswordModal
+          isOpen={isPasswordRecovery}
+          onClose={() => setIsPasswordRecovery(false)}
+        />
+      </>
     );
   }
 
@@ -148,6 +155,12 @@ function AppContent() {
       {showBanner && (
         <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
       )}
+
+      {/* Recovery Modal if triggered while session exists */}
+      <SetNewPasswordModal
+        isOpen={isPasswordRecovery}
+        onClose={() => setIsPasswordRecovery(false)}
+      />
 
       <Routes>
         {/* AppShell wraps every route so BottomNav is always rendered */}
