@@ -175,6 +175,17 @@ function ConvertToPortfolioModal({ item, isOpen, onClose }) {
   );
 }
 
+function formatAddedDate(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch (_e) {
+    return '';
+  }
+}
+
 export default function WatchlistPage() {
   const navigate = useNavigate();
   const { state, refreshAll, refreshing, removeWatchlistItem } = usePortfolio();
@@ -376,7 +387,7 @@ export default function WatchlistPage() {
                       Return Since Added
                     </span>
                     <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
-                      (Added @ ₹{item.addedPrice ? item.addedPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'})
+                      {item.addedAt ? `Added ${formatAddedDate(item.addedAt)} @ ` : 'Added @ '}₹{item.addedPrice ? item.addedPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                     </span>
                   </div>
                   <div className="text-right">
@@ -431,13 +442,15 @@ export default function WatchlistPage() {
                     >
                       <Trash2 size={16} />
                     </button>
-                    <button
-                      onClick={() => setSelectedConvertItem(item)}
-                      className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white transition hover:opacity-90 flex items-center gap-1.5"
-                      style={{ background: 'var(--emerald)' }}
-                    >
-                      <Plus size={14} /> Add to Portfolio
-                    </button>
+                    {!item.inPortfolio && (
+                      <button
+                        onClick={() => setSelectedConvertItem(item)}
+                        className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white transition hover:opacity-90 flex items-center gap-1.5"
+                        style={{ background: 'var(--emerald)' }}
+                      >
+                        <Plus size={14} /> Add to Portfolio
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

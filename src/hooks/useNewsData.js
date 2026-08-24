@@ -57,12 +57,19 @@ export function useNewsData(mode, symbol, enabled = true) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Clear stale local news whenever symbol or mode changes
+  useEffect(() => {
+    setLocalNews(null);
+    setError(null);
+  }, [cleanSymbol, mode]);
+
   // Fallback to prefetched news if we haven't manually fetched yet
   const prefetched = getPrefetchedNews();
   const activeNews = localNews || prefetched;
 
   const fetchNews = useCallback(async () => {
     if (!enabled) return;
+    if (mode === 'stock' && !cleanSymbol) return;
 
     setLoading(true);
     setError(null);
@@ -83,12 +90,18 @@ export function useNewsData(mode, symbol, enabled = true) {
   }, [mode, cleanSymbol, enabled]);
 
   useEffect(() => {
-    // If we already have prefetched data or local data, skip the automatic fetch on open.
-    // The user can still manually refresh.
-    if (!enabled || (activeNews && activeNews.length > 0)) return;
+    if (!enabled) return;
+    if (mode === 'stock' && !cleanSymbol) return;
+
+    // Check if we have prefetched data specifically for this symbol/mode
+    const pre = getPrefetchedNews();
+    if (pre && pre.length > 0) {
+      setLocalNews(pre);
+      return;
+    }
+
     fetchNews();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, fetchNews]); // activeNews intentionally omitted to prevent re-fetching if data clears
+  }, [enabled, cleanSymbol, mode, fetchNews]);
 
   return { news: activeNews, loading, error, refresh: fetchNews };
 }

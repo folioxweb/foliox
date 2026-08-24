@@ -18,37 +18,97 @@ export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || ''
   }
 });
 
+// Helper to fetch live stock quote for watchlist & paper trades
+async function fetchYahooStockQuote(symbol) {
+  if (!symbol) return null;
+  let s = String(symbol).trim().replace(/^NSE:/i, '').replace(/^BSE:/i, '');
+  if (!s.endsWith('.NS') && !s.endsWith('.BO')) s += '.NS';
+
+  try {
+    const directUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?interval=1d`;
+    const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
+
+    const res = await fetch(corsProxyUrl).catch(() => fetch(directUrl));
+    if (res.ok) {
+      const json = await res.json();
+      const meta = json?.chart?.result?.[0]?.meta;
+      if (meta && meta.regularMarketPrice !== undefined) {
+        return {
+          price: Number(meta.regularMarketPrice),
+          prevClose: Number(meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice)
+        };
+      }
+    }
+  } catch (_err) {}
+  return null;
+}
+
 function normalizeHoldingItem(h, idx, sipMap = new Map()) {
   const sip = sipMap.get(h.asset_id) || {};
   const curVal = Number(h.current_value || 0);
   const invVal = Number(h.invested_value || 0);
   const pnlAbs = Number(h.return_abs ?? h.pnl ?? (curVal - invVal));
-  const pnlPct = Number(h.return_pct ?? (h.pnl_pct != null ? (h.pnl_pct * 100) : null) ?? (invVal > 0 ? (pnlAbs / invVal) * 100 : 0));
+  const pnlPct = Number(h.return_pct ?? (invVal > 0 ? (pnlAbs / invVal) * 100 : 0));
   const dayAbs = Number(h.day_change_abs ?? h.day_change ?? 0);
-  const dayPct = Number(h.day_change_pct != null ? (Math.abs(h.day_change_pct) < 1 && h.day_change_pct !== 0 ? h.day_change_pct * 100 : h.day_change_pct) : 0);
+  const dayPct = Number(h.day_change_pct != null ? h.day_change_pct : (h.prev_close > 0 ? ((h.current_price - h.prev_close) / h.prev_close) * 100 : 0));
+
+  const assetType = h.asset_type === 'STOCK' ? 'stocks' : h.asset_type === 'ETF' ? 'etfs' : h.asset_type === 'MF' ? 'mutualFunds' : h.asset_type === 'FD' ? 'fds' : (h.assetType || 'stocks');
+  const isStock = h.asset_type === 'STOCK' || (!h.asset_type && !h.api_code && !h.fd_rate && h.category !== 'Mutual Fund' && !h.category?.includes('ETF'));
+
+  // FD-specific computed values (Maturity Value, Accrued Interest, Duration)
+  let fdMaturityValue = 0;
+  let fdInterestEarned = pnlAbs;
+  const sDateStr = h.start_date || h.startDate || h.tx_date || '';
+  const mDateStr = h.maturity_date || h.maturityDate || h.fd_maturity_date || '';
+
+  if (assetType === 'fds') {
+    let tenureYears = 1;
+    if (sDateStr && mDateStr) {
+      const sDate = new Date(sDateStr);
+      const mDate = new Date(mDateStr);
+      if (!isNaN(mDate.getTime()) && !isNaN(sDate.getTime()) && mDate > sDate) {
+        tenureYears = (mDate.getTime() - sDate.getTime()) / (365.25 * 24 * 3600 * 1000);
+      }
+    }
+    const principalAmt = invVal || Number(h.current_price || h.avg_price || h.principal || 0);
+    const rateVal = Number(h.fd_rate || h.interestRate || 7.0);
+    // Compound quarterly (standard Indian banking formula)
+    fdMaturityValue = Math.round(principalAmt * Math.pow(1 + (rateVal / 400), 4 * tenureYears));
+    if (isNaN(fdMaturityValue) || fdMaturityValue <= 0) {
+      fdMaturityValue = Math.round(principalAmt * (1 + (rateVal * tenureYears) / 100));
+    }
+    fdInterestEarned = Math.max(0, Math.round(curVal >= invVal ? curVal - invVal : pnlAbs));
+  }
+
+  const finalPrincipal = invVal || Number(h.current_price || h.avg_price || h.principal || 0);
+  const finalCurrentVal = curVal > 0 ? curVal : (assetType === 'fds' ? finalPrincipal + fdInterestEarned : curVal);
 
   return {
     srNo: idx + 1,
     holdingId: h.asset_id,
     assetId: h.asset_id,
+    assetType,
+    asset_type: h.asset_type || (isStock ? 'STOCK' : 'UNKNOWN'),
     symbol: h.symbol,
     name: h.name,
     company: h.name,
     fundName: h.name,
     bankName: h.name,
     isin: h.isin || '',
-    quantity: Number(h.total_quantity || 0),
-    units: Number(h.total_quantity || 0),
-    avgPrice: Number(h.avg_price || 0),
-    buyPrice: Number(h.avg_price || 0),
-    currentPrice: Number(h.current_price || 0),
+    quantity: Number(h.total_quantity || 1),
+    units: Number(h.total_quantity || 1),
+    avgPrice: Number(h.avg_price || finalPrincipal || 0),
+    buyPrice: Number(h.avg_price || finalPrincipal || 0),
+    currentPrice: Number(h.current_price || finalCurrentVal || 0),
     currentNAV: Number(h.current_price || 0),
     prevClose: Number(h.prev_close || h.current_price || 0),
-    invested: invVal,
-    investedValue: invVal,
-    principal: invVal,
-    principalAmount: invVal,
-    currentValue: curVal,
+    invested: finalPrincipal,
+    investedValue: finalPrincipal,
+    principal: finalPrincipal,
+    principalAmount: finalPrincipal,
+    currentValue: finalCurrentVal,
+    maturityValue: fdMaturityValue || Number(h.maturity_value || h.maturityValue || 0),
+    interestEarned: fdInterestEarned,
     overallGainLoss: pnlAbs,
     overallGainLossPercentage: Number(pnlPct.toFixed(2)),
     pnl: pnlAbs,
@@ -58,10 +118,10 @@ function normalizeHoldingItem(h, idx, sipMap = new Map()) {
     todaysGainLossPercentage: Number(dayPct.toFixed(2)),
     dayChange: dayAbs,
     dayChangePercent: Number(dayPct.toFixed(2)),
-    sector: h.sector || '',
+    sector: h.sector || (assetType === 'fds' ? 'Fixed Deposit' : ''),
     confidence: h.confidence || 'Medium',
-    badge: h.trade_type || h.badge || 'Trade',
-    tradeType: h.trade_type || h.badge || 'Trade',
+    badge: isStock ? (h.trade_type || h.badge || 'Trade') : null,
+    tradeType: isStock ? (h.trade_type || h.badge || 'Trade') : null,
     sipEnabled: Boolean(h.sip_enabled ?? sip.is_enabled),
     sipAmount: Number(h.sip_amount ?? sip.sip_amount ?? 0),
     sipDay: Number(h.sip_day ?? sip.sip_day ?? 1),
@@ -69,8 +129,10 @@ function normalizeHoldingItem(h, idx, sipMap = new Map()) {
     fundCode: h.symbol || '',
     mfApiCode: h.api_code || '',
     interestRate: Number(h.fd_rate || 7.0),
-    startDate: h.start_date || h.tx_date || '',
-    maturityDate: h.maturity_date || h.fd_maturity_date || '',
+    startDate: sDateStr,
+    maturityDate: mDateStr,
+    weightage: Number(h.weightage ?? h.portfolio_weight ?? h.portfolioWeight ?? h.allocation ?? 0),
+    portfolioWeight: Number(h.weightage ?? h.portfolio_weight ?? h.portfolioWeight ?? h.allocation ?? 0),
     color: ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899', '#6366F1', '#14B8A6'][idx % 7]
   };
 }
@@ -405,6 +467,22 @@ export const supabaseApi = {
       supabaseApi.getFDs(),
     ]);
 
+    // Calculate total portfolio value across all asset types
+    const allHoldings = [...stocks, ...etfs, ...mutualFunds, ...fds];
+    const totalCurrentVal = allHoldings.reduce(
+      (sum, h) => sum + (Number(h.currentValue) || Number(h.principal) || 0),
+      0
+    );
+
+    if (totalCurrentVal > 0) {
+      allHoldings.forEach((h) => {
+        const val = Number(h.currentValue) || Number(h.principal) || 0;
+        const weight = Number(((val / totalCurrentVal) * 100).toFixed(2));
+        h.weightage = weight;
+        h.portfolioWeight = weight;
+      });
+    }
+
     return { stocks, etfs, mutualFunds, fds };
   },
 
@@ -420,36 +498,12 @@ export const supabaseApi = {
     if (limit) query = query.limit(limit);
 
     const { data, error } = await query;
-    if (!error && data && data.length > 0) {
-      return data.map(n => ({
-        guid: n.guid,
-        title: n.title,
-        source: n.source,
-        category: n.category,
-        publishedAt: n.published_at,
-        link: n.url,
-        url: n.url,
-        isRead: n.is_read,
-        company: n.company_name || n.symbol || '',
-        symbol: n.symbol || ''
-      }));
-    }
-
-    // Direct fallback: query news
-    let fallbackQuery = supabase
-      .from('news')
-      .select('guid, title, source, category, published_at, url, is_read, assets(symbol, name)')
-      .order('published_at', { ascending: false });
-
-    if (limit) fallbackQuery = fallbackQuery.limit(limit);
-
-    const { data: fbData, error: fbErr } = await fallbackQuery;
-    if (fbErr) {
-      console.warn('News fallback error:', fbErr.message);
+    if (error) {
+      console.warn('vw_user_news error:', error.message);
       return [];
     }
 
-    return (fbData || []).map(n => ({
+    return (data || []).map(n => ({
       guid: n.guid,
       title: n.title,
       source: n.source,
@@ -458,8 +512,8 @@ export const supabaseApi = {
       link: n.url,
       url: n.url,
       isRead: n.is_read,
-      company: n.assets?.name || n.assets?.symbol || '',
-      symbol: n.assets?.symbol || ''
+      company: n.company_name || n.symbol || '',
+      symbol: n.symbol || ''
     }));
   },
 
@@ -570,6 +624,39 @@ export const supabaseApi = {
   },
 
   // -----------------------------------------
+  // Master Mutual Fund Schemes Search API
+  // -----------------------------------------
+  searchMfSchemes: async (query) => {
+    if (!query || query.trim().length < 1) return [];
+    const q = query.trim();
+    const isNum = !isNaN(Number(q));
+
+    let dbQuery = supabase
+      .from('mf_schemes')
+      .select('scheme_code, isin, name, amc_name, category, plan, nav, nav_date')
+      .or(`name.ilike.%${q}%,amc_name.ilike.%${q}%,isin.ilike.%${q}%${isNum ? `,scheme_code.eq.${Number(q)}` : ''}`)
+      .order('name', { ascending: true })
+      .limit(20);
+
+    const { data, error } = await dbQuery;
+    if (error) {
+      console.warn('MF schemes search error:', error.message);
+      return [];
+    }
+
+    return (data || []).map((item) => ({
+      schemeCode: String(item.scheme_code),
+      isin: item.isin || '',
+      name: item.name,
+      amcName: item.amc_name || '',
+      category: item.category || '',
+      plan: item.plan || '',
+      nav: item.nav != null ? Number(item.nav) : null,
+      navDate: item.nav_date || ''
+    }));
+  },
+
+  // -----------------------------------------
   // Watchlist APIs
   // -----------------------------------------
   getWatchlist: async () => {
@@ -579,26 +666,55 @@ export const supabaseApi = {
       .order('added_at', { ascending: false });
 
     if (error) throw error;
-    return (data || []).map((item) => ({
-      watchlistId: item.watchlist_id,
-      symbol: item.symbol,
-      isin: item.isin || '',
-      name: item.name,
-      sector: item.sector || '',
-      confidence: item.confidence || 'Medium',
-      badge: item.badge || 'Trade',
-      addedPrice: Number(item.added_price || 0),
-      targetPrice: item.target_price ? Number(item.target_price) : null,
-      notes: item.notes || '',
-      addedAt: item.added_at,
-      currentPrice: Number(item.current_price || item.added_price || 0),
-      prevClose: Number(item.prev_close || item.added_price || 0),
-      returnSinceAddedPct: Number((item.return_since_added_pct || 0).toFixed(2)),
-      returnSinceAddedAbs: Number((item.return_since_added_abs || 0).toFixed(2)),
-      dayChangePercent: Number((item.day_change_pct || 0).toFixed(2)),
-      dayChange: Number((item.day_change_abs || 0).toFixed(2)),
-      inPortfolio: Boolean(item.in_portfolio)
+
+    const items = await Promise.all((data || []).map(async (item) => {
+      let curPrice = Number(item.current_price || 0);
+      let prevClose = Number(item.prev_close || 0);
+      let addedPrice = Number(item.added_price || 0);
+
+      // If price or addedPrice is 0 (e.g. newly watched stock not in portfolio), fetch live quote
+      if (curPrice <= 0 || addedPrice <= 0 || prevClose <= 0) {
+        try {
+          const live = await fetchYahooStockQuote(item.symbol);
+          if (live && live.price > 0) {
+            if (curPrice <= 0) curPrice = live.price;
+            if (prevClose <= 0) prevClose = live.prevClose || live.price;
+            if (addedPrice <= 0) {
+              addedPrice = live.price;
+              supabase.from('watchlist_items').update({ added_price: live.price }).eq('watchlist_id', item.watchlist_id).then();
+            }
+          }
+        } catch (_e) {}
+      }
+
+      const returnSinceAddedAbs = addedPrice > 0 ? (curPrice - addedPrice) : 0;
+      const returnSinceAddedPct = addedPrice > 0 ? ((curPrice - addedPrice) / addedPrice) * 100 : 0;
+      const dayChangeAbs = prevClose > 0 ? (curPrice - prevClose) : 0;
+      const dayChangePct = prevClose > 0 ? ((curPrice - prevClose) / prevClose) * 100 : 0;
+
+      return {
+        watchlistId: item.watchlist_id,
+        symbol: item.symbol,
+        isin: item.isin || '',
+        name: item.name,
+        sector: item.sector || '',
+        confidence: item.confidence || 'Medium',
+        badge: item.badge || 'Trade',
+        addedPrice: Number(addedPrice.toFixed(2)),
+        targetPrice: item.target_price ? Number(item.target_price) : null,
+        notes: item.notes || '',
+        addedAt: item.added_at,
+        currentPrice: Number(curPrice.toFixed(2)),
+        prevClose: Number(prevClose.toFixed(2)),
+        returnSinceAddedPct: Number(returnSinceAddedPct.toFixed(2)),
+        returnSinceAddedAbs: Number(returnSinceAddedAbs.toFixed(2)),
+        dayChangePercent: Number(dayChangePct.toFixed(2)),
+        dayChange: Number(dayChangeAbs.toFixed(2)),
+        inPortfolio: Boolean(item.in_portfolio)
+      };
     }));
+
+    return items;
   },
 
   addWatchlistItem: async (payload) => {
@@ -725,33 +841,87 @@ export const supabaseApi = {
       let targetType = (payload.assetType || payload.asset_type || 'STOCK').toUpperCase();
 
       if (!targetAssetId) {
-        let query = supabase.from('assets').select('asset_id').limit(1);
-        if (targetSymbol) query = query.eq('symbol', targetSymbol);
-        else query = query.eq('name', payload.name);
+        let query = supabase.from('assets').select('asset_id, current_price').limit(1);
+        if (targetType === 'MF' && (payload.mfApiCode || payload.api_code)) {
+          query = query.eq('api_code', payload.mfApiCode || payload.api_code);
+        } else if (payload.isin) {
+          query = query.eq('isin', payload.isin);
+        } else if (targetSymbol && !targetSymbol.startsWith('ASSET_')) {
+          query = query.eq('symbol', targetSymbol);
+        } else if (payload.name) {
+          query = query.eq('name', payload.name);
+        }
 
         const { data: existing } = await query.maybeSingle();
         if (existing) {
           targetAssetId = existing.asset_id;
         } else {
+          let initPrice = Number(payload.currentNav || payload.price || payload.fd_principal || 0);
+          let initPrevClose = initPrice;
+
+          if (targetType === 'MF' && (payload.mfApiCode || payload.api_code)) {
+            try {
+              const code = payload.mfApiCode || payload.api_code;
+              const mfRes = await fetch(`https://api.mfapi.in/mf/${code}`);
+              if (mfRes.ok) {
+                const mfJson = await mfRes.json();
+                if (mfJson?.data?.length > 0) {
+                  const latestNav = parseFloat(mfJson.data[0].nav);
+                  if (!isNaN(latestNav) && latestNav > 0) {
+                    initPrice = latestNav;
+                    if (mfJson.data.length > 1) {
+                      const prevNav = parseFloat(mfJson.data[1].nav);
+                      if (!isNaN(prevNav) && prevNav > 0) {
+                        initPrevClose = prevNav;
+                      } else {
+                        initPrevClose = latestNav;
+                      }
+                    } else {
+                      initPrevClose = latestNav;
+                    }
+                  }
+                }
+              }
+            } catch (_err) {
+              console.warn("Direct MF fetch error in client:", _err);
+            }
+          }
+
           const { data: newAsset, error: createErr } = await supabase.from('assets').insert({
-            symbol: targetSymbol || `ASSET_${Date.now()}`,
+            symbol: targetSymbol || (targetType === 'MF' && (payload.mfApiCode || payload.api_code) ? `AMFI_${payload.mfApiCode || payload.api_code}` : `ASSET_${Date.now()}`),
             name: payload.name ? payload.name.trim() : targetSymbol,
             asset_type: targetType,
             sector: payload.sector || null,
             category: payload.category || null,
             confidence: payload.confidence || 'Medium',
             trade_type: payload.badge || payload.tradeType || 'Trade',
-            current_price: Number(payload.price || payload.fd_principal || 0),
-            prev_close: Number(payload.price || payload.fd_principal || 0),
-            isin: payload.isin || null
+            current_price: initPrice,
+            prev_close: initPrevClose,
+            isin: payload.isin || null,
+            api_code: payload.mfApiCode || payload.api_code || null
           }).select().single();
           if (createErr) throw createErr;
           targetAssetId = newAsset.asset_id;
         }
       }
 
+      // User-specific duplicate holding check for addHolding
+      if (userId && targetAssetId && action === 'addHolding' && targetType !== 'FD') {
+        const { data: userHolding } = await supabase
+          .from('transactions')
+          .select('tx_id')
+          .eq('user_id', userId)
+          .eq('asset_id', targetAssetId)
+          .limit(1)
+          .maybeSingle();
+
+        if (userHolding) {
+          throw new Error(`You already hold this asset. Please use 'Buy More' on your existing holding.`);
+        }
+      }
+
       if (targetType === 'FD' || action === 'addFD') {
-        const principal = Number(payload.fd_principal || payload.price || 0);
+        const principal = Number(payload.fd_principal || payload.principal || payload.price || payload.quantity || 0);
         const rate = Number(payload.fd_rate || payload.interestRate || 0);
         const maturity = payload.fd_maturity_date || payload.maturityDate || null;
         const start = payload.startDate ? new Date(payload.startDate).toISOString() : new Date().toISOString();
@@ -864,9 +1034,10 @@ export const supabaseApi = {
     if (action === 'updateFD') {
       const targetTxId = payload.tx_id || payload.txId;
       const updates = {};
-      if (payload.fd_principal || payload.price) {
-        updates.price = Number(payload.fd_principal || payload.price);
-        updates.fd_principal = Number(payload.fd_principal || payload.price);
+      const principalVal = Number(payload.fd_principal || payload.principal || payload.price || payload.quantity || 0);
+      if (principalVal > 0) {
+        updates.price = principalVal;
+        updates.fd_principal = principalVal;
       }
       if (payload.fd_rate || payload.interestRate) updates.fd_rate = Number(payload.fd_rate || payload.interestRate);
       if (payload.fd_maturity_date || payload.maturityDate) updates.fd_maturity_date = payload.fd_maturity_date || payload.maturityDate;
@@ -884,6 +1055,12 @@ export const supabaseApi = {
     // 5. WATCHLIST ACTIONS
     if (action === 'addWatchlistItem') {
       const sym = payload.symbol ? payload.symbol.trim().toUpperCase() : '';
+      let addedPrice = Number(payload.added_price || payload.addedPrice || payload.price || 0);
+      if (addedPrice <= 0 && sym) {
+        const live = await fetchYahooStockQuote(sym);
+        if (live && live.price > 0) addedPrice = live.price;
+      }
+
       const { data, error } = await supabase.from('watchlist_items').upsert({
         symbol: sym,
         isin: payload.isin || null,
@@ -891,8 +1068,8 @@ export const supabaseApi = {
         sector: payload.sector || null,
         confidence: payload.confidence || 'Medium',
         badge: payload.badge || payload.tradeType || 'Trade',
-        added_price: Number(payload.addedPrice || payload.price || 0),
-        target_price: payload.targetPrice ? Number(payload.targetPrice) : null,
+        added_price: Number(addedPrice.toFixed(2)),
+        target_price: payload.target_price || payload.targetPrice ? Number(payload.target_price || payload.targetPrice) : null,
         notes: payload.notes || null,
         added_at: new Date().toISOString()
       }).select().single();

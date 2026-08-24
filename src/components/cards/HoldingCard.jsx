@@ -189,6 +189,8 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
     boxShadow: 'var(--card-shadow)',
   };
 
+  const isStock = holding.assetType === 'stocks' || holding.asset_type === 'STOCK' || (!holding.assetType && !holding.mfApiCode && !holding.interestRate && !holding.category?.includes('ETF') && holding.category !== 'Mutual Fund');
+
   // Shared interactive props when onPress is provided
   const interactiveProps = onPress
     ? {
@@ -263,7 +265,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
     return (
       <Tag
         {...tagProps}
-        className="w-full flex items-center justify-between gap-3 px-0 py-3 text-left"
+        className="w-full flex items-center justify-between gap-3 px-2 sm:px-3 py-3 text-left transition-colors duration-150 rounded-xl hover:bg-[var(--sheet-btn-bg)]"
         aria-label={ariaLabel}
       >
         {/* Left: name + qty + optional news icon */}
@@ -272,7 +274,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
             <span className="text-sm font-semibold leading-tight truncate text-[var(--text)]">
               {isPrivacyMode ? 'Confidential Asset' : name}
             </span>
-            {renderStockBadge(badge)}
+            {isStock && renderStockBadge(badge)}
             {/* News icon — only rendered when the parent passes onNewsPress */}
             {onNewsPress && (
               <button
@@ -388,7 +390,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
             <span className="text-sm font-bold leading-tight truncate text-[var(--text)]">
               {isPrivacyMode ? 'Confidential Asset' : name}
             </span>
-            {renderStockBadge(badge)}
+            {isStock && renderStockBadge(badge)}
           </div>
           {(sector || category) && (
             <Badge
@@ -398,8 +400,8 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
           )}
         </div>
 
-        {/* Confidence level — top right */}
-        {confidenceLevel && (
+        {/* Confidence level — top right (Stocks & ETFs only) */}
+        {(isStock || holding.assetType === 'etfs' || holding.asset_type === 'ETF') && confidenceLevel && (
           <span
             className="flex-shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full"
             style={{

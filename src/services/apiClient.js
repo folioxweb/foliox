@@ -266,6 +266,7 @@ const realApi = {
 
   // Watchlist & Paper Trading
   searchNseStocks: (query) => supabaseApi.searchNseStocks(query),
+  searchMfSchemes: (query) => supabaseApi.searchMfSchemes(query),
   getWatchlist: () => supabaseApi.getWatchlist(),
   addWatchlistItem: (payload) => supabaseApi.addWatchlistItem(payload),
   removeWatchlistItem: (payload) => supabaseApi.removeWatchlistItem(payload),

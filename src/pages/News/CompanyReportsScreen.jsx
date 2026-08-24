@@ -307,6 +307,11 @@ export default function CompanyReportsScreen({ holding, isOpen, onClose }) {
   }, [isOpen, symbol]);
 
   useEffect(() => {
+    setDocs(null);
+    setError(null);
+  }, [symbol]);
+
+  useEffect(() => {
     fetchDocs();
   }, [fetchDocs]);
 

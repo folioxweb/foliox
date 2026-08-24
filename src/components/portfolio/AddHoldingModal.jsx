@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { usePortfolio } from "../../context/PortfolioContext";
 import Modal from "../ui/Modal";
 import StockSearchInput from "../ui/StockSearchInput";
+import MfSearchInput from "../ui/MfSearchInput";
 import { fetchLiveStockPrice } from "../../services/stockChartService";
-import { RefreshCw, Zap, Sliders } from "lucide-react";
+import { RefreshCw, Zap, Sliders, AlertTriangle, Lock } from "lucide-react";
 
 const ASSET_TYPES = {
   STOCK: "stocks",
@@ -115,13 +116,15 @@ function DateInput({ label, value, onChange, disabled, style: inputStyle }) {
   );
 }
 
-export default function AddHoldingModal({ isOpen, onClose }) {
-  const [assetType, setAssetType] = useState(ASSET_TYPES.STOCK);
-  const { addHolding } = usePortfolio();
+export default function AddHoldingModal({ isOpen, onClose, initialAssetType }) {
+  const [assetType, setAssetType] = useState(initialAssetType || ASSET_TYPES.STOCK);
+  const { state, addHolding } = usePortfolio();
   const [loading, setLoading] = useState(false);
   const [fetchingPrice, setFetchingPrice] = useState(false);
   const [livePrice, setLivePrice] = useState(null);
   const [isMarketPrice, setIsMarketPrice] = useState(true);
+  const [isMasterSelected, setIsMasterSelected] = useState(false);
+  const [masterNav, setMasterNav] = useState(null);
 
   const [symbol, setSymbol] = useState("");
   const [isin, setIsin] = useState("");
@@ -144,19 +147,53 @@ export default function AddHoldingModal({ isOpen, onClose }) {
   const qty = parseFloat(quantity);
   const avg = parseFloat(price);
 
+  // User-specific duplicate holding check across current portfolio state
+  const isDuplicateHolding = useMemo(() => {
+    if (assetType === ASSET_TYPES.STOCK) {
+      if (!symbol && !isin) return false;
+      return (state?.stocks?.data || []).some(
+        (s) =>
+          (symbol && s.symbol?.toUpperCase() === symbol.toUpperCase()) ||
+          (isin && s.isin && s.isin === isin)
+      );
+    }
+    if (assetType === ASSET_TYPES.ETF) {
+      if (!symbol && !isin) return false;
+      return (state?.etfs?.data || []).some(
+        (e) =>
+          (symbol && e.symbol?.toUpperCase() === symbol.toUpperCase()) ||
+          (isin && e.isin && e.isin === isin)
+      );
+    }
+    if (assetType === ASSET_TYPES.MF) {
+      if (!mfApiCode && !isin && !name) return false;
+      return (state?.mutualFunds?.data || []).some(
+        (m) =>
+          (mfApiCode && m.mfApiCode && String(m.mfApiCode) === String(mfApiCode)) ||
+          (isin && m.isin && m.isin === isin) ||
+          (name && m.name && m.name.trim().toLowerCase() === name.trim().toLowerCase())
+      );
+    }
+    return false;
+  }, [assetType, symbol, isin, mfApiCode, name, state]);
+
   const isFormValid =
     assetType === ASSET_TYPES.STOCK
       ? symbol.trim() && name.trim() && qty > 0 && avg > 0 && sector && confidence && badge !== undefined
       : assetType === ASSET_TYPES.ETF
       ? symbol.trim() && name.trim() && qty > 0 && avg > 0 && confidence
       : assetType === ASSET_TYPES.MF
-      ? name.trim() && qty > 0 && avg > 0 && fundCode.trim() && mfApiCode.trim() && confidence &&
+      ? name.trim() && qty > 0 && avg > 0 && mfApiCode.trim() && confidence &&
         (!sipEnabled || (Number(sipAmount) > 0 && Number(sipDay) >= 1 && Number(sipDay) <= 30))
       : name.trim() && qty > 0 && Number(interestRate) > 0 && startDate && maturityDate;
 
   useEffect(() => {
-    if (!isOpen) {
-      setAssetType(ASSET_TYPES.STOCK);
+    if (isOpen) {
+      if (initialAssetType) {
+        setAssetType(initialAssetType);
+      }
+    } else {
+      setAssetType(initialAssetType || ASSET_TYPES.STOCK);
       setSymbol("");
       setName("");
       setIsin("");
@@ -164,6 +201,8 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       setPrice("");
       setLivePrice(null);
       setIsMarketPrice(true);
+      setIsMasterSelected(false);
+      setMasterNav(null);
       setConfidence("Medium");
       setSector("");
       setBadge("Trade");
@@ -176,7 +215,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
       setSipAmount("");
       setSipDay("");
     }
-  }, [isOpen]);
+  }, [isOpen, initialAssetType]);
 
   async function fetchPriceForInstrument(sym) {
     if (!sym) return;
@@ -197,6 +236,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
   }
 
   function handleSelectInstrument(item) {
+    setIsMasterSelected(true);
     setSymbol(item.symbol || "");
     setName(item.name || "");
     setIsin(item.isin || "");
@@ -208,6 +248,20 @@ export default function AddHoldingModal({ isOpen, onClose }) {
     }
     if (item.symbol) {
       fetchPriceForInstrument(item.symbol);
+    }
+  }
+
+  function handleSelectMfScheme(item) {
+    setIsMasterSelected(true);
+    setMasterNav(item.nav || null);
+    setName(item.name || "");
+    setMfApiCode(item.schemeCode || "");
+    setIsin(item.isin || "");
+    if (item.nav != null && Number(item.nav) > 0) {
+      setPrice(String(item.nav));
+    }
+    if (item.category) {
+      setSector(item.category);
     }
   }
 
@@ -233,16 +287,24 @@ export default function AddHoldingModal({ isOpen, onClose }) {
         payload.name = name.trim();
         payload.isin = isin;
         payload.sector = sector || "ETF";
-        payload.badge = "Longterm";
+        payload.badge = null;
       } else if (assetType === ASSET_TYPES.MF) {
         payload.name = name.trim();
-        payload.fundCode = fundCode.trim();
+        payload.symbol = mfApiCode ? `AMFI_${mfApiCode}` : `MF_${Date.now()}`;
         payload.mfApiCode = mfApiCode.trim();
+        payload.isin = isin.trim() || null;
+        payload.sector = sector || "Mutual Fund";
+        payload.badge = null;
+        payload.currentNav = masterNav ? Number(masterNav) : null;
         payload.sipEnabled = sipEnabled;
         payload.sipAmount = sipEnabled ? Number(sipAmount) : 0;
         payload.sipDay = sipEnabled ? Number(sipDay) : 0;
       } else {
+        const principalAmt = Number(quantity);
         payload.name = name.trim();
+        payload.price = principalAmt;
+        payload.fd_principal = principalAmt;
+        payload.principal = principalAmt;
         payload.interestRate = Number(interestRate);
         payload.startDate = startDate;
         payload.maturityDate = maturityDate;
@@ -332,6 +394,19 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           </div>
         )}
 
+        {/* Mutual Fund Master Search */}
+        {assetType === ASSET_TYPES.MF && (
+          <div>
+            <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+              Search Mutual Fund (Master Directory)
+            </label>
+            <MfSearchInput
+              onSelectScheme={handleSelectMfScheme}
+              placeholder="Search mutual fund (e.g. Parag Parikh, Quant Small Cap)..."
+            />
+          </div>
+        )}
+
         {/* Selected Instrument Live Quote Card */}
         {symbol && (assetType === ASSET_TYPES.STOCK || assetType === ASSET_TYPES.ETF) && (
           <div className="p-3 rounded-2xl flex items-center justify-between" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
@@ -388,17 +463,11 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           </div>
         )}
 
-        {/* Manual Symbol & Name for non-stock or custom edits */}
-        {assetType !== ASSET_TYPES.STOCK && assetType !== ASSET_TYPES.ETF && (
+        {/* Bank Name for FD */}
+        {assetType === ASSET_TYPES.FD && (
           <input
             type="text"
-            placeholder={
-              assetType === ASSET_TYPES.MF
-                ? "Fund Name"
-                : assetType === ASSET_TYPES.FD
-                ? "Bank Name"
-                : "Company Name"
-            }
+            placeholder="Bank Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             style={inputStyle}
@@ -455,7 +524,7 @@ export default function AddHoldingModal({ isOpen, onClose }) {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
-                  Buy Price (₹)
+                  {assetType === ASSET_TYPES.MF ? 'Buy NAV (₹)' : 'Buy Price (₹)'}
                 </label>
                 {symbol && (assetType === ASSET_TYPES.STOCK || assetType === ASSET_TYPES.ETF) && (
                   <button
@@ -470,7 +539,13 @@ export default function AddHoldingModal({ isOpen, onClose }) {
               <div className="relative">
                 <input
                   type="number"
-                  placeholder={isMarketPrice ? (fetchingPrice ? "Fetching..." : "Market Price") : "Price per unit"}
+                  placeholder={
+                    assetType === ASSET_TYPES.MF
+                      ? "Buy NAV"
+                      : isMarketPrice
+                      ? (fetchingPrice ? "Fetching..." : "Market Price")
+                      : "Price per unit"
+                  }
                   value={price}
                   onChange={(e) => {
                     setPrice(e.target.value);
@@ -577,24 +652,92 @@ export default function AddHoldingModal({ isOpen, onClose }) {
         {/* MF Specific Fields */}
         {assetType === ASSET_TYPES.MF && (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                Fund Name
+              </label>
               <input
                 type="text"
-                placeholder="Fund Code (e.g. MF:NIFTY_INDEX)"
-                value={fundCode}
-                onChange={(e) => setFundCode(e.target.value)}
-                style={inputStyle}
-                className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-              />
-              <input
-                type="text"
-                placeholder="MFAPI Code (e.g. 120716)"
-                value={mfApiCode}
-                onChange={(e) => setMfApiCode(e.target.value)}
+                placeholder="Fund Name (e.g. Parag Parikh Flexi Cap Fund)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 style={inputStyle}
                 className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
               />
             </div>
+
+            {/* Fund Code (Commented out - legacy AppScript field)
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                  Fund Code (Manual)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. MF:PARAG_PARIKH"
+                  value={fundCode}
+                  onChange={(e) => setFundCode(e.target.value)}
+                  style={inputStyle}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+                />
+              </div>
+            </div>
+            */}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                    AMFI Code
+                  </label>
+                  {isMasterSelected && (
+                    <span className="text-[10px] text-emerald-400 flex items-center gap-0.5">
+                      <Lock size={10} /> Locked
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. 122639"
+                  value={mfApiCode}
+                  onChange={(e) => !isMasterSelected && setMfApiCode(e.target.value)}
+                  readOnly={isMasterSelected}
+                  style={{
+                    ...inputStyle,
+                    opacity: isMasterSelected ? 0.75 : 1,
+                    cursor: isMasterSelected ? 'not-allowed' : 'text'
+                  }}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                    ISIN Code
+                  </label>
+                  {isMasterSelected && isin && (
+                    <span className="text-[10px] text-emerald-400 flex items-center gap-0.5">
+                      <Lock size={10} /> Locked
+                    </span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="e.g. INF879O01019"
+                  value={isin}
+                  onChange={(e) => !isMasterSelected && setIsin(e.target.value)}
+                  readOnly={isMasterSelected && !!isin}
+                  style={{
+                    ...inputStyle,
+                    opacity: isMasterSelected && isin ? 0.75 : 1,
+                    cursor: isMasterSelected && isin ? 'not-allowed' : 'text'
+                  }}
+                  className="w-full focus:ring-1 focus:ring-[var(--emerald)] font-mono text-xs"
+                />
+              </div>
+            </div>
+
             <div className="flex flex-col gap-3 p-3 rounded-2xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
               <div className="flex items-center justify-between px-1">
                 <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>SIP Enabled</span>
@@ -656,6 +799,19 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           </div>
         )}
 
+        {/* Duplicate Holding Alert */}
+        {isDuplicateHolding && (
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 animate-fade-in">
+            <AlertTriangle size={18} className="text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-amber-300">Asset already in your portfolio</p>
+              <p className="text-[11px] text-amber-200/80 mt-0.5 leading-relaxed">
+                You already hold <strong>{name || symbol}</strong> in your portfolio. Please use <strong>Manage Position ➔ Buy More</strong> on your existing holding card to add more units.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Action buttons */}
         <div className="mt-6 flex gap-3 pt-2">
           <button
@@ -672,13 +828,13 @@ export default function AddHoldingModal({ isOpen, onClose }) {
           </button>
           <button
             type="button"
-            disabled={loading || !isFormValid}
+            disabled={loading || !isFormValid || isDuplicateHolding}
             onClick={handleSave}
             className="flex-1 rounded-full py-3 font-bold transition disabled:cursor-not-allowed"
             style={{
-              background: isFormValid ? 'var(--emerald)' : 'var(--divider)',
-              color: isFormValid ? '#ffffff' : 'var(--text-muted)',
-              boxShadow: isFormValid ? '0 4px 12px rgba(16,185,129,0.2)' : 'none',
+              background: isFormValid && !isDuplicateHolding ? 'var(--emerald)' : 'var(--divider)',
+              color: isFormValid && !isDuplicateHolding ? '#ffffff' : 'var(--text-muted)',
+              boxShadow: isFormValid && !isDuplicateHolding ? '0 4px 12px rgba(16,185,129,0.2)' : 'none',
             }}
           >
             {loading ? "Adding..." : "Add Holding"}

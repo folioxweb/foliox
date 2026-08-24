@@ -255,14 +255,16 @@ export default function NewsPage({ isOpen, onClose }) {
               )}
 
               {/* Empty state */}
-              {!loading && !error && news && news.length === 0 && (
-                <div className="flex flex-col items-center gap-4 px-8 py-16 text-center">
-                  <Inbox size={40} style={{ color: 'var(--text-muted)', opacity: 0.5 }} />
-                  <p className="text-base font-semibold" style={{ color: 'var(--text)' }}>
-                    No news for your portfolio
-                  </p>
-                  <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Articles and updates will appear here for stocks in your active holdings.
+              {!loading && !error && (!news || news.length === 0) && (
+                <div className="flex flex-col items-center gap-3 px-8 py-16 text-center">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center mb-1" style={{ background: 'rgba(16,185,129,0.12)' }}>
+                    <Newspaper size={26} className="text-emerald-400" />
+                  </div>
+                  <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>
+                    No News for Your Portfolio
+                  </h3>
+                  <p className="text-xs leading-relaxed max-w-xs" style={{ color: 'var(--text-muted)' }}>
+                    Add stocks to get news updates. Real-time news and corporate announcements will appear here for your holdings.
                   </p>
                 </div>
               )}

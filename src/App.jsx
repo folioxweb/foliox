@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { PortfolioProvider } from './context/PortfolioContext';
 import { PrivacyProvider } from './context/PrivacyContext';
 import BottomNav from './components/navigation/BottomNav';
+import SidebarNav from './components/navigation/SidebarNav';
 import LoginPage from "./pages/Login/LoginPage";
 import VoiceAssistant from './components/VoiceAssistant';
 
@@ -22,16 +23,17 @@ import SettingsPage from './pages/Settings/SettingsPage';
 import IpoListPage from './pages/IPO/IpoListPage';
 import IpoDetailPage from './pages/IPO/IpoDetailPage';
 import SetNewPasswordModal from './components/auth/SetNewPasswordModal';
+import AppGuideModal from './components/guide/AppGuideModal';
 
 // ---------------------------------------------------------------------------
-// AppShell — wraps every page; renders active page via <Outlet> + <BottomNav>
+// AppShell — wraps every page; renders Sidebar on Desktop & BottomNav on Mobile
 // ---------------------------------------------------------------------------
 function AppShell() {
   return (
-    <div className="relative flex h-[100svh] flex-col overflow-hidden bg-[var(--bg)]">
-      {/* Top safe-area status bar overlay */}
+    <div className="relative flex h-[100svh] flex-col lg:flex-row overflow-hidden bg-[var(--bg)]">
+      {/* Top safe-area status bar overlay (Mobile only) */}
       <div
-        className="fixed top-0 left-0 right-0 z-50 pointer-events-none"
+        className="fixed top-0 left-0 right-0 z-50 pointer-events-none lg:hidden"
         style={{
           height: 'env(safe-area-inset-top, 0px)',
           background: 'var(--header-bg)',
@@ -39,11 +41,18 @@ function AppShell() {
         }}
       />
 
-      {/* Active page renders instantly without Suspense delay */}
-      <Outlet />
+      {/* Desktop Sidebar Navigation (Visible on lg: >= 1024px) */}
+      <SidebarNav />
 
-      {/* BottomNav is always visible outside the page outlet */}
-      <BottomNav />
+      {/* Main Page Outlet Container */}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        <Outlet />
+      </div>
+
+      {/* BottomNav is visible only on Mobile/Tablet (< 1024px) */}
+      <div className="lg:hidden">
+        <BottomNav />
+      </div>
       
       {/* Global Voice Assistant Component (commented out for now) */}
       {/* <VoiceAssistant /> */}
@@ -106,6 +115,7 @@ function isStandaloneMode() {
 function AppContent() {
   const { isLoggedIn, loading, signOut, isPasswordRecovery, setIsPasswordRecovery } = useAuth();
   const [showBanner, setShowBanner] = useState(false);
+  const [showAutoGuide, setShowAutoGuide] = useState(false);
   const navigate = useNavigate();
 
   // Detect standalone mode on mount; show banner if running in browser.
@@ -114,6 +124,19 @@ function AppContent() {
       setShowBanner(true);
     }
   }, []);
+
+  // Check if first-time user guide should be shown
+  useEffect(() => {
+    if (isLoggedIn && !loading) {
+      const hasSeenGuide = localStorage.getItem('foliox_guide_seen');
+      if (!hasSeenGuide) {
+        const timer = setTimeout(() => {
+          setShowAutoGuide(true);
+        }, 500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isLoggedIn, loading]);
 
   // Listen for a custom app-wide logout event (for legacy or external calls)
   useEffect(() => {
@@ -155,6 +178,12 @@ function AppContent() {
       {showBanner && (
         <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
       )}
+
+      {/* First-login Feature Tour Guide Modal */}
+      <AppGuideModal
+        isOpen={showAutoGuide}
+        onClose={() => setShowAutoGuide(false)}
+      />
 
       {/* Recovery Modal if triggered while session exists */}
       <SetNewPasswordModal

@@ -181,18 +181,21 @@ export default function DetailScreen({ holding: propHolding }) {
     dayChangePercent: rawDayChangePercent,
   } = holding;
 
+  const isFD = holding.assetType === "fds";
+  const isMF = holding.assetType === "mutualFunds" || holding.assetType === "mutual_funds" || holding.category === "Mutual Fund";
+  const isStockOrETF = !isFD && !isMF;
+  const isStock = !isFD && !isMF && holding.assetType !== "etfs" && holding.asset_type !== "ETF" && holding.category !== "ETF";
+
   const derivedPrice = (currentValue && quantity && quantity > 0) ? (currentValue / quantity) : undefined;
-  const todayPrice = currentNAV ?? rawCurrentPrice ?? derivedPrice ?? 0;
+  const todayPrice = isFD
+    ? (currentValue || holding.principal || 0)
+    : (currentNAV ?? rawCurrentPrice ?? derivedPrice ?? 0);
 
   const dayChangeVal = rawDayChange != null ? Number(rawDayChange) : 0;
   const dayChangePct = rawDayChangePercent != null ? Number(rawDayChangePercent) : 0;
   const isDayProfit = dayChangeVal >= 0;
   const dayPnlColor = isDayProfit ? 'var(--profit)' : 'var(--loss)';
   const dayPnlBg = isDayProfit ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)';
-
-  const isFD = holding.assetType === "fds";
-  const isMF = holding.assetType === "mutualFunds" || holding.assetType === "mutual_funds" || holding.category === "Mutual Fund";
-  const isStockOrETF = !isFD && !isMF;
 
   const returnValue = isFD
     ? holding.interestEarned
@@ -216,7 +219,7 @@ export default function DetailScreen({ holding: propHolding }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -12 }}
       transition={{ duration: 0.25, ease: 'easeOut' }}
-      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--bg)] px-3 sm:px-4 pb-28 text-[var(--text)] font-sans"
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto bg-[var(--bg)] px-3 sm:px-4 lg:px-8 pb-28 lg:pb-12 text-[var(--text)] font-sans max-w-7xl mx-auto w-full"
       style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top, 24px))' }}
     >
       {/* ── Top Header Navigation Bar (Notch Safe Padding) ────────────────────── */}
@@ -243,7 +246,7 @@ export default function DetailScreen({ holding: propHolding }) {
           <h1 className="text-xl sm:text-2xl font-extrabold leading-tight text-[var(--text)] font-sans">
             {isPrivacyMode ? 'Confidential Asset' : name}
           </h1>
-          {renderStockBadge(badge)}
+          {isStock && renderStockBadge(badge)}
         </div>
 
         {/* Today's Market Price (Clean App Typography) */}
@@ -297,20 +300,20 @@ export default function DetailScreen({ holding: propHolding }) {
           {isFD ? (
             <>
               <FundamentalsRow
-                left={{ label: 'Principal', value: isPrivacyMode ? '₹***' : formatCurrency(holding.principal) }}
-                right={{ label: 'Current Value', value: isPrivacyMode ? '₹***' : formatCurrency(holding.currentValue) }}
+                left={{ label: 'Principal', value: isPrivacyMode ? '₹***' : formatCurrency(holding.principal || holding.investedValue || 0) }}
+                right={{ label: 'Current Value', value: isPrivacyMode ? '₹***' : formatCurrency(holding.currentValue || holding.principal || 0) }}
               />
               <FundamentalsRow
-                left={{ label: 'Interest Earned', value: isPrivacyMode ? '₹***' : formatCurrency(holding.interestEarned), style: { color: pnlColor } }}
-                right={{ label: 'Interest Rate', value: `${holding.interestRate}%` }}
+                left={{ label: 'Interest Earned', value: isPrivacyMode ? '₹***' : formatCurrency(holding.interestEarned || 0), style: { color: pnlColor } }}
+                right={{ label: 'Interest Rate', value: `${holding.interestRate || 0}%` }}
               />
               <FundamentalsRow
-                left={{ label: 'Maturity Value', value: isPrivacyMode ? '₹***' : formatCurrency(holding.maturityValue) }}
-                right={{ label: 'Allocation', value: `${holding.weightage.toFixed(2)}%` }}
+                left={{ label: 'Maturity Value', value: isPrivacyMode ? '₹***' : formatCurrency(holding.maturityValue || 0) }}
+                right={{ label: 'Allocation', value: `${Number(holding.weightage ?? holding.portfolioWeight ?? 0).toFixed(2)}%` }}
               />
               <FundamentalsRow
-                left={{ label: 'Start Date', value: new Date(holding.startDate).toLocaleDateString('en-IN') }}
-                right={{ label: 'Maturity Date', value: new Date(holding.maturityDate).toLocaleDateString('en-IN') }}
+                left={{ label: 'Start Date', value: holding.startDate ? new Date(holding.startDate).toLocaleDateString('en-IN') : '—' }}
+                right={{ label: 'Maturity Date', value: holding.maturityDate ? new Date(holding.maturityDate).toLocaleDateString('en-IN') : '—' }}
               />
             </>
           ) : (
@@ -322,17 +325,13 @@ export default function DetailScreen({ holding: propHolding }) {
                     ? (isPrivacyMode ? '₹***' : formatCurrency(todayPrice))
                     : '—',
                 }}
-                right={
-                  dayChangeVal !== 0 || dayChangePct !== 0
-                    ? {
-                        label: 'Day Change',
-                        value: isPrivacyMode
-                          ? '₹***'
-                          : `${isDayProfit ? '+' : ''}${dayChangeVal.toFixed(2)} (${dayChangePct.toFixed(2)}%)`,
-                        style: { color: dayPnlColor },
-                      }
-                    : { label: 'Return %', value: isPrivacyMode ? '***%' : formatPercent(returnPct), style: { color: pnlColor } }
-                }
+                right={{
+                  label: 'Day Change',
+                  value: isPrivacyMode
+                    ? '₹***'
+                    : `${isDayProfit && dayChangeVal > 0 ? '+' : ''}${dayChangeVal.toFixed(2)} (${isDayProfit && dayChangePct > 0 ? '+' : ''}${dayChangePct.toFixed(2)}%)`,
+                  style: { color: dayPnlColor },
+                }}
               />
 
               <FundamentalsRow
@@ -364,31 +363,40 @@ export default function DetailScreen({ holding: propHolding }) {
                 }}
               />
 
-              <FundamentalsRow
-                left={{
-                  label: 'Conviction',
-                  value: confidenceLevel
-                    ? (
-                        <span
-                          style={{
-                            color: confidenceBadgeColor,
-                            background: `${confidenceBadgeColor}18`,
-                            border: `1px solid ${confidenceBadgeColor}40`,
-                            borderRadius: '9999px',
-                            padding: '1px 9px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            display: 'inline-block',
-                            lineHeight: '18px',
-                          }}
-                        >
-                          {confidenceLevel}
-                        </span>
-                      )
-                    : '—',
-                }}
-                right={labelStr ? { label: 'Sector', value: labelStr } : undefined}
-              />
+              {isStockOrETF ? (
+                <FundamentalsRow
+                  left={{
+                    label: 'Conviction',
+                    value: confidenceLevel
+                      ? (
+                          <span
+                            style={{
+                              color: confidenceBadgeColor,
+                              background: `${confidenceBadgeColor}18`,
+                              border: `1px solid ${confidenceBadgeColor}40`,
+                              borderRadius: '9999px',
+                              padding: '1px 9px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              display: 'inline-block',
+                              lineHeight: '18px',
+                            }}
+                          >
+                            {confidenceLevel}
+                          </span>
+                        )
+                      : '—',
+                  }}
+                  right={labelStr ? { label: 'Sector', value: labelStr } : undefined}
+                />
+              ) : (
+                <FundamentalsRow
+                  left={{
+                    label: 'Sector',
+                    value: labelStr || '—',
+                  }}
+                />
+              )}
               
               {holding.assetType === 'mutualFunds' && holding.sipEnabled && (
                 <FundamentalsRow

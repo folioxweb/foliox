@@ -235,10 +235,9 @@ export default function PortfolioPage() {
   return (
     <motion.main
       ref={scrollRef}
-      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto"
+      className="relative flex min-h-0 flex-1 flex-col overflow-y-auto pb-24 lg:pb-8"
       style={{
         background: 'var(--bg)',
-        paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom))',
       }}
       variants={pageVariants}
       initial="hidden"
@@ -250,128 +249,134 @@ export default function PortfolioPage() {
     >
       {/* ── Title row — scrolls away on scroll-up ────────────────────────── */}
       <div
-        className="px-4"
+        className="w-full"
         style={{
-          paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
-          paddingBottom: '0.5rem',
           background: 'var(--header-bg)',
         }}
       >
-        <div className="flex items-center justify-between h-10 relative">
-          <AnimatePresence mode="wait">
-            {!isSearchOpen ? (
-              <motion.div
-                key="header-normal"
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -4 }}
-                transition={{ duration: 0.15 }}
-                className="w-full flex items-center justify-between"
-              >
-                {/* Left: Title + Loading */}
-                <div className="flex items-center gap-1.5 min-w-0 shrink">
-                  <h1 className="text-xl font-bold truncate" style={{ color: 'var(--text)' }}>
-                    Portfolio
-                  </h1>
-                  <LoadingIndicator loading={refreshing} />
-                </div>
-
-                {/* Right: Actions */}
-                <div className="flex items-center gap-1 shrink-0">
-                  <button
-                    onClick={() => setIsSearchOpen(true)}
-                    className="rounded-full p-1.5 transition-colors hover:opacity-80"
-                    style={{ color: 'var(--text-muted)' }}
-                    aria-label="Search holdings"
-                  >
-                    <Search size={18} />
-                  </button>
-
-                  <button
-                    onClick={() => setNewsPageOpen(true)}
-                    className="rounded-full p-1.5 transition-colors hover:opacity-80"
-                    style={{ color: 'var(--text-muted)' }}
-                    aria-label="Market news"
-                  >
-                    <Newspaper size={18} />
-                  </button>
-
-                  <button
-                    onClick={() => setAddHoldingOpen(true)}
-                    className="rounded-full px-2.5 py-1 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap"
-                    style={{ background: 'var(--emerald)' }}
-                  >
-                    + Add
-                  </button>
-                  <RefreshButton onRefresh={refreshAll} />
-                  <PrivacyToggle />
-                  <button
-                    onClick={() => navigate('/settings')}
-                    className="flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
-                    style={{ border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--text-2)' }}
-                    aria-label="Settings"
-                  >
-                    <Settings size={18} />
-                  </button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="header-search"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.15 }}
-                className="w-full flex items-center justify-between gap-3"
-              >
-                {/* Search Input Container */}
-                <div className="relative flex-1 flex items-center">
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={`Search ${activeTab}...`}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full rounded-xl py-1.5 pl-3 pr-8 text-base focus:outline-none focus:ring-1 focus:ring-[var(--emerald)]"
-                    style={{
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--input-border)',
-                      color: 'var(--text)',
-                      fontSize: '16px', // Prevents iOS Safari auto-zoom
-                    }}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 hover:opacity-80"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <X size={16} />
-                    </button>
-                  )}
-                </div>
-
-                {/* Cancel Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setIsSearchOpen(false);
-                  }}
-                  className="text-sm font-semibold transition hover:opacity-80"
-                  style={{ color: 'var(--emerald)' }}
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          style={{
+            paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
+            paddingBottom: '0.5rem',
+          }}
+        >
+          <div className="flex items-center justify-between h-10 relative">
+            <AnimatePresence mode="wait">
+              {!isSearchOpen ? (
+                <motion.div
+                  key="header-normal"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-full flex items-center justify-between"
                 >
-                  Cancel
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  {/* Left: Title + Loading */}
+                  <div className="flex items-center gap-2 min-w-0 shrink">
+                    <h1 className="text-xl sm:text-2xl font-bold tracking-tight truncate" style={{ color: 'var(--text)' }}>
+                      Portfolio
+                    </h1>
+                    <LoadingIndicator loading={refreshing} />
+                  </div>
+
+                  {/* Right: Actions */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setIsSearchOpen(true)}
+                      className="rounded-full p-1.5 transition-colors hover:opacity-80"
+                      style={{ color: 'var(--text-muted)' }}
+                      aria-label="Search holdings"
+                    >
+                      <Search size={18} />
+                    </button>
+
+                    <button
+                      onClick={() => setNewsPageOpen(true)}
+                      className="rounded-full p-1.5 transition-colors hover:opacity-80"
+                      style={{ color: 'var(--text-muted)' }}
+                      aria-label="Market news"
+                    >
+                      <Newspaper size={18} />
+                    </button>
+
+                    <button
+                      onClick={() => setAddHoldingOpen(true)}
+                      className="rounded-full px-3 py-1 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap shadow-sm"
+                      style={{ background: 'var(--emerald)' }}
+                    >
+                      + Add
+                    </button>
+                    <RefreshButton onRefresh={refreshAll} />
+                    <PrivacyToggle />
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
+                      style={{ border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--text-2)' }}
+                      aria-label="Settings"
+                    >
+                      <Settings size={18} />
+                    </button>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="header-search"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.15 }}
+                  className="w-full flex items-center justify-between gap-3"
+                >
+                  {/* Search Input Container */}
+                  <div className="relative flex-1 flex items-center">
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder={`Search ${activeTab}...`}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full rounded-xl py-1.5 pl-3 pr-8 text-base focus:outline-none focus:ring-1 focus:ring-[var(--emerald)]"
+                      style={{
+                        background: 'var(--input-bg)',
+                        border: '1px solid var(--input-border)',
+                        color: 'var(--text)',
+                        fontSize: '16px', // Prevents iOS Safari auto-zoom
+                      }}
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2.5 hover:opacity-80"
+                        style={{ color: 'var(--text-muted)' }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Cancel Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setIsSearchOpen(false);
+                    }}
+                    className="text-sm font-semibold transition hover:opacity-80"
+                    style={{ color: 'var(--emerald)' }}
+                  >
+                    Cancel
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
       {/* ── TabBar — sticks at top once title row scrolls away ───────────── */}
       <div
-        className="z-20"
+        className="z-20 w-full"
         style={{
           position: 'sticky',
           top: 'env(safe-area-inset-top)',
@@ -379,15 +384,17 @@ export default function PortfolioPage() {
           borderBottom: '1px solid var(--header-border)',
         }}
       >
-        <TabBar
-          tabs={TAB_LABELS}
-          activeTab={activeTab}
-          onChange={handleTabChange}
-        />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <TabBar
+            tabs={TAB_LABELS}
+            activeTab={activeTab}
+            onChange={handleTabChange}
+          />
+        </div>
       </div>
 
       {/* ── Holdings list ────────────────────────────────────────────────── */}
-      <section className="flex-1 px-4 pt-2" aria-label={`${activeTab} holdings`}>
+      <section className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2" aria-label={`${activeTab} holdings`}>
         {/* View mode toggle row — matches Zerodha Sort / <> toggle */}
         <div className="flex items-center justify-between mb-1 pb-2" style={{ borderBottom: '1px solid var(--divider)' }}>
           {/* Sort button — tapping opens the sort/filter bottom sheet */}
@@ -563,6 +570,7 @@ export default function PortfolioPage() {
       <AddHoldingModal
         isOpen={addHoldingOpen}
         onClose={() => setAddHoldingOpen(false)}
+        initialAssetType={TAB_CONFIG.find((t) => t.label === activeTab)?.stateKey || 'stocks'}
       />
 
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound } from 'lucide-react';
+import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { useAuth } from '../../context/AuthContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -7,6 +7,7 @@ import { logout } from '../../services/apiClient';
 import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
 import SetNewPasswordModal from '../../components/auth/SetNewPasswordModal';
+import AppGuideModal from '../../components/guide/AppGuideModal';
 
 const APP_VERSION = '4.2.0';
 const BUILD_DATE = __BUILD_DATE__;
@@ -28,6 +29,7 @@ export default function SettingsPage() {
   const scrollRef = usePageScrollRestoration('settings');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
   const [paperCapital, setPaperCapital] = useState('5000000');
   const [updatingCap, setUpdatingCap] = useState(false);
 
@@ -160,6 +162,35 @@ export default function SettingsPage() {
             </div>
             <ThemeToggle />
           </div>
+        </section>
+
+        {/* ── Help & App Tour ─────────────────────────────────────────────── */}
+        <section aria-label="App Guide" style={sectionStyle} className="mb-4">
+          <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Help & Overview</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Sparkles size={20} className="text-amber-400" />
+              <div>
+                <h3 className="text-base font-semibold" style={{ color: 'var(--text)' }}>Feature Tour & Guide</h3>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                  Explore everything you can do with Foliox
+                </p>
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            className="mt-1 flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition hover:opacity-90"
+            style={{
+              background: 'var(--input-bg)',
+              border: '1px solid var(--card-border)',
+              color: 'var(--text)',
+            }}
+          >
+            <Compass size={14} className="text-emerald-400" />
+            Open Feature Tour
+          </button>
         </section>
 
         {/* ── Voice Assistant (commented out for now) ──────────────────────────────────────────── */}
@@ -394,6 +425,12 @@ export default function SettingsPage() {
       <SetNewPasswordModal
         isOpen={showChangePasswordModal}
         onClose={() => setShowChangePasswordModal(false)}
+      />
+
+      {/* App Feature Tour & Guide Modal */}
+      <AppGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
       />
     </>
   );

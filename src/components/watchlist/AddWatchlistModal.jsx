@@ -69,6 +69,16 @@ export default function AddWatchlistModal({ isOpen, onClose }) {
   async function handleSave() {
     try {
       setLoading(true);
+      let priceToSave = livePrice;
+      if (!priceToSave || priceToSave <= 0) {
+        try {
+          const quote = await fetchLiveStockPrice(selectedStock.symbol);
+          if (quote && quote.price) {
+            priceToSave = quote.price;
+          }
+        } catch (_e) {}
+      }
+
       await addWatchlistItem({
         symbol: selectedStock.symbol,
         isin: selectedStock.isin,
@@ -76,8 +86,11 @@ export default function AddWatchlistModal({ isOpen, onClose }) {
         sector,
         confidence,
         badge,
-        added_price: livePrice || 0,
+        added_price: priceToSave || 0,
+        addedPrice: priceToSave || 0,
+        price: priceToSave || 0,
         target_price: targetPrice ? Number(targetPrice) : null,
+        targetPrice: targetPrice ? Number(targetPrice) : null,
         notes: notes.trim()
       });
       onClose();

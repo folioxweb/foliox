@@ -64,63 +64,79 @@ export default function DashboardPage() {
     >
       {/* Sticky Header */}
       <div
-        className="sticky top-0 z-20 px-4 flex items-center justify-between"
+        className="sticky top-0 z-20"
         style={{
-          paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
-          paddingBottom: '0.75rem',
           background: 'var(--header-bg)',
           borderBottom: '1px solid var(--header-border)',
         }}
       >
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>Dashboard</h1>
-          <LoadingIndicator loading={refreshing} />
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Market News button */}
-          <button
-            id="dashboard-news-btn"
-            onClick={() => setNewsPageOpen(true)}
-            className="relative rounded-full p-2 transition-colors hover:opacity-80"
-            style={{ color: 'var(--text-muted)' }}
-            aria-label="View market news"
-          >
-            <Newspaper size={20} />
-          </button>
-          <RefreshButton onRefresh={refreshAll} />
-          <PrivacyToggle />
-          <button
-            type="button"
-            onClick={() => navigate('/settings')}
-            className="flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
-            style={{
-              border: '1px solid var(--card-border)',
-              background: 'var(--card-bg)',
-              color: 'var(--text-2)',
-            }}
-            aria-label="Settings"
-          >
-            <Settings size={18} />
-          </button>
+        <div
+          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between"
+          style={{
+            paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
+            paddingBottom: '0.75rem',
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+              Dashboard
+            </h1>
+            <LoadingIndicator loading={refreshing} />
+          </div>
+          <div className="flex items-center gap-2">
+            {/* Market News button */}
+            <button
+              id="dashboard-news-btn"
+              onClick={() => setNewsPageOpen(true)}
+              className="relative rounded-full p-2 transition-colors hover:opacity-80"
+              style={{ color: 'var(--text-muted)' }}
+              aria-label="View market news"
+            >
+              <Newspaper size={20} />
+            </button>
+            <RefreshButton onRefresh={refreshAll} />
+            <PrivacyToggle />
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              className="flex h-9 w-9 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"
+              style={{
+                border: '1px solid var(--card-border)',
+                background: 'var(--card-bg)',
+                color: 'var(--text-2)',
+              }}
+              aria-label="Settings"
+            >
+              <Settings size={18} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-4 pt-4">
+      {/* Main Content Container with Responsive Multi-Column Desktop Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
         <AnimatePresence>
           {hasError && <ErrorBanner key="err" onRetry={refreshAll} />}
         </AnimatePresence>
 
-        <div>
-          <OverallInvestments
-            data={overallInvestments.data}
-            todayData={todayPerformance.data}
-            loading={overallInvestments.loading || todayPerformance.loading}
-          />
-          <TodayPerformance data={todayPerformance.data} loading={todayPerformance.loading} />
-          <AssetAllocation data={assetAllocation.data} loading={assetAllocation.loading} />
-          <OverallSectorAllocation data={overallSectorAllocation.data} loading={overallSectorAllocation.loading} />
-          <StocksAllocation data={stocksAllocation.data} loading={stocksAllocation.loading} />
+        {/* Responsive Layout: 1 Column on Mobile/Tablet (<1024px), 2 Columns on Desktop (>=1024px) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-6 items-start">
+          {/* Left / Primary Column (7 Cols on Desktop) */}
+          <div className="lg:col-span-7">
+            <OverallInvestments
+              data={overallInvestments.data}
+              todayData={todayPerformance.data}
+              loading={overallInvestments.loading || todayPerformance.loading}
+            />
+            <StocksAllocation data={stocksAllocation.data} loading={stocksAllocation.loading} />
+          </div>
+
+          {/* Right / Allocation Column (5 Cols on Desktop) */}
+          <div className="lg:col-span-5">
+            <TodayPerformance data={todayPerformance.data} loading={todayPerformance.loading} />
+            <AssetAllocation data={assetAllocation.data} loading={assetAllocation.loading} />
+            <OverallSectorAllocation data={overallSectorAllocation.data} loading={overallSectorAllocation.loading} />
+          </div>
         </div>
       </div>
 
