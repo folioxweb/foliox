@@ -216,7 +216,7 @@ export default function App() {
       <AuthProvider>
         <PortfolioProvider>
           <PrivacyProvider>
-            <BrowserRouter basename="/foliox/">
+            <BrowserRouter basename={import.meta.env.BASE_URL || "/foliox/"}>
               <AppContent />
             </BrowserRouter>
           </PrivacyProvider>

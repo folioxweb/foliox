@@ -1,0 +1,52 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - uat
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    name: Build & Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: |
+          if [ "${{ github.ref_name }}" = "uat" ]; then
+            echo "==========================================="
+            echo "🏗️ Building for UAT Environment (/foliox/uat/)"
+            echo "==========================================="
+            npm run build:uat
+          else
+            echo "==========================================="
+            echo "🚀 Building for PRODUCTION Environment (/foliox/)"
+            echo "==========================================="
+            npm run build:prod
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: ${{ github.ref_name == 'uat' && 'uat' || '' }}
+          keep_files: true
