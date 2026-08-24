@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/foliox/uat/sw.js', { scope: '/foliox/uat/' })})}
