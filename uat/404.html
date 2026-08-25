@@ -4,12 +4,11 @@
     <meta charset="utf-8">
     <title>Foliox</title>
     <script type="text/javascript">
-      // Single Page Apps for GitHub Pages
-      // MIT License
-      // https://github.com/rafgraph/spa-github-pages
-      var pathSegmentsToKeep = 1;
-
+      // Single Page Apps for GitHub Pages with Dual Environment (Prod vs UAT) support
       var l = window.location;
+      var isUat = l.pathname.startsWith('/foliox/uat');
+      var pathSegmentsToKeep = isUat ? 2 : 1;
+
       l.replace(
         l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
         l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/?/' +
