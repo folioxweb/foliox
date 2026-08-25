@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { formatCurrency } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
-import { Landmark, Calendar, Percent, ShieldCheck } from 'lucide-react';
+import { ChevronUp, ChevronDown, Landmark } from 'lucide-react';
 
 function formatDateSafe(dateStr) {
   if (!dateStr) return 'Not specified';
@@ -15,21 +16,32 @@ function formatDateSafe(dateStr) {
 
 /**
  * DesktopFDView
- * Modernized luxury desktop view for Fixed Deposits.
+ * Clean, modern table view for Fixed Deposits matching Stocks, ETFs, and MF tables.
  */
 export default function DesktopFDView({ fds = [], onPress }) {
   const { isPrivacyMode } = usePrivacy();
+  const [sortColumn, setSortColumn] = useState('name');
+  const [sortAsc, setSortAsc] = useState(true);
+
+  function handleSort(column) {
+    if (sortColumn === column) {
+      setSortAsc(!sortAsc);
+    } else {
+      setSortColumn(column);
+      setSortAsc(column === 'name');
+    }
+  }
 
   if (!fds || fds.length === 0) {
     return (
       <div
-        className="rounded-2xl p-10 text-center border shadow-xl"
+        className="w-full rounded-2xl p-10 text-center border shadow-xl transition-all"
         style={{
           background: 'var(--card-bg)',
           borderColor: 'var(--card-border)',
         }}
       >
-        <Landmark className="mx-auto mb-3 text-emerald-400 opacity-60" size={36} />
+        <Landmark className="mx-auto mb-3 text-teal-400 opacity-60" size={36} />
         <h3 className="text-base font-semibold text-[var(--text)]">No Fixed Deposits</h3>
         <p className="text-xs text-[var(--text-muted)] mt-1">
           Your active fixed deposits will appear here.
@@ -38,128 +50,202 @@ export default function DesktopFDView({ fds = [], onPress }) {
     );
   }
 
+  // Sorted list
+  const sortedFds = [...fds].sort((a, b) => {
+    let aVal, bVal;
+
+    switch (sortColumn) {
+      case 'name':
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
+        return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+
+      case 'rate':
+        aVal = Number(a.interestRate ?? 0);
+        bVal = Number(b.interestRate ?? 0);
+        break;
+
+      case 'maturity':
+        aVal = Number(a.maturityValue ?? 0);
+        bVal = Number(b.maturityValue ?? 0);
+        break;
+
+      case 'currentValue':
+        aVal = Number(a.currentValue ?? a.principal ?? 0);
+        bVal = Number(b.currentValue ?? b.principal ?? 0);
+        break;
+
+      default:
+        return 0;
+    }
+
+    return sortAsc ? aVal - bVal : bVal - aVal;
+  });
+
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-      {fds.map((fd) => {
-        const {
-          name,
-          principal = 0,
-          interestRate = 0,
-          currentValue = 0,
-          maturityValue = 0,
-          interestEarned = 0,
-          maturityDate,
-          investmentDate,
-        } = fd;
-
-        // Calculate tenure progress if dates are provided
-        let progressPct = 50;
-        if (maturityDate) {
-          const start = investmentDate ? new Date(investmentDate).getTime() : Date.now() - 180 * 86400000;
-          const end = new Date(maturityDate).getTime();
-          const now = Date.now();
-          if (end > start) {
-            progressPct = Math.min(100, Math.max(5, Math.round(((now - start) / (end - start)) * 100)));
-          }
-        }
-
-        const effectiveEarned = interestEarned > 0 ? interestEarned : Math.max(0, currentValue - principal);
-
-        return (
-          <div
-            key={fd.id ?? fd.symbol ?? name}
-            onClick={() => onPress && onPress(fd)}
-            className="group relative rounded-2xl p-5 border shadow-xl transition-all duration-200 cursor-pointer hover:border-emerald-500/40 hover:shadow-emerald-950/20"
+    <div
+      className="w-full rounded-2xl overflow-hidden border shadow-xl transition-all"
+      style={{
+        background: 'var(--card-bg)',
+        borderColor: 'var(--card-border)',
+        backdropFilter: 'blur(16px)',
+      }}
+    >
+      <table className="w-full text-left border-collapse">
+        {/* Table Header */}
+        <thead>
+          <tr
+            className="border-b text-xs font-semibold select-none"
             style={{
-              background: 'var(--card-bg)',
               borderColor: 'var(--card-border)',
-              backdropFilter: 'blur(16px)',
+              color: 'var(--text-muted)',
+              background: 'var(--sheet-btn-bg)',
             }}
           >
-            {/* Top Bar: Bank Name & Badges */}
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-teal-500/10 border border-teal-500/20 text-teal-400">
-                  <Landmark size={20} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-[var(--text)] group-hover:text-emerald-400 transition-colors">
-                    {isPrivacyMode ? 'Confidential Fixed Deposit' : name}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-teal-400 bg-teal-500/10 px-2 py-0.5 rounded-full">
-                      <ShieldCheck size={11} /> Fixed Deposit
+            {/* Column 1: Bank / Scheme */}
+            <th
+              className="py-4 px-6 cursor-pointer transition-colors hover:text-[var(--text)]"
+              onClick={() => handleSort('name')}
+            >
+              <div className="flex items-center gap-1.5">
+                <span>Bank / Scheme</span>
+                {sortColumn === 'name' ? (
+                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                ) : (
+                  <ChevronDown size={14} className="opacity-40" />
+                )}
+              </div>
+            </th>
+
+            {/* Column 2: Interest Rate (Accrued) */}
+            <th
+              className="py-4 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              onClick={() => handleSort('rate')}
+            >
+              <div className="flex items-center justify-end gap-1.5">
+                <span>Interest Rate (Accrued)</span>
+                {sortColumn === 'rate' ? (
+                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                ) : (
+                  <ChevronDown size={14} className="opacity-40" />
+                )}
+              </div>
+            </th>
+
+            {/* Column 3: Maturity Value */}
+            <th
+              className="py-4 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              onClick={() => handleSort('maturity')}
+            >
+              <div className="flex items-center justify-end gap-1.5">
+                <span>Maturity Value</span>
+                {sortColumn === 'maturity' ? (
+                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                ) : (
+                  <ChevronDown size={14} className="opacity-40" />
+                )}
+              </div>
+            </th>
+
+            {/* Column 4: Current (Principal) */}
+            <th
+              className="py-4 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              onClick={() => handleSort('currentValue')}
+            >
+              <div className="flex items-center justify-end gap-1.5">
+                <span>Current (Principal)</span>
+                {sortColumn === 'currentValue' ? (
+                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                ) : (
+                  <ChevronDown size={14} className="opacity-40" />
+                )}
+              </div>
+            </th>
+          </tr>
+        </thead>
+
+        {/* Table Body */}
+        <tbody className="divide-y" style={{ borderColor: 'var(--divider)' }}>
+          {sortedFds.map((fd) => {
+            const {
+              name,
+              principal = 0,
+              interestRate = 0,
+              currentValue = 0,
+              maturityValue = 0,
+              interestEarned = 0,
+              maturityDate,
+            } = fd;
+
+            const effectiveEarned = interestEarned > 0 ? interestEarned : Math.max(0, currentValue - principal);
+
+            return (
+              <tr
+                key={fd.id ?? fd.symbol ?? name}
+                onClick={() => onPress && onPress(fd)}
+                className="cursor-pointer"
+              >
+                {/* 1. Bank / Scheme Name & Maturity Subtitle */}
+                <td className="py-4 px-6">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[15px] font-semibold text-[var(--text)]">
+                        {isPrivacyMode ? 'Confidential Fixed Deposit' : name}
+                      </span>
+                      <span className="inline-flex items-center text-[11px] font-medium text-teal-500 bg-teal-500/10 px-2 py-0.5 rounded-full border border-teal-500/20">
+                        FD
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-[var(--text-muted)] font-medium">
+                      Maturity: {formatDateSafe(maturityDate)}
+                    </div>
+                  </div>
+                </td>
+
+                {/* 2. Rate & Accrued Interest */}
+                <td className="py-4 px-6 text-right">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[15px] font-medium text-[var(--text)]">
+                      {interestRate}% p.a.
+                    </span>
+                    <span
+                      className="text-xs font-semibold"
+                      style={{ color: 'var(--profit, #10B981)' }}
+                    >
+                      {isPrivacyMode ? '***' : `+${formatCurrency(effectiveEarned)} accrued`}
                     </span>
                   </div>
-                </div>
-              </div>
+                </td>
 
-              {/* Interest Rate Badge */}
-              <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl text-emerald-400 text-xs font-bold">
-                <Percent size={12} strokeWidth={2.5} />
-                <span>{interestRate}% p.a.</span>
-              </div>
-            </div>
+                {/* 3. Maturity Value */}
+                <td className="py-4 px-6 text-right">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[15px] font-semibold text-[var(--text)]">
+                      {isPrivacyMode ? '₹***' : formatCurrency(maturityValue)}
+                    </span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">
+                      Matures {formatDateSafe(maturityDate)}
+                    </span>
+                  </div>
+                </td>
 
-            {/* Metrics 4-Column Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 rounded-xl bg-slate-900/40 border border-slate-800/60 mb-4">
-              <div>
-                <span className="text-[11px] font-medium text-[var(--text-muted)] block mb-0.5">
-                  Principal
-                </span>
-                <span className="text-sm font-semibold text-[var(--text)]">
-                  {isPrivacyMode ? '₹***' : formatCurrency(principal)}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-medium text-[var(--text-muted)] block mb-0.5">
-                  Current Value
-                </span>
-                <span className="text-sm font-semibold text-emerald-400">
-                  {isPrivacyMode ? '₹***' : formatCurrency(currentValue || principal)}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-medium text-[var(--text-muted)] block mb-0.5">
-                  Interest Accrued
-                </span>
-                <span className="text-sm font-semibold text-teal-300">
-                  {isPrivacyMode ? '₹***' : `+${formatCurrency(effectiveEarned)}`}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-medium text-[var(--text-muted)] block mb-0.5">
-                  Maturity Value
-                </span>
-                <span className="text-sm font-semibold text-[var(--text)]">
-                  {isPrivacyMode ? '₹***' : formatCurrency(maturityValue)}
-                </span>
-              </div>
-            </div>
-
-            {/* Tenure & Maturity Progress Bar */}
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
-                <span className="flex items-center gap-1">
-                  <Calendar size={12} />
-                  Maturity: <strong className="text-[var(--text)]">{formatDateSafe(maturityDate)}</strong>
-                </span>
-                <span className="text-emerald-400 font-semibold">{progressPct}% elapsed</span>
-              </div>
-
-              <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-400 transition-all duration-500"
-                  style={{ width: `${progressPct}%` }}
-                />
-              </div>
-            </div>
-          </div>
-        );
-      })}
+                {/* 4. Current (Principal) */}
+                <td className="py-4 px-6 text-right">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[15px] font-semibold text-[var(--text)]">
+                      {isPrivacyMode ? '₹***' : formatCurrency(currentValue || principal)}
+                    </span>
+                    <span className="text-xs font-medium text-[var(--text-muted)]">
+                      {isPrivacyMode ? '₹***' : formatCurrency(principal)}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

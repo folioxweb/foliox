@@ -86,7 +86,7 @@ export default function DesktopHoldingsTable({
             style={{
               borderColor: 'var(--card-border)',
               color: 'var(--text-muted)',
-              background: 'rgba(255, 255, 255, 0.02)',
+              background: 'var(--sheet-btn-bg)',
             }}
           >
             {/* Column 1: Company */}
