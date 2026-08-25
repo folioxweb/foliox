@@ -1,7 +1,14 @@
 import { useState } from 'react';
-import { formatCurrency } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
 import { ChevronUp, ChevronDown, Landmark } from 'lucide-react';
+
+function formatBrokerCurrency(val) {
+  if (val === null || val === undefined || isNaN(val)) return '₹0.00';
+  const num = Number(val);
+  const sign = num < 0 ? '−' : '';
+  const abs = Math.abs(num);
+  return `${sign}₹${abs.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
 function formatDateSafe(dateStr) {
   if (!dateStr) return 'Not specified';
@@ -16,7 +23,7 @@ function formatDateSafe(dateStr) {
 
 /**
  * DesktopFDView
- * Clean, modern table view for Fixed Deposits matching Stocks, ETFs, and MF tables.
+ * Clean, professional broker-style table view for Fixed Deposits matching Stocks, ETFs, and MF tables.
  */
 export default function DesktopFDView({ fds = [], onPress }) {
   const { isPrivacyMode } = usePrivacy();
@@ -35,13 +42,14 @@ export default function DesktopFDView({ fds = [], onPress }) {
   if (!fds || fds.length === 0) {
     return (
       <div
-        className="w-full rounded-2xl p-10 text-center border shadow-xl transition-all"
+        className="w-full rounded-2xl p-10 text-center border transition-all"
         style={{
           background: 'var(--card-bg)',
           borderColor: 'var(--card-border)',
+          boxShadow: 'var(--card-shadow)',
         }}
       >
-        <Landmark className="mx-auto mb-3 text-teal-400 opacity-60" size={36} />
+        <Landmark className="mx-auto mb-3 text-teal-500 opacity-60" size={36} />
         <h3 className="text-base font-semibold text-[var(--text)]">No Fixed Deposits</h3>
         <p className="text-xs text-[var(--text-muted)] mt-1">
           Your active fixed deposits will appear here.
@@ -84,79 +92,80 @@ export default function DesktopFDView({ fds = [], onPress }) {
 
   return (
     <div
-      className="w-full rounded-xl overflow-hidden border shadow-sm transition-all"
+      className="w-full rounded-2xl overflow-hidden border transition-all"
       style={{
         background: 'var(--card-bg)',
         borderColor: 'var(--card-border)',
+        boxShadow: 'var(--card-shadow)',
       }}
     >
       <table className="w-full text-left border-collapse">
         {/* Table Header */}
         <thead>
           <tr
-            className="border-b text-[12px] font-medium select-none"
+            className="border-b text-[12px] font-semibold tracking-wide select-none"
             style={{
               borderColor: 'var(--divider)',
               color: 'var(--text-muted)',
-              background: 'var(--card-bg)',
+              background: 'rgba(0, 0, 0, 0.015)',
             }}
           >
             {/* Column 1: Bank / Scheme */}
             <th
-              className="py-3.5 px-5 cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-6 cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('name')}
             >
               <div className="flex items-center gap-1.5">
                 <span>Bank / Scheme</span>
                 {sortColumn === 'name' ? (
-                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
+                  sortAsc ? <ChevronUp size={13} style={{ color: 'var(--profit)' }} /> : <ChevronDown size={13} style={{ color: 'var(--profit)' }} />
                 ) : (
-                  <ChevronDown size={13} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-30" />
                 )}
               </div>
             </th>
 
             {/* Column 2: Interest Rate (Accrued) */}
             <th
-              className="py-3.5 px-5 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('rate')}
             >
               <div className="flex items-center justify-end gap-1.5">
                 <span>Interest Rate (Accrued)</span>
                 {sortColumn === 'rate' ? (
-                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
+                  sortAsc ? <ChevronUp size={13} style={{ color: 'var(--profit)' }} /> : <ChevronDown size={13} style={{ color: 'var(--profit)' }} />
                 ) : (
-                  <ChevronDown size={13} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-30" />
                 )}
               </div>
             </th>
 
             {/* Column 3: Maturity Value */}
             <th
-              className="py-3.5 px-5 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('maturity')}
             >
               <div className="flex items-center justify-end gap-1.5">
                 <span>Maturity Value</span>
                 {sortColumn === 'maturity' ? (
-                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
+                  sortAsc ? <ChevronUp size={13} style={{ color: 'var(--profit)' }} /> : <ChevronDown size={13} style={{ color: 'var(--profit)' }} />
                 ) : (
-                  <ChevronDown size={13} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-30" />
                 )}
               </div>
             </th>
 
             {/* Column 4: Current (Principal) */}
             <th
-              className="py-3.5 px-5 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('currentValue')}
             >
               <div className="flex items-center justify-end gap-1.5">
                 <span>Current (Principal)</span>
                 {sortColumn === 'currentValue' ? (
-                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
+                  sortAsc ? <ChevronUp size={13} style={{ color: 'var(--profit)' }} /> : <ChevronDown size={13} style={{ color: 'var(--profit)' }} />
                 ) : (
-                  <ChevronDown size={13} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-30" />
                 )}
               </div>
             </th>
@@ -182,16 +191,16 @@ export default function DesktopFDView({ fds = [], onPress }) {
               <tr
                 key={fd.id ?? fd.symbol ?? name}
                 onClick={() => onPress && onPress(fd)}
-                className="cursor-pointer transition-colors duration-100"
+                className="cursor-pointer"
               >
                 {/* 1. Bank / Scheme Name & Maturity Subtitle */}
-                <td className="py-3 px-5">
-                  <div className="flex flex-col gap-0.5">
-                    <div className="flex items-center gap-1.5">
+                <td className="py-4 px-6">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
                       <span className="text-[14px] font-semibold text-[var(--text)] tracking-tight">
                         {isPrivacyMode ? 'Confidential Fixed Deposit' : name}
                       </span>
-                      <span className="inline-flex items-center text-[10px] font-medium text-teal-500 bg-teal-500/10 px-1.5 py-0.2 rounded border border-teal-500/20">
+                      <span className="inline-flex items-center text-[10px] font-semibold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded border border-teal-500/20">
                         FD
                       </span>
                     </div>
@@ -203,25 +212,25 @@ export default function DesktopFDView({ fds = [], onPress }) {
                 </td>
 
                 {/* 2. Rate & Accrued Interest */}
-                <td className="py-3 px-5 text-right tabular-nums">
-                  <div className="flex flex-col items-end gap-0.5">
-                    <span className="text-[14px] font-medium text-[var(--text)]">
+                <td className="py-4 px-6 text-right tabular-nums">
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[14px] font-semibold text-[var(--text)]">
                       {interestRate}% p.a.
                     </span>
                     <span
-                      className="text-[12px] font-semibold"
-                      style={{ color: 'var(--profit, #10B981)' }}
+                      className="text-[12px] font-medium"
+                      style={{ color: 'var(--profit)' }}
                     >
-                      {isPrivacyMode ? '***' : `+${formatCurrency(effectiveEarned)} accrued`}
+                      {isPrivacyMode ? '***' : `+${formatBrokerCurrency(effectiveEarned)} accrued`}
                     </span>
                   </div>
                 </td>
 
                 {/* 3. Maturity Value */}
-                <td className="py-3 px-5 text-right tabular-nums">
-                  <div className="flex flex-col items-end gap-0.5">
+                <td className="py-4 px-6 text-right tabular-nums">
+                  <div className="flex flex-col items-end gap-1">
                     <span className="text-[14px] font-semibold text-[var(--text)]">
-                      {isPrivacyMode ? '₹***' : formatCurrency(maturityValue)}
+                      {isPrivacyMode ? '₹***' : formatBrokerCurrency(maturityValue)}
                     </span>
                     <span className="text-[12px] font-normal text-[var(--text-muted)]">
                       Matures {formatDateSafe(maturityDate)}
@@ -230,13 +239,13 @@ export default function DesktopFDView({ fds = [], onPress }) {
                 </td>
 
                 {/* 4. Current (Principal) */}
-                <td className="py-3 px-5 text-right tabular-nums">
-                  <div className="flex flex-col items-end gap-0.5">
+                <td className="py-4 px-6 text-right tabular-nums">
+                  <div className="flex flex-col items-end gap-1">
                     <span className="text-[14px] font-semibold text-[var(--text)]">
-                      {isPrivacyMode ? '₹***' : formatCurrency(currentValue || principal)}
+                      {isPrivacyMode ? '₹***' : formatBrokerCurrency(currentValue || principal)}
                     </span>
                     <span className="text-[12px] font-normal text-[var(--text-muted)]">
-                      {isPrivacyMode ? '₹***' : formatCurrency(principal)}
+                      {isPrivacyMode ? '₹***' : formatBrokerCurrency(principal)}
                     </span>
                   </div>
                 </td>
