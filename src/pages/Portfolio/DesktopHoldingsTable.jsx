@@ -192,13 +192,13 @@ export default function DesktopHoldingsTable({
               <tr
                 key={holding.id ?? holding.symbol ?? holding.srNo ?? name}
                 onClick={() => onPress && onPress(holding)}
-                className="group cursor-pointer transition-colors duration-150 hover:bg-slate-800/40"
+                className="cursor-pointer"
               >
                 {/* 1. Company Name & Holdings Subtitle */}
                 <td className="py-4 px-6">
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[15px] font-semibold text-[var(--text)] group-hover:text-emerald-400 transition-colors">
+                      <span className="text-[15px] font-semibold text-[var(--text)]">
                         {isPrivacyMode ? 'Confidential Asset' : name}
                       </span>
                       {badge && renderStockBadge(badge)}
@@ -212,7 +212,7 @@ export default function DesktopHoldingsTable({
                             onNewsPress(holding);
                           }}
                           title="View News"
-                          className="inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-emerald-400 hover:bg-slate-700/50 transition-colors"
+                          className="inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
                         >
                           <Newspaper size={13} strokeWidth={2} />
                         </button>
@@ -227,7 +227,7 @@ export default function DesktopHoldingsTable({
                             onReportsPress(holding);
                           }}
                           title="View BSE Reports"
-                          className="inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-emerald-400 hover:bg-slate-700/50 transition-colors"
+                          className="inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
                         >
                           <FileText size={13} strokeWidth={2} />
                         </button>
@@ -251,9 +251,8 @@ export default function DesktopHoldingsTable({
                       {isPrivacyMode ? '₹***' : formatCurrency(effectiveLtp)}
                     </span>
                     <span
-                      className={`text-xs font-semibold ${
-                        isDayPositive ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
+                      className="text-xs font-semibold"
+                      style={{ color: isDayPositive ? 'var(--profit, #10B981)' : 'var(--loss, #EF4444)' }}
                     >
                       {isPrivacyMode ? (
                         '***%'
@@ -270,9 +269,8 @@ export default function DesktopHoldingsTable({
                 <td className="py-4 px-6 text-right">
                   <div className="flex flex-col items-end gap-1">
                     <span
-                      className={`text-[15px] font-medium ${
-                        isTotalPositive ? 'text-[var(--text)]' : 'text-[var(--text)]'
-                      }`}
+                      className="text-[15px] font-semibold"
+                      style={{ color: isTotalPositive ? 'var(--profit, #10B981)' : 'var(--loss, #EF4444)' }}
                     >
                       {isPrivacyMode ? (
                         '₹***'
@@ -281,14 +279,13 @@ export default function DesktopHoldingsTable({
                       )}
                     </span>
                     <span
-                      className={`text-xs font-semibold ${
-                        isTotalPositive ? 'text-emerald-400' : 'text-rose-400'
-                      }`}
+                      className="text-xs font-semibold"
+                      style={{ color: isTotalPositive ? 'var(--profit, #10B981)' : 'var(--loss, #EF4444)' }}
                     >
                       {isPrivacyMode ? (
                         '***%'
                       ) : (
-                        `${isTotalPositive ? '+' : ''}${Math.abs(totalPnlPct).toFixed(2)}%`
+                        `${isTotalPositive ? '+' : ''}${totalPnlPct.toFixed(2)}%`
                       )}
                     </span>
                   </div>
