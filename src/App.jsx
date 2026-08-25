@@ -72,58 +72,12 @@ function AuthLoadingScreen() {
 }
 
 // ---------------------------------------------------------------------------
-// "Add to Home Screen" banner
-// ---------------------------------------------------------------------------
-function AddToHomeScreenBanner({ onDismiss }) {
-  return (
-    <div
-      role="banner"
-      aria-live="polite"
-      className="fixed top-0 inset-x-0 z-[100] flex items-center gap-3 bg-[#1E293B] border-b border-[#334155] px-4 py-3 text-sm text-slate-200"
-      style={{ paddingTop: 'max(0.75rem, env(safe-area-inset-top))' }}
-    >
-      <span className="flex-1">
-        For the best experience, tap{' '}
-        <strong className="text-emerald-400">Share</strong> →{' '}
-        <strong className="text-emerald-400">Add to Home Screen</strong>.
-      </span>
-      <button
-        type="button"
-        aria-label="Dismiss banner"
-        onClick={onDismiss}
-        className="shrink-0 text-slate-400 hover:text-white transition-colors"
-      >
-        ✕
-      </button>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Standalone mode detection
-// ---------------------------------------------------------------------------
-function isStandaloneMode() {
-  return (
-    window.matchMedia('(display-mode: standalone)').matches ||
-    Boolean(window.navigator.standalone)
-  );
-}
-
-// ---------------------------------------------------------------------------
 // App root
 // ---------------------------------------------------------------------------
 function AppContent() {
   const { isLoggedIn, loading, signOut, isPasswordRecovery, setIsPasswordRecovery } = useAuth();
-  const [showBanner, setShowBanner] = useState(false);
   const [showAutoGuide, setShowAutoGuide] = useState(false);
   const navigate = useNavigate();
-
-  // Detect standalone mode on mount; show banner if running in browser.
-  useEffect(() => {
-    if (!isStandaloneMode()) {
-      setShowBanner(true);
-    }
-  }, []);
 
   // Check if first-time user guide should be shown
   useEffect(() => {
@@ -174,11 +128,6 @@ function AppContent() {
 
   return (
     <>
-      {/* "Add to Home Screen" banner */}
-      {showBanner && (
-        <AddToHomeScreenBanner onDismiss={() => setShowBanner(false)} />
-      )}
-
       {/* First-login Feature Tour Guide Modal */}
       <AppGuideModal
         isOpen={showAutoGuide}
