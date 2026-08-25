@@ -71,80 +71,79 @@ export default function DesktopHoldingsTable({
 
   return (
     <div
-      className="w-full rounded-2xl overflow-hidden border shadow-xl transition-all"
+      className="w-full rounded-xl overflow-hidden border shadow-sm transition-all"
       style={{
         background: 'var(--card-bg)',
         borderColor: 'var(--card-border)',
-        backdropFilter: 'blur(16px)',
       }}
     >
       <table className="w-full text-left border-collapse">
         {/* Table Header */}
         <thead>
           <tr
-            className="border-b text-xs font-semibold select-none"
+            className="border-b text-[12px] font-medium select-none"
             style={{
-              borderColor: 'var(--card-border)',
+              borderColor: 'var(--divider)',
               color: 'var(--text-muted)',
-              background: 'var(--sheet-btn-bg)',
+              background: 'var(--card-bg)',
             }}
           >
             {/* Column 1: Company */}
             <th
-              className="py-4 px-6 cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-5 cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('name')}
             >
               <div className="flex items-center gap-1.5">
                 <span>Company</span>
                 {sortColumn === 'name' ? (
-                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
                 ) : (
-                  <ChevronDown size={14} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-40" />
                 )}
               </div>
             </th>
 
             {/* Column 2: Market price (1D%) */}
             <th
-              className="py-4 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-5 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('dayChange')}
             >
               <div className="flex items-center justify-end gap-1.5">
                 <span>Market price (1D%)</span>
                 {sortColumn === 'dayChange' ? (
-                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
                 ) : (
-                  <ChevronDown size={14} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-40" />
                 )}
               </div>
             </th>
 
             {/* Column 3: Returns (%) */}
             <th
-              className="py-4 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-5 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('returns')}
             >
               <div className="flex items-center justify-end gap-1.5">
                 <span>Returns (%)</span>
                 {sortColumn === 'returns' ? (
-                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
                 ) : (
-                  <ChevronDown size={14} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-40" />
                 )}
               </div>
             </th>
 
             {/* Column 4: Current (Invested) */}
             <th
-              className="py-4 px-6 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
+              className="py-3.5 px-5 text-right cursor-pointer transition-colors hover:text-[var(--text)]"
               onClick={() => handleSort('currentValue')}
             >
               <div className="flex items-center justify-end gap-1.5">
                 <span>Current (Invested)</span>
                 {sortColumn === 'currentValue' ? (
-                  sortAsc ? <ChevronUp size={14} className="text-emerald-400" /> : <ChevronDown size={14} className="text-emerald-400" />
+                  sortAsc ? <ChevronUp size={13} className="text-emerald-500" /> : <ChevronDown size={13} className="text-emerald-500" />
                 ) : (
-                  <ChevronDown size={14} className="opacity-40" />
+                  <ChevronDown size={13} className="opacity-40" />
                 )}
               </div>
             </th>
@@ -156,7 +155,6 @@ export default function DesktopHoldingsTable({
           {sortedHoldings.map((holding) => {
             const {
               name,
-              symbol,
               quantity = 0,
               avgPrice,
               avgCost,
@@ -192,13 +190,13 @@ export default function DesktopHoldingsTable({
               <tr
                 key={holding.id ?? holding.symbol ?? holding.srNo ?? name}
                 onClick={() => onPress && onPress(holding)}
-                className="cursor-pointer"
+                className="cursor-pointer transition-colors duration-100"
               >
                 {/* 1. Company Name & Holdings Subtitle */}
-                <td className="py-4 px-6">
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[15px] font-semibold text-[var(--text)]">
+                <td className="py-3 px-5">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[14px] font-semibold text-[var(--text)] tracking-tight">
                         {isPrivacyMode ? 'Confidential Asset' : name}
                       </span>
                       {badge && renderStockBadge(badge)}
@@ -212,9 +210,9 @@ export default function DesktopHoldingsTable({
                             onNewsPress(holding);
                           }}
                           title="View News"
-                          className="inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
+                          className="inline-flex items-center justify-center p-0.5 rounded text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
                         >
-                          <Newspaper size={13} strokeWidth={2} />
+                          <Newspaper size={12} strokeWidth={2} />
                         </button>
                       )}
 
@@ -227,14 +225,14 @@ export default function DesktopHoldingsTable({
                             onReportsPress(holding);
                           }}
                           title="View BSE Reports"
-                          className="inline-flex items-center justify-center p-1 rounded-md text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
+                          className="inline-flex items-center justify-center p-0.5 rounded text-[var(--text-muted)] hover:text-emerald-500 transition-colors"
                         >
-                          <FileText size={13} strokeWidth={2} />
+                          <FileText size={12} strokeWidth={2} />
                         </button>
                       )}
                     </div>
 
-                    <div className="text-xs text-[var(--text-muted)] font-medium">
+                    <div className="text-[12px] text-[var(--text-muted)] font-normal">
                       {isPrivacyMode ? (
                         '*** • Avg. ₹***'
                       ) : (
@@ -245,13 +243,13 @@ export default function DesktopHoldingsTable({
                 </td>
 
                 {/* 2. Market price (1D%) */}
-                <td className="py-4 px-6 text-right">
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[15px] font-medium text-[var(--text)]">
+                <td className="py-3 px-5 text-right tabular-nums">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-[14px] font-medium text-[var(--text)]">
                       {isPrivacyMode ? '₹***' : formatCurrency(effectiveLtp)}
                     </span>
                     <span
-                      className="text-xs font-semibold"
+                      className="text-[12px] font-semibold"
                       style={{ color: isDayPositive ? 'var(--profit, #10B981)' : 'var(--loss, #EF4444)' }}
                     >
                       {isPrivacyMode ? (
@@ -266,10 +264,10 @@ export default function DesktopHoldingsTable({
                 </td>
 
                 {/* 3. Returns (%) */}
-                <td className="py-4 px-6 text-right">
-                  <div className="flex flex-col items-end gap-1">
+                <td className="py-3 px-5 text-right tabular-nums">
+                  <div className="flex flex-col items-end gap-0.5">
                     <span
-                      className="text-[15px] font-semibold"
+                      className="text-[14px] font-semibold"
                       style={{ color: isTotalPositive ? 'var(--profit, #10B981)' : 'var(--loss, #EF4444)' }}
                     >
                       {isPrivacyMode ? (
@@ -279,7 +277,7 @@ export default function DesktopHoldingsTable({
                       )}
                     </span>
                     <span
-                      className="text-xs font-semibold"
+                      className="text-[12px] font-semibold"
                       style={{ color: isTotalPositive ? 'var(--profit, #10B981)' : 'var(--loss, #EF4444)' }}
                     >
                       {isPrivacyMode ? (
@@ -292,12 +290,12 @@ export default function DesktopHoldingsTable({
                 </td>
 
                 {/* 4. Current (Invested) */}
-                <td className="py-4 px-6 text-right">
-                  <div className="flex flex-col items-end gap-1">
-                    <span className="text-[15px] font-semibold text-[var(--text)]">
+                <td className="py-3 px-5 text-right tabular-nums">
+                  <div className="flex flex-col items-end gap-0.5">
+                    <span className="text-[14px] font-semibold text-[var(--text)]">
                       {isPrivacyMode ? '₹***' : formatCurrency(currentValue)}
                     </span>
-                    <span className="text-xs font-medium text-[var(--text-muted)]">
+                    <span className="text-[12px] font-normal text-[var(--text-muted)]">
                       {isPrivacyMode ? '₹***' : formatCurrency(investedValue)}
                     </span>
                   </div>
