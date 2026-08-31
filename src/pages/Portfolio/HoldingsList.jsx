@@ -3,6 +3,8 @@ import HoldingCard from '../../components/cards/HoldingCard';
 import FDCard from '../../components/cards/FDCard';
 import Skeleton from '../../components/ui/Skeleton';
 import Button from '../../components/ui/Button';
+import DesktopHoldingsTable from './DesktopHoldingsTable';
+import DesktopFDView from './DesktopFDView';
 
 // ── Animation variants ───────────────────────────────────────────────────────
 
@@ -63,22 +65,7 @@ function SkeletonCard() {
 // ── HoldingsList ─────────────────────────────────────────────────────────────
 
 /**
- * HoldingsList — renders a list of full-variant HoldingCards.
- *
- * States:
- *   - loading  → 4 SkeletonCard placeholders
- *   - error    → inline error message + Retry button
- *   - empty    → empty-state message
- *   - data     → staggered animated list of HoldingCard components
- *
- * Props:
- *   holdings  {Holding[]}         — array of holding objects
- *   loading   {boolean}           — show skeletons while true
- *   error     {ApiError|null}     — structured error from the API client
- *   onRetry   {() => void}        — callback for the Retry button
- *   onPress   {(holding) => void} — called when a card is tapped
- *
- * Requirements: 4.2, 4.7, 4.8
+ * HoldingsList — renders Desktop table on md+ and mobile cards on mobile.
  */
 export default function HoldingsList({ holdings, loading, error, onRetry, onPress, onNewsPress, onReportsPress, viewMode = 'currentInvested' }) {
   // ── Loading state ──────────────────────────────────────────────────────────
@@ -134,42 +121,62 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
       >
         <p className="text-base font-semibold text-[var(--text)]">No holdings found</p>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          Add holdings to your Google Sheet to see them here.
+          Add holdings to your portfolio to see them here.
         </p>
       </section>
     );
   }
 
-  // ── Data state — staggered entry animation ─────────────────────────────────
+  const isFdList = holdings.length > 0 && holdings[0].assetType === 'fds';
+
+  // ── Data state ─────────────────────────────────────────────────────────────
   return (
-    <motion.section
-      aria-label="Holdings list"
-      variants={listVariants}
-      initial="hidden"
-      animate="visible"
-    >
-      {holdings.map((holding) => (
-        <motion.div
-          key={holding.id ?? holding.symbol ?? holding.srNo ?? holding.name}
-          variants={itemVariants}
-        >
-          {holding.assetType === "fds" ? (
-            <FDCard
-              holding={holding}
-              onPress={onPress ? () => onPress(holding) : undefined}
-            />
-          ) : (
-            <HoldingCard
-              holding={holding}
-              variant="list"
-              viewMode={viewMode}
-              onPress={onPress ? () => onPress(holding) : undefined}
-              onNewsPress={onNewsPress ? () => onNewsPress(holding) : undefined}
-              onReportsPress={onReportsPress ? () => onReportsPress(holding) : undefined}
-            />
-          )}
-        </motion.div>
-      ))}
-    </motion.section>
+    <>
+      {/* ── 1. Desktop UI (Tablet & Desktop: md+) ── */}
+      <div className="hidden md:block">
+        {isFdList ? (
+          <DesktopFDView fds={holdings} onPress={onPress} />
+        ) : (
+          <DesktopHoldingsTable
+            holdings={holdings}
+            onPress={onPress}
+            onNewsPress={onNewsPress}
+            onReportsPress={onReportsPress}
+          />
+        )}
+      </div>
+
+      {/* ── 2. Mobile UI (Smartphones: < md) ── */}
+      <motion.section
+        aria-label="Holdings list"
+        className="md:hidden"
+        variants={listVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {holdings.map((holding) => (
+          <motion.div
+            key={holding.id ?? holding.symbol ?? holding.srNo ?? holding.name}
+            variants={itemVariants}
+          >
+            {holding.assetType === 'fds' ? (
+              <FDCard
+                holding={holding}
+                onPress={onPress ? () => onPress(holding) : undefined}
+              />
+            ) : (
+              <HoldingCard
+                holding={holding}
+                variant="list"
+                viewMode={viewMode}
+                onPress={onPress ? () => onPress(holding) : undefined}
+                onNewsPress={onNewsPress ? () => onNewsPress(holding) : undefined}
+                onReportsPress={onReportsPress ? () => onReportsPress(holding) : undefined}
+              />
+            )}
+          </motion.div>
+        ))}
+      </motion.section>
+    </>
   );
 }
