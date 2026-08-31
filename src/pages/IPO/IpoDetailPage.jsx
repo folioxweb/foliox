@@ -5,8 +5,6 @@ import {
   ExternalLink,
   Calendar,
   AlertCircle,
-  Calculator,
-  CheckCircle2,
   Users,
   TrendingUp,
   PieChart,
@@ -15,11 +13,7 @@ import {
   Sparkles,
   Plus,
   Minus,
-  Clock,
-  Layers,
-  HelpCircle,
-  Table,
-  LayoutGrid
+  Clock
 } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { FlameRating, StatusBadge } from '../../components/ipo/IpoCard';
@@ -34,7 +28,6 @@ export default function IpoDetailPage() {
   const [ipo, setIpo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lots, setLots] = useState(1);
-  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'table'
 
   async function loadDetail() {
     try {
@@ -91,34 +84,55 @@ export default function IpoDetailPage() {
   const totalExpectedProfit = ipo.expectedProfit * lots;
   const totalListingValue = expectedListingPrice * ipo.lotSize * lots;
 
-  const resolvedSub = ipo.subscriptionDetails || (ipo.subscription && ipo.subscription !== '-' && ipo.subscription !== '--' ? {
-    total: ipo.subscription,
-    totalNum: parseFloat(String(ipo.subscription).replace(/[^0-9.]/g, '')) || 0,
-    qib: ipo.raw_json?.QIB ? `${String(ipo.raw_json.QIB).replace(/x$/i, '')}x` : '-',
-    qibNum: parseFloat(String(ipo.raw_json?.QIB || 0).replace(/[^0-9.]/g, '')) || 0,
-    nii: ipo.raw_json?.NII ? `${String(ipo.raw_json.NII).replace(/x$/i, '')}x` : '-',
-    niiNum: parseFloat(String(ipo.raw_json?.NII || 0).replace(/[^0-9.]/g, '')) || 0,
-    shni: ipo.raw_json?.SHNI ? `${String(ipo.raw_json.SHNI).replace(/x$/i, '')}x` : '-',
-    shniNum: parseFloat(String(ipo.raw_json?.SHNI || 0).replace(/[^0-9.]/g, '')) || 0,
-    bhni: ipo.raw_json?.BHNI ? `${String(ipo.raw_json.BHNI).replace(/x$/i, '')}x` : '-',
-    bhniNum: parseFloat(String(ipo.raw_json?.BHNI || 0).replace(/[^0-9.]/g, '')) || 0,
-    rii: ipo.raw_json?.RII ? `${String(ipo.raw_json.RII).replace(/x$/i, '')}x` : '-',
-    riiNum: parseFloat(String(ipo.raw_json?.RII || 0).replace(/[^0-9.]/g, '')) || 0,
-    anchorAvailable: Boolean(ipo.anchorAvailable),
-    anchorStatus: ipo.anchorAvailable ? '✅ Allocated' : '-',
-    updatedAt: ipo.updatedOn || '',
-    closingDate: ipo.closeDate || ''
-  } : null);
-
-  const sub = resolvedSub;
-  const hasDetailedSub = Boolean(sub && (sub.totalNum > 0 || (sub.total && sub.total !== '-' && sub.total !== '--')));
-  const hasLegacySub = Boolean(ipo.subscription && ipo.subscription !== '-' && ipo.subscription !== '--');
-
-  // Helper to render subscription progress bar percentage
-  function getSubProgress(num) {
-    if (!num || isNaN(num) || num <= 0) return 0;
-    return Math.min(Math.round(num >= 1 ? 100 : num * 100), 100);
+  // Extract subscription details with direct and raw_json fallback
+  let rawSub = ipo.subscriptionDetails || ipo.subscription_details || ipo.raw_json?.subscription_details || null;
+  if (typeof rawSub === 'string') {
+    try {
+      rawSub = JSON.parse(rawSub);
+    } catch {
+      rawSub = null;
+    }
   }
+  const rawObj = ipo.raw_json || {};
+
+  const cleanNum = (val) => {
+    if (!val || val === '-' || val === '--') return 0;
+    const n = parseFloat(String(val).replace(/[^0-9.]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
+
+  const formatSub = (val, num) => {
+    if (val && val !== '-' && val !== '--') {
+      const s = String(val).trim();
+      return s.endsWith('x') ? s : `${s}x`;
+    }
+    if (num && num > 0) return `${num}x`;
+    return '-';
+  };
+
+  const totalNum = rawSub?.totalNum || rawSub?.total_num || cleanNum(rawSub?.total) || cleanNum(ipo.subscription) || cleanNum(rawObj.Total) || 0;
+  const totalText = rawSub?.total && rawSub.total !== '-' ? (String(rawSub.total).endsWith('x') ? rawSub.total : `${rawSub.total}x`) : (totalNum > 0 ? `${totalNum}x` : (ipo.subscription || '-'));
+
+  const qibNum = rawSub?.qibNum || rawSub?.qib_num || cleanNum(rawSub?.qib) || cleanNum(rawObj.QIB) || 0;
+  const qibText = formatSub(rawSub?.qib || rawObj.QIB, qibNum);
+
+  const niiNum = rawSub?.niiNum || rawSub?.nii_num || cleanNum(rawSub?.nii) || cleanNum(rawObj.NII) || 0;
+  const niiText = formatSub(rawSub?.nii || rawObj.NII, niiNum);
+
+  const shniNum = rawSub?.shniNum || rawSub?.shni_num || cleanNum(rawSub?.shni) || cleanNum(rawObj.SHNI) || 0;
+  const shniText = formatSub(rawSub?.shni || rawObj.SHNI, shniNum);
+
+  const bhniNum = rawSub?.bhniNum || rawSub?.bhni_num || cleanNum(rawSub?.bhni) || cleanNum(rawObj.BHNI) || 0;
+  const bhniText = formatSub(rawSub?.bhni || rawObj.BHNI, bhniNum);
+
+  const riiNum = rawSub?.riiNum || rawSub?.rii_num || cleanNum(rawSub?.rii) || cleanNum(rawObj.RII) || 0;
+  const riiText = formatSub(rawSub?.rii || rawObj.RII, riiNum);
+
+  const anchorAvailable = Boolean(rawSub?.anchorAvailable || rawSub?.anchor_available || ipo.anchorAvailable || (rawObj.Anchor && String(rawObj.Anchor).includes('✅')));
+  const anchorStatusText = anchorAvailable ? 'Allocated' : ((rawSub?.anchorStatus || rawSub?.anchor_status || '-').replace(/✅|❌/g, '').trim() || (anchorAvailable ? 'Allocated' : 'Not Available'));
+
+  const subUpdatedAt = rawSub?.updatedAt || rawSub?.updated_at || '';
+  const hasSubData = totalNum > 0 || (totalText && totalText !== '-' && totalText !== '--') || qibNum > 0 || niiNum > 0 || riiNum > 0;
 
   return (
     <main
@@ -216,15 +230,14 @@ export default function IpoDetailPage() {
             className="flex items-center justify-between p-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md transition active:scale-[0.99]"
           >
             <div className="flex items-center gap-2">
-              <CheckCircle2 size={18} />
-              <span>Allotment Declared — Check Allotment Status</span>
+              <span className="font-extrabold text-white">Allotment Declared — Check Allotment Status</span>
             </div>
             <ExternalLink size={16} />
           </a>
         )}
 
         {/* ========================================================================= */}
-        {/* 2. SECTION: DETAILED SUBSCRIPTION STATUS (AT TOP OF DETAILS CONTENT)     */}
+        {/* 2. SECTION: DETAILED SUBSCRIPTION STATUS (TABLE ONLY, CLEAN NUMBERS)     */}
         {/* ========================================================================= */}
         <div
           className="rounded-2xl p-4 space-y-3.5"
@@ -234,7 +247,7 @@ export default function IpoDetailPage() {
             boxShadow: 'var(--card-shadow, 0 2px 10px rgba(0, 0, 0, 0.05))',
           }}
         >
-          {/* Section Header with Live Timestamp & View Mode Toggle */}
+          {/* Section Header with Live Timestamp */}
           <div className="flex items-center justify-between border-b pb-2.5 flex-wrap gap-2" style={{ borderColor: 'var(--divider)' }}>
             <div className="flex items-center gap-2">
               <Users size={16} className="text-blue-600 dark:text-blue-400" />
@@ -248,46 +261,17 @@ export default function IpoDetailPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {sub?.updatedAt && (
-                <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/20 px-2.5 py-0.5 rounded-full border border-blue-500/20 flex items-center gap-1">
-                  <Clock size={10} />
-                  <span>{sub.updatedAt}</span>
-                </span>
-              )}
-
-              {hasDetailedSub && (
-                <div className="flex items-center rounded-lg bg-[var(--input-bg)] p-0.5 border border-[var(--divider)]">
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('cards')}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition flex items-center gap-1 ${
-                      viewMode === 'cards'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'text-[var(--text-2)] hover:text-[var(--text)]'
-                    }`}
-                  >
-                    <LayoutGrid size={11} /> Cards
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewMode('table')}
-                    className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition flex items-center gap-1 ${
-                      viewMode === 'table'
-                        ? 'bg-blue-600 text-white shadow-xs'
-                        : 'text-[var(--text-2)] hover:text-[var(--text)]'
-                    }`}
-                  >
-                    <Table size={11} /> Table
-                  </button>
-                </div>
-              )}
-            </div>
+            {subUpdatedAt && (
+              <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-500/10 dark:bg-blue-500/20 px-2.5 py-0.5 rounded-full border border-blue-500/20 flex items-center gap-1">
+                <Clock size={10} />
+                <span>Updated: {subUpdatedAt}</span>
+              </span>
+            )}
           </div>
 
-          {hasDetailedSub ? (
+          {hasSubData ? (
             <div className="space-y-3.5">
-              {/* Overall Total Subscription Highlight Banner */}
+              {/* Overall Total Subscription Highlight Banner (Progress line removed, % removed) */}
               <div
                 className="p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden"
                 style={{
@@ -300,34 +284,22 @@ export default function IpoDetailPage() {
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300">
                       Total Overall Subscription
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-blue-600 text-white">
-                      {sub.totalNum >= 1 ? `${sub.totalNum.toFixed(2)}x Booked` : 'In Progress'}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                      {totalNum >= 1 ? `${totalNum.toFixed(2)}x Booked` : (totalNum > 0 ? `${totalNum.toFixed(2)}x Subscribed` : 'Bidding Open')}
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-2)] font-medium">
-                    {sub.totalNum >= 1
-                      ? `Issue is oversubscribed by ${sub.totalNum.toFixed(2)} times total demand.`
-                      : `Issue has received ${(sub.totalNum * 100).toFixed(1)}% of total shares on offer.`}
+                    {totalNum >= 1
+                      ? `Issue is oversubscribed by ${totalNum.toFixed(2)} times total demand.`
+                      : totalNum > 0
+                      ? `Issue has received ${totalNum.toFixed(2)}x of total shares on offer.`
+                      : 'Live bidding numbers across categories.'}
                   </p>
-
-                  {/* Progress Gauge */}
-                  <div className="w-full sm:max-w-xs bg-slate-200 dark:bg-slate-700/60 h-2 rounded-full mt-2.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        sub.totalNum >= 10
-                          ? 'bg-gradient-to-r from-purple-500 to-indigo-500'
-                          : sub.totalNum >= 1
-                          ? 'bg-gradient-to-r from-emerald-500 to-blue-500'
-                          : 'bg-blue-500'
-                      }`}
-                      style={{ width: `${getSubProgress(sub.totalNum)}%` }}
-                    />
-                  </div>
                 </div>
 
                 <div className="text-left sm:text-right shrink-0">
                   <span className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-300 tracking-tight block">
-                    {sub.total}
+                    {totalText}
                   </span>
                   <span className="text-[11px] font-semibold text-[var(--text-2)]">
                     Across All Categories
@@ -335,248 +307,91 @@ export default function IpoDetailPage() {
                 </div>
               </div>
 
-              {viewMode === 'cards' ? (
-                /* Detailed Category Cards Grid */
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {/* 1. QIB (Qualified Institutional Buyers) */}
-                  <div
-                    className="p-3.5 rounded-xl flex flex-col justify-between"
-                    style={{
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--divider)',
-                    }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1.5">
-                          <Building2 size={14} className="text-blue-500" />
-                          QIB
-                        </span>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                          {sub.qibNum >= 1 ? '100%+' : `${(sub.qibNum * 100).toFixed(0)}%`}
-                        </span>
-                      </div>
-                      <span className="text-xs text-[var(--text-2)] block mb-2 font-medium">
-                        Institutions (MFs &amp; FPIs)
-                      </span>
-                    </div>
+              {/* Detailed Subscription Table View (3 Columns: Category, Scope, Subscription) */}
+              <div className="overflow-x-auto rounded-xl border border-[var(--divider)]">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-[var(--input-bg)] text-[var(--text-2)] border-b border-[var(--divider)]">
+                    <tr>
+                      <th className="p-3 font-bold uppercase text-[10px]">Investor Category</th>
+                      <th className="p-3 font-bold uppercase text-[10px]">Bidder Scope</th>
+                      <th className="p-3 font-bold uppercase text-[10px] text-right">Subscription</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--divider)]" style={{ color: 'var(--text)' }}>
+                    {/* QIB Row */}
+                    <tr>
+                      <td className="p-3 font-extrabold flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                        <Building2 size={14} className="shrink-0" />
+                        <span>QIB</span>
+                      </td>
+                      <td className="p-3 text-[var(--text-2)]">Qualified Institutional Buyers (MFs &amp; FPIs)</td>
+                      <td className="p-3 font-black text-right text-blue-600 dark:text-blue-400 text-sm">
+                        {qibText}
+                      </td>
+                    </tr>
 
-                    <div>
-                      <div className="flex items-baseline justify-between mb-1.5">
-                        <span className="text-2xl font-black text-blue-600 dark:text-blue-300">
-                          {sub.qib}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-2)]">
-                          {sub.qibNum >= 1 ? `${sub.qibNum.toFixed(2)}x Demand` : 'Subscribing'}
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500 rounded-full"
-                          style={{ width: `${getSubProgress(sub.qibNum)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    {/* NII Total Row */}
+                    <tr>
+                      <td className="p-3 font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                        <TrendingUp size={14} className="shrink-0" />
+                        <span>NII Total</span>
+                      </td>
+                      <td className="p-3 text-[var(--text-2)]">Non-Institutional (High Net-Worth &gt; ₹2 Lakhs)</td>
+                      <td className="p-3 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                        {niiText}
+                      </td>
+                    </tr>
 
-                  {/* 2. NII (Non-Institutional / HNI) */}
-                  <div
-                    className="p-3.5 rounded-xl flex flex-col justify-between"
-                    style={{
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--divider)',
-                    }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
-                          <TrendingUp size={14} className="text-indigo-500" />
-                          NII (HNI)
-                        </span>
-                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-300">
-                          {sub.nii}
-                        </span>
-                      </div>
-                      <span className="text-xs text-[var(--text-2)] block mb-2 font-medium">
-                        High Net-Worth (Bids &gt; ₹2L)
-                      </span>
-                    </div>
+                    {/* sHNI Sub-Row */}
+                    <tr className="bg-[var(--input-bg)]/50 text-xs">
+                      <td className="p-2.5 pl-7 font-semibold text-[var(--text-2)]">
+                        ↳ sHNI
+                      </td>
+                      <td className="p-2.5 text-[var(--text-2)]">Small HNI (Applications ₹2L – ₹10L)</td>
+                      <td className="p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                        {shniText}
+                      </td>
+                    </tr>
 
-                    {/* Sub-HNI breakdown: sHNI and bHNI */}
-                    <div className="grid grid-cols-2 gap-1.5 p-2 rounded-lg bg-[var(--card-bg)] border border-[var(--divider)] text-[11px]">
-                      <div>
-                        <span className="text-[10px] text-[var(--text-2)] block font-medium">sHNI (₹2L–10L)</span>
-                        <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{sub.shni}</span>
-                      </div>
-                      <div className="border-l border-[var(--divider)] pl-2">
-                        <span className="text-[10px] text-[var(--text-2)] block font-medium">bHNI (&gt; ₹10L)</span>
-                        <span className="font-extrabold text-indigo-600 dark:text-indigo-400">{sub.bhni}</span>
-                      </div>
-                    </div>
-                  </div>
+                    {/* bHNI Sub-Row */}
+                    <tr className="bg-[var(--input-bg)]/50 text-xs">
+                      <td className="p-2.5 pl-7 font-semibold text-[var(--text-2)]">
+                        ↳ bHNI
+                      </td>
+                      <td className="p-2.5 text-[var(--text-2)]">Big HNI (Applications Above ₹10L)</td>
+                      <td className="p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                        {bhniText}
+                      </td>
+                    </tr>
 
-                  {/* 3. Retail (RII) */}
-                  <div
-                    className="p-3.5 rounded-xl flex flex-col justify-between"
-                    style={{
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--divider)',
-                    }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                          <Users size={14} className="text-emerald-500" />
-                          Retail (RII)
-                        </span>
-                        <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                          {sub.riiNum >= 1 ? '100%+' : `${(sub.riiNum * 100).toFixed(0)}%`}
-                        </span>
-                      </div>
-                      <span className="text-xs text-[var(--text-2)] block mb-2 font-medium">
-                        Individual Bids (&le; ₹2 Lakhs)
-                      </span>
-                    </div>
+                    {/* Retail Row */}
+                    <tr>
+                      <td className="p-3 font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                        <Users size={14} className="shrink-0" />
+                        <span>Retail (RII)</span>
+                      </td>
+                      <td className="p-3 text-[var(--text-2)]">Individual Retail Investors (≤ ₹2 Lakhs)</td>
+                      <td className="p-3 font-black text-right text-emerald-600 dark:text-emerald-400 text-sm">
+                        {riiText}
+                      </td>
+                    </tr>
 
-                    <div>
-                      <div className="flex items-baseline justify-between mb-1.5">
-                        <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
-                          {sub.rii}
+                    {/* Anchor Book Row */}
+                    <tr>
+                      <td className="p-3 font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                        <PieChart size={14} className="shrink-0" />
+                        <span>Anchor Book</span>
+                      </td>
+                      <td className="p-3 text-[var(--text-2)]">Anchor Institutional Placement (Pre-Issue)</td>
+                      <td className="p-3 font-bold text-right text-emerald-600 dark:text-emerald-400 text-xs">
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
+                          {anchorStatusText}
                         </span>
-                        <span className="text-[10px] text-[var(--text-2)]">
-                          {sub.riiNum >= 1 ? `${sub.riiNum.toFixed(2)}x Demand` : 'Subscribing'}
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-emerald-500 rounded-full"
-                          style={{ width: `${getSubProgress(sub.riiNum)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 4. Anchor Investors */}
-                  <div
-                    className="p-3.5 rounded-xl flex flex-col justify-between"
-                    style={{
-                      background: 'var(--input-bg)',
-                      border: '1px solid var(--divider)',
-                    }}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                          <PieChart size={14} className="text-amber-500" />
-                          Anchor
-                        </span>
-                        <span className="text-[10px] font-semibold text-[var(--text-2)]">Pre-Issue</span>
-                      </div>
-                      <span className="text-xs text-[var(--text-2)] block mb-2 font-medium">
-                        Institutional Anchor Book
-                      </span>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          {sub.anchorAvailable ? (
-                            <><CheckCircle2 size={16} className="text-emerald-500" /> Allocated</>
-                          ) : (
-                            sub.anchorStatus || 'Not Available'
-                          )}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-[var(--text-2)]">
-                        Locked-in institutional allotment
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* Detailed Subscription Table View */
-                <div className="overflow-x-auto rounded-xl border border-[var(--divider)]">
-                  <table className="w-full text-xs text-left">
-                    <thead className="bg-[var(--input-bg)] text-[var(--text-2)] border-b border-[var(--divider)]">
-                      <tr>
-                        <th className="p-2.5 font-bold uppercase text-[10px]">Investor Category</th>
-                        <th className="p-2.5 font-bold uppercase text-[10px]">Bidder Scope</th>
-                        <th className="p-2.5 font-bold uppercase text-[10px] text-right">Subscription</th>
-                        <th className="p-2.5 font-bold uppercase text-[10px] text-right">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--divider)]" style={{ color: 'var(--text)' }}>
-                      <tr>
-                        <td className="p-2.5 font-extrabold flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                          <Building2 size={13} /> QIB
-                        </td>
-                        <td className="p-2.5 text-[var(--text-2)]">Qualified Institutional Buyers</td>
-                        <td className="p-2.5 font-black text-right text-blue-600 dark:text-blue-400">{sub.qib}</td>
-                        <td className="p-2.5 text-right font-medium">{sub.qibNum >= 1 ? 'Oversubscribed' : 'Subscribing'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
-                          <TrendingUp size={13} /> NII Total
-                        </td>
-                        <td className="p-2.5 text-[var(--text-2)]">Non-Institutional (HNI &gt; ₹2 Lakhs)</td>
-                        <td className="p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400">{sub.nii}</td>
-                        <td className="p-2.5 text-right font-medium">{sub.niiNum >= 1 ? 'Oversubscribed' : 'Subscribing'}</td>
-                      </tr>
-                      <tr className="bg-[var(--input-bg)]/40 text-[11px]">
-                        <td className="p-2 pl-6 font-semibold text-[var(--text-2)]">↳ sHNI</td>
-                        <td className="p-2 text-[var(--text-2)]">Small HNI (₹2 Lakhs – ₹10 Lakhs)</td>
-                        <td className="p-2 font-bold text-right text-indigo-500">{sub.shni}</td>
-                        <td className="p-2 text-right text-[var(--text-2)]">{sub.shniNum >= 1 ? 'Booked' : 'Open'}</td>
-                      </tr>
-                      <tr className="bg-[var(--input-bg)]/40 text-[11px]">
-                        <td className="p-2 pl-6 font-semibold text-[var(--text-2)]">↳ bHNI</td>
-                        <td className="p-2 text-[var(--text-2)]">Big HNI (Above ₹10 Lakhs)</td>
-                        <td className="p-2 font-bold text-right text-indigo-500">{sub.bhni}</td>
-                        <td className="p-2 text-right text-[var(--text-2)]">{sub.bhniNum >= 1 ? 'Booked' : 'Open'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                          <Users size={13} /> Retail (RII)
-                        </td>
-                        <td className="p-2.5 text-[var(--text-2)]">Individual Retail (≤ ₹2 Lakhs)</td>
-                        <td className="p-2.5 font-black text-right text-emerald-600 dark:text-emerald-400">{sub.rii}</td>
-                        <td className="p-2.5 text-right font-medium">{sub.riiNum >= 1 ? 'Oversubscribed' : 'Subscribing'}</td>
-                      </tr>
-                      <tr>
-                        <td className="p-2.5 font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                          <PieChart size={13} /> Anchor Book
-                        </td>
-                        <td className="p-2.5 text-[var(--text-2)]">Anchor Institutional Placement</td>
-                        <td className="p-2.5 font-black text-right text-emerald-600 dark:text-emerald-400">
-                          {sub.anchorAvailable ? '✅ Allocated' : '-'}
-                        </td>
-                        <td className="p-2.5 text-right font-medium">{sub.anchorAvailable ? 'Completed' : 'N/A'}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          ) : hasLegacySub ? (
-            /* Fallback for already listed IPOs with overall subscription string */
-            <div
-              className="p-3.5 rounded-xl flex items-center justify-between"
-              style={{
-                background: 'rgba(59, 130, 246, 0.08)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-              }}
-            >
-              <div>
-                <span className="text-xs font-bold text-blue-700 dark:text-blue-300 block mb-0.5">
-                  Total Final Subscription
-                </span>
-                <span className="text-xs text-[var(--text-2)] font-medium">
-                  Overall demand at close of bidding
-                </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-              <span className="text-2xl font-black text-blue-600 dark:text-blue-300">
-                {ipo.subscription}
-              </span>
             </div>
           ) : (
             /* Upcoming IPOs before bidding opens */
@@ -848,8 +663,8 @@ export default function IpoDetailPage() {
 
             <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
               <span className="text-[11px] text-[var(--text-2)] block mb-0.5">Anchor Allotment</span>
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
-                {ipo.anchorAvailable ? <><CheckCircle2 size={13} /> Available</> : 'No'}
+              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mt-0.5">
+                {anchorAvailable ? 'Allocated' : 'No'}
               </span>
             </div>
 
