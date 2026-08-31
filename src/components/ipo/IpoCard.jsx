@@ -181,6 +181,28 @@ export default function IpoCard({ ipo, onClick }) {
         </div>
       </div>
 
+      {/* Detailed Category Subscription Pills if available */}
+      {ipo.subscriptionDetails && (ipo.subscriptionDetails.qib !== '-' || ipo.subscriptionDetails.rii !== '-') && (
+        <div className="flex items-center gap-1.5 flex-wrap text-[10px] mb-2.5 px-0.5">
+          <span className="text-[var(--text-2)] font-medium">Bidding:</span>
+          {ipo.subscriptionDetails.qib && ipo.subscriptionDetails.qib !== '-' && (
+            <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold">
+              QIB: {ipo.subscriptionDetails.qib}
+            </span>
+          )}
+          {ipo.subscriptionDetails.nii && ipo.subscriptionDetails.nii !== '-' && (
+            <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold">
+              NII: {ipo.subscriptionDetails.nii}
+            </span>
+          )}
+          {ipo.subscriptionDetails.rii && ipo.subscriptionDetails.rii !== '-' && (
+            <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+              Retail: {ipo.subscriptionDetails.rii}
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Footer Info: Bidding Dates & Action Arrow */}
       <div className="flex items-center justify-between text-xs text-[var(--text-2)] pt-0.5">
         <div className="flex items-center gap-1.5">

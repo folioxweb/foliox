@@ -146,6 +146,26 @@ function normalizeIpo(item) {
   const expectedProfit = gmpAmount * lotSize;
   const minInvestment = priceNum * lotSize;
 
+  const subDetails = item.subscription_details || item.raw_json?.subscription_details || null;
+  const subscriptionDetails = subDetails ? {
+    total: subDetails.total || item.subscription || '-',
+    totalNum: Number(subDetails.total_num || 0),
+    qib: subDetails.qib || '-',
+    qibNum: Number(subDetails.qib_num || 0),
+    nii: subDetails.nii || '-',
+    niiNum: Number(subDetails.nii_num || 0),
+    shni: subDetails.shni || '-',
+    shniNum: Number(subDetails.shni_num || 0),
+    bhni: subDetails.bhni || '-',
+    bhniNum: Number(subDetails.bhni_num || 0),
+    rii: subDetails.rii || '-',
+    riiNum: Number(subDetails.rii_num || 0),
+    anchorAvailable: Boolean(subDetails.anchor_available ?? item.anchor_available),
+    anchorStatus: subDetails.anchor_status || (item.anchor_available ? '✅ Allocated' : '-'),
+    updatedAt: subDetails.updated_at || '',
+    closingDate: subDetails.closing_date || ''
+  } : null;
+
   return {
     id: item.id,
     name: item.ipo_name || item.company_name || item.name || item.symbol || 'IPO',
@@ -164,6 +184,7 @@ function normalizeIpo(item) {
     lotSize,
     peRatio: item.pe_ratio || '--',
     subscription: item.subscription || '-',
+    subscriptionDetails,
     openDate: item.open_date || '',
     closeDate: item.close_date || '',
     boaDate: item.boa_date || '',

@@ -30,4 +30,10 @@ describe('Supabase Client API', () => {
     expect(typeof supabaseApi.updateFD).toBe('function');
     expect(typeof supabaseApi.deleteFD).toBe('function');
   });
+
+  it('should export all required IPO methods', () => {
+    expect(typeof supabaseApi.getIpos).toBe('function');
+    expect(typeof supabaseApi.getIpoById).toBe('function');
+  });
 });
+
