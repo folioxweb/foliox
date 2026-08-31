@@ -146,20 +146,74 @@ function normalizeIpo(item) {
   const expectedProfit = gmpAmount * lotSize;
   const minInvestment = priceNum * lotSize;
 
-  const subDetails = item.subscription_details || item.raw_json?.subscription_details || null;
+  let subDetails = item.subscription_details || item.raw_json?.subscription_details || null;
+  if (typeof subDetails === 'string') {
+    try {
+      subDetails = JSON.parse(subDetails);
+    } catch {
+      subDetails = null;
+    }
+  }
+
+  // Fallback: extract directly from raw_json if report 333 fields are in raw_json
+  if (!subDetails && item.raw_json && (item.raw_json.QIB !== undefined || item.raw_json.NII !== undefined || item.raw_json.RII !== undefined)) {
+    const raw = item.raw_json;
+    const parseField = (v) => {
+      if (!v || v === '-' || v === '--') return { text: '-', num: 0 };
+      const str = String(v).replace(/<[^>]*>/g, '').trim();
+      const m = str.match(/([0-9]+(?:\.[0-9]+)?)/);
+      return { text: m ? `${m[1]}x` : (str || '-'), num: m ? parseFloat(m[1]) : 0 };
+    };
+    const totalMatch = String(raw.Total || item.subscription || '').match(/<b>([0-9]+(?:\.[0-9]+)?)<\/b>/i) 
+      || String(raw.Total || item.subscription || '').match(/([0-9]+(?:\.[0-9]+)?)/);
+    const totalNum = totalMatch ? parseFloat(totalMatch[1]) : 0;
+    const totalText = totalMatch ? `${totalNum}x` : (item.subscription || '-');
+
+    const qib = parseField(raw.QIB);
+    const nii = parseField(raw.NII);
+    const shni = parseField(raw.SHNI);
+    const bhni = parseField(raw.BHNI);
+    const rii = parseField(raw.RII);
+    const anchorAvailable = Boolean((raw.Anchor && String(raw.Anchor).includes('✅')) || item.anchor_available);
+
+    let updatedAt = '';
+    const timeMatch = String(raw.Total || '').match(/<small[^>]*>.*?<b>([^<]+)<\/b>.*?<\/small>/i)
+      || String(raw.Total || '').match(/<small[^>]*>([^<]+)<\/small>/i);
+    if (timeMatch) updatedAt = timeMatch[1].replace(/<[^>]*>/g, '').trim();
+
+    subDetails = {
+      total: totalText,
+      total_num: totalNum,
+      qib: qib.text,
+      qib_num: qib.num,
+      nii: nii.text,
+      nii_num: nii.num,
+      shni: shni.text,
+      shni_num: shni.num,
+      bhni: bhni.text,
+      bhni_num: bhni.num,
+      rii: rii.text,
+      rii_num: rii.num,
+      anchor_available: anchorAvailable,
+      anchor_status: anchorAvailable ? '✅ Allocated' : '-',
+      updated_at: updatedAt,
+      closing_date: raw['Closing Date'] || ''
+    };
+  }
+
   const subscriptionDetails = subDetails ? {
     total: subDetails.total || item.subscription || '-',
-    totalNum: Number(subDetails.total_num || 0),
+    totalNum: Number((subDetails.total_num ?? parseFloat(String(subDetails.total || 0).replace(/[^0-9.]/g, ''))) || 0),
     qib: subDetails.qib || '-',
-    qibNum: Number(subDetails.qib_num || 0),
+    qibNum: Number((subDetails.qib_num ?? parseFloat(String(subDetails.qib || 0).replace(/[^0-9.]/g, ''))) || 0),
     nii: subDetails.nii || '-',
-    niiNum: Number(subDetails.nii_num || 0),
+    niiNum: Number((subDetails.nii_num ?? parseFloat(String(subDetails.nii || 0).replace(/[^0-9.]/g, ''))) || 0),
     shni: subDetails.shni || '-',
-    shniNum: Number(subDetails.shni_num || 0),
+    shniNum: Number((subDetails.shni_num ?? parseFloat(String(subDetails.shni || 0).replace(/[^0-9.]/g, ''))) || 0),
     bhni: subDetails.bhni || '-',
-    bhniNum: Number(subDetails.bhni_num || 0),
+    bhniNum: Number((subDetails.bhni_num ?? parseFloat(String(subDetails.bhni || 0).replace(/[^0-9.]/g, ''))) || 0),
     rii: subDetails.rii || '-',
-    riiNum: Number(subDetails.rii_num || 0),
+    riiNum: Number((subDetails.rii_num ?? parseFloat(String(subDetails.rii || 0).replace(/[^0-9.]/g, ''))) || 0),
     anchorAvailable: Boolean(subDetails.anchor_available ?? item.anchor_available),
     anchorStatus: subDetails.anchor_status || (item.anchor_available ? '✅ Allocated' : '-'),
     updatedAt: subDetails.updated_at || '',

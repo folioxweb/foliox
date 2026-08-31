@@ -91,9 +91,28 @@ export default function IpoDetailPage() {
   const totalExpectedProfit = ipo.expectedProfit * lots;
   const totalListingValue = expectedListingPrice * ipo.lotSize * lots;
 
-  const sub = ipo.subscriptionDetails;
-  const hasDetailedSub = sub && (sub.totalNum > 0 || (sub.total && sub.total !== '-'));
-  const hasLegacySub = ipo.subscription && ipo.subscription !== '-' && ipo.subscription !== '--';
+  const resolvedSub = ipo.subscriptionDetails || (ipo.subscription && ipo.subscription !== '-' && ipo.subscription !== '--' ? {
+    total: ipo.subscription,
+    totalNum: parseFloat(String(ipo.subscription).replace(/[^0-9.]/g, '')) || 0,
+    qib: ipo.raw_json?.QIB ? `${String(ipo.raw_json.QIB).replace(/x$/i, '')}x` : '-',
+    qibNum: parseFloat(String(ipo.raw_json?.QIB || 0).replace(/[^0-9.]/g, '')) || 0,
+    nii: ipo.raw_json?.NII ? `${String(ipo.raw_json.NII).replace(/x$/i, '')}x` : '-',
+    niiNum: parseFloat(String(ipo.raw_json?.NII || 0).replace(/[^0-9.]/g, '')) || 0,
+    shni: ipo.raw_json?.SHNI ? `${String(ipo.raw_json.SHNI).replace(/x$/i, '')}x` : '-',
+    shniNum: parseFloat(String(ipo.raw_json?.SHNI || 0).replace(/[^0-9.]/g, '')) || 0,
+    bhni: ipo.raw_json?.BHNI ? `${String(ipo.raw_json.BHNI).replace(/x$/i, '')}x` : '-',
+    bhniNum: parseFloat(String(ipo.raw_json?.BHNI || 0).replace(/[^0-9.]/g, '')) || 0,
+    rii: ipo.raw_json?.RII ? `${String(ipo.raw_json.RII).replace(/x$/i, '')}x` : '-',
+    riiNum: parseFloat(String(ipo.raw_json?.RII || 0).replace(/[^0-9.]/g, '')) || 0,
+    anchorAvailable: Boolean(ipo.anchorAvailable),
+    anchorStatus: ipo.anchorAvailable ? '✅ Allocated' : '-',
+    updatedAt: ipo.updatedOn || '',
+    closingDate: ipo.closeDate || ''
+  } : null);
+
+  const sub = resolvedSub;
+  const hasDetailedSub = Boolean(sub && (sub.totalNum > 0 || (sub.total && sub.total !== '-' && sub.total !== '--')));
+  const hasLegacySub = Boolean(ipo.subscription && ipo.subscription !== '-' && ipo.subscription !== '--');
 
   // Helper to render subscription progress bar percentage
   function getSubProgress(num) {
