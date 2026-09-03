@@ -279,6 +279,7 @@ const realApi = {
   // Mainboard IPO API
   getIpos: () => supabaseApi.getIpos(),
   getIpoById: (id) => supabaseApi.getIpoById(id),
+  getIpoGmpHistory: (id) => supabaseApi.getIpoGmpHistory(id),
 };
 
 function getActiveApi() {

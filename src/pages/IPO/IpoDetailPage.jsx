@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { FlameRating, StatusBadge } from '../../components/ipo/IpoCard';
+import IpoGmpHistoryChart from '../../components/ipo/IpoGmpHistoryChart';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 
@@ -464,6 +465,15 @@ export default function IpoDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ========================================================================= */}
+        {/* 3.5 SECTION: GMP TREND & HISTORICAL CHART                                 */}
+        {/* ========================================================================= */}
+        <IpoGmpHistoryChart
+          ipoId={ipo.id}
+          currentGmpPercent={ipo.gmpPercent}
+          currentGmpAmount={ipo.gmpAmount}
+        />
 
         {/* ========================================================================= */}
         {/* 4. SECTION: EST. PROFIT PER LOT                                          */}
