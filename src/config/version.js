@@ -8,7 +8,12 @@ export const RELEASE_CODENAME = 'IPO Intelligence & Alerts';
 export const RELEASE_DATE = 'September 2026';
 export const BUILD_TIMESTAMP = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '5 Sept 2026';
 
-export const IS_UAT = import.meta.env.MODE === 'uat' || (typeof window !== 'undefined' && window.location.pathname.includes('/uat/'));
+export const IS_UAT =
+  import.meta.env.MODE === 'uat' ||
+  (typeof window !== 'undefined' && (
+    window.location.pathname.includes('/uat') ||
+    window.location.href.includes('/uat')
+  ));
 export const ENVIRONMENT_LABEL = IS_UAT ? 'UAT' : 'Production';
 
 export const STORAGE_SEEN_VERSION_KEY = 'foliox_seen_version';
