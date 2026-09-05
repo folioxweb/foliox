@@ -9,12 +9,15 @@ import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useTheme } from '../../context/ThemeContext';
 import SetNewPasswordModal from '../../components/auth/SetNewPasswordModal';
 import AppGuideModal from '../../components/guide/AppGuideModal';
-
-const APP_VERSION = '4.2.0';
-const BUILD_DATE = __BUILD_DATE__;
-const REACT_VERSION = __REACT_VERSION__;
-const VITE_VERSION = __VITE_VERSION__;
-const API_VERSION = 'Version 55 on 17 Jul 2026, 10:52 PM';
+import WhatsNewModal from '../../components/whatsNew/WhatsNewModal';
+import {
+  APP_VERSION,
+  RELEASE_CODENAME,
+  RELEASE_DATE,
+  BUILD_TIMESTAMP,
+  ENVIRONMENT_LABEL,
+  IS_UAT
+} from '../../config/version';
 
 function formatLastUpdated(date) {
   if (!date) return 'Never';
@@ -32,6 +35,7 @@ export default function SettingsPage() {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [showWhatsNewModal, setShowWhatsNewModal] = useState(false);
   const [paperCapital, setPaperCapital] = useState('5000000');
   const [updatingCap, setUpdatingCap] = useState(false);
   const [updatingAlerts, setUpdatingAlerts] = useState(false);
@@ -503,33 +507,104 @@ export default function SettingsPage() {
           </button>
         </section>
 
-        {/* ── About / App Info (commented out for now) ───────────────────────────────────────── */}
-        {/*
-        <section aria-label="About" style={{ ...sectionStyle, gap: 0 }}>
-          <div className="flex items-center gap-3 mb-4">
-            <Info size={20} className="text-sky-400 flex-shrink-0" />
-            <div>
-              <h3 className="text-lg font-semibold" style={{ color: 'var(--text)' }}>Equity Dashboard</h3>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Personal Portfolio Management Platform</p>
+        {/* ── About FolioX ───────────────────────────────────────── */}
+        <section aria-label="About" style={sectionStyle} className="mb-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+              About FolioX
+            </h2>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                IS_UAT
+                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                  : 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  IS_UAT ? 'bg-amber-500' : 'bg-emerald-500'
+                }`}
+              />
+              {ENVIRONMENT_LABEL}
+            </span>
+          </div>
+
+          <div className="flex items-start gap-3.5 pt-1">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(14,165,233,0.15))',
+                border: '1px solid rgba(16,185,129,0.25)',
+              }}
+            >
+              <Sparkles size={24} className="text-emerald-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base font-bold text-[var(--text)] leading-tight">FolioX Wealth Tracker</h3>
+                <span className="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-[var(--input-bg)] text-[var(--text-2)] border border-[var(--divider)]">
+                  v{APP_VERSION}
+                </span>
+              </div>
+              <p className="text-xs text-[var(--text-2)] mt-1 leading-relaxed">
+                Personal equity, automated IPO intelligence, and wealth analytics platform.
+              </p>
             </div>
           </div>
 
-          <div>
+          {/* Action Buttons: What's New & App Tour */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setShowWhatsNewModal(true)}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90 active:scale-98 cursor-pointer"
+              style={{
+                background: 'linear-gradient(135deg, rgba(16,185,129,0.12), rgba(14,165,233,0.12))',
+                border: '1px solid rgba(16,185,129,0.3)',
+                color: 'var(--emerald, #10b981)',
+              }}
+            >
+              <Sparkles size={14} className="text-emerald-500" />
+              What's New in v{APP_VERSION}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all hover:opacity-90 active:scale-98 cursor-pointer"
+              style={{
+                background: 'var(--input-bg)',
+                border: '1px solid var(--card-border)',
+                color: 'var(--text)',
+              }}
+            >
+              <Compass size={14} className="text-sky-400" />
+              Feature Tour & Guide
+            </button>
+          </div>
+
+          {/* System Specs List */}
+          <div className="pt-2 border-t mt-1" style={{ borderColor: 'var(--divider)' }}>
             {[
-              ['App Version', APP_VERSION],
-              ['API Version', API_VERSION],
-              ['Build Date', BUILD_DATE],
-              ['React', REACT_VERSION],
-              ['Vite', VITE_VERSION],
-              ['Backend', import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE' ? 'Supabase (PostgreSQL)' : 'Google Apps Script'],
-              ['Hosting', 'GitHub Pages'],
+              ['App Version', `v${APP_VERSION}`],
+              ['Release', RELEASE_CODENAME],
+              ['Release Date', RELEASE_DATE],
+              ['Environment', ENVIRONMENT_LABEL],
+              ['Build Timestamp', BUILD_TIMESTAMP],
+              ['Architecture', `React ${typeof __REACT_VERSION__ !== 'undefined' ? __REACT_VERSION__ : '19'} + Vite PWA`],
+              ['Backend Engine', 'Supabase PostgreSQL (Edge Functions)'],
               ['Developer', 'Parth Deshmukh'],
             ].map(([label, value]) => (
               <InfoRow key={label} label={label} value={value} />
             ))}
           </div>
+
+          <div className="pt-2 text-center">
+            <p className="text-[11px] text-[var(--text-muted)] m-0">
+              &copy; 2026 FolioX. All rights reserved.
+            </p>
+          </div>
         </section>
-        */}
       </main>
 
       {/* Logout Dialog */}
@@ -572,6 +647,12 @@ export default function SettingsPage() {
       <AppGuideModal
         isOpen={showGuideModal}
         onClose={() => setShowGuideModal(false)}
+      />
+
+      {/* What's New Release Notes Modal */}
+      <WhatsNewModal
+        isOpen={showWhatsNewModal}
+        onClose={() => setShowWhatsNewModal(false)}
       />
     </>
   );
