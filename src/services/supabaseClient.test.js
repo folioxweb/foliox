@@ -34,6 +34,7 @@ describe('Supabase Client API', () => {
   it('should export all required IPO methods', () => {
     expect(typeof supabaseApi.getIpos).toBe('function');
     expect(typeof supabaseApi.getIpoById).toBe('function');
+    expect(typeof supabaseApi.getIpoGmpHistory).toBe('function');
   });
 });
 

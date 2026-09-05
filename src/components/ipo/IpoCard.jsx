@@ -1,5 +1,4 @@
 import { memo } from 'react';
-import { motion } from 'framer-motion';
 import { Flame, Calendar, ChevronRight, ExternalLink } from 'lucide-react';
 
 /**
@@ -100,11 +99,7 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
   );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.15 }}
+    <div
       onClick={onClick}
       className="p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:shadow-md relative overflow-hidden"
       style={{
@@ -250,7 +245,7 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 });
 

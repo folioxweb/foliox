@@ -44,9 +44,9 @@ export default function DesktopFDView({ fds = [], onPress }) {
       <div
         className="w-full rounded-2xl p-10 text-center border transition-all"
         style={{
-          background: 'var(--card-bg)',
+          background: 'var(--header-bg)',
           borderColor: 'var(--card-border)',
-          boxShadow: 'var(--card-shadow)',
+          boxShadow: 'none',
         }}
       >
         <Landmark className="mx-auto mb-3 text-teal-500 opacity-60" size={36} />
@@ -94,9 +94,9 @@ export default function DesktopFDView({ fds = [], onPress }) {
     <div
       className="w-full rounded-2xl overflow-hidden border transition-all"
       style={{
-        background: 'var(--card-bg)',
+        background: 'var(--header-bg)',
         borderColor: 'var(--card-border)',
-        boxShadow: 'var(--card-shadow)',
+        boxShadow: 'none',
       }}
     >
       <table className="w-full text-left border-collapse">
@@ -107,7 +107,7 @@ export default function DesktopFDView({ fds = [], onPress }) {
             style={{
               borderColor: 'var(--divider)',
               color: 'var(--text-muted)',
-              background: 'rgba(0, 0, 0, 0.015)',
+              background: 'transparent',
             }}
           >
             {/* Column 1: Bank / Scheme */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   ExternalLink,
@@ -17,13 +17,16 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { FlameRating, StatusBadge } from '../../components/ipo/IpoCard';
+import IpoGmpHistoryChart from '../../components/ipo/IpoGmpHistoryChart';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 
 export default function IpoDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const scrollRef = usePageScrollRestoration('ipo_detail');
+  const fromTab = location.state?.fromTab || sessionStorage.getItem('ipo_active_tab') || 'open';
 
   const [ipo, setIpo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,7 +69,7 @@ export default function IpoDetailPage() {
           The requested IPO details could not be loaded.
         </p>
         <button
-          onClick={() => navigate('/ipo')}
+          onClick={() => navigate('/ipo', { state: { fromTab } })}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 text-white shadow-md active:scale-95 transition"
         >
           <ArrowLeft size={14} /> Back to IPO List
@@ -151,7 +154,13 @@ export default function IpoDetailPage() {
         }}
       >
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => {
+            if (window.history.length > 1) {
+              navigate(-1);
+            } else {
+              navigate('/ipo', { state: { fromTab } });
+            }
+          }}
           className="flex items-center gap-1.5 text-xs font-semibold text-[var(--text-2)] hover:text-[var(--text)] transition-colors"
         >
           <ArrowLeft size={18} />
@@ -464,6 +473,15 @@ export default function IpoDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ========================================================================= */}
+        {/* 3.5 SECTION: GMP TREND & HISTORICAL CHART                                 */}
+        {/* ========================================================================= */}
+        <IpoGmpHistoryChart
+          ipoId={ipo.id}
+          currentGmpPercent={ipo.gmpPercent}
+          currentGmpAmount={ipo.gmpAmount}
+        />
 
         {/* ========================================================================= */}
         {/* 4. SECTION: EST. PROFIT PER LOT                                          */}

@@ -128,12 +128,12 @@ export default function DashboardPage() {
               todayData={todayPerformance.data}
               loading={overallInvestments.loading || todayPerformance.loading}
             />
+            <TodayPerformance data={todayPerformance.data} loading={todayPerformance.loading} />
             <StocksAllocation data={stocksAllocation.data} loading={stocksAllocation.loading} />
           </div>
 
           {/* Right / Allocation Column (5 Cols on Desktop) */}
           <div className="lg:col-span-5">
-            <TodayPerformance data={todayPerformance.data} loading={todayPerformance.loading} />
             <AssetAllocation data={assetAllocation.data} loading={assetAllocation.loading} />
             <OverallSectorAllocation data={overallSectorAllocation.data} loading={overallSectorAllocation.loading} />
           </div>

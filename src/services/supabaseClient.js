@@ -901,6 +901,20 @@ export const supabaseApi = {
     return normalizeIpo(data);
   },
 
+  getIpoGmpHistory: async (ipoId) => {
+    const { data, error } = await supabase
+      .from('ipo_gmp_history')
+      .select('*')
+      .eq('ipo_id', ipoId)
+      .order('recorded_at', { ascending: true });
+
+    if (error) {
+      console.warn('Could not load ipo_gmp_history:', error.message);
+      return [];
+    }
+    return data || [];
+  },
+
   // -----------------------------------------
   // Direct Database Mutation Handler (PostgREST)
   // -----------------------------------------

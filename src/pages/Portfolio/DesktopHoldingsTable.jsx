@@ -78,9 +78,9 @@ export default function DesktopHoldingsTable({
     <div
       className="w-full rounded-2xl overflow-hidden border transition-all"
       style={{
-        background: 'var(--card-bg)',
+        background: 'var(--header-bg)',
         borderColor: 'var(--card-border)',
-        boxShadow: 'var(--card-shadow)',
+        boxShadow: 'none',
       }}
     >
       <table className="w-full text-left border-collapse">
@@ -91,7 +91,7 @@ export default function DesktopHoldingsTable({
             style={{
               borderColor: 'var(--divider)',
               color: 'var(--text-muted)',
-              background: 'rgba(0, 0, 0, 0.015)',
+              background: 'transparent',
             }}
           >
             {/* Column 1: Company */}
