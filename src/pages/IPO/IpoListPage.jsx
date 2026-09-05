@@ -1,7 +1,24 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Layers, Settings, X, SlidersHorizontal, ArrowUpDown, Check } from 'lucide-react';
+import {
+  TrendingUp,
+  Search,
+  SlidersHorizontal,
+  X,
+  Clock,
+  CheckCircle2,
+  Calendar,
+  Layers,
+  Sparkles,
+  ArrowUpDown,
+  RefreshCw,
+  Info,
+  Check,
+  Building2,
+  Flame,
+  Settings,
+} from 'lucide-react';
 import IpoCard from '../../components/ipo/IpoCard';
 import { api } from '../../services/apiClient';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
@@ -26,6 +43,7 @@ const SORT_OPTIONS = [
 
 export default function IpoListPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const scrollRef = usePageScrollRestoration('ipo_list');
   const searchInputRef = useRef(null);
 
@@ -47,10 +65,17 @@ export default function IpoListPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('open');
+  const [activeTab, setActiveTab] = useState(() => {
+    return location.state?.fromTab || sessionStorage.getItem('ipo_active_tab') || 'open';
+  });
   const [sortBy, setSortBy] = useState('gmp'); // 'gmp' | 'rating' | 'size' | 'date'
   const [sortDirection, setSortDirection] = useState('desc'); // 'desc' | 'asc'
   const [showSortFilter, setShowSortFilter] = useState(false);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    sessionStorage.setItem('ipo_active_tab', tabId);
+  };
 
   async function fetchIpos(isRefresh = false) {
     try {
@@ -74,6 +99,13 @@ export default function IpoListPage() {
   useEffect(() => {
     fetchIpos();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.fromTab) {
+      setActiveTab(location.state.fromTab);
+      sessionStorage.setItem('ipo_active_tab', location.state.fromTab);
+    }
+  }, [location.state?.fromTab]);
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -262,7 +294,7 @@ export default function IpoListPage() {
                 <li key={tab.id} className="relative flex-1" role="presentation">
                   <button
                     type="button"
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => handleTabChange(tab.id)}
                     className="relative w-full px-2 py-3 text-xs sm:text-sm font-semibold whitespace-nowrap text-center flex items-center justify-center gap-1 focus-visible:outline-none"
                     style={{
                       color: isActive ? 'var(--text)' : 'var(--text-muted)',
@@ -354,7 +386,7 @@ export default function IpoListPage() {
               <IpoCard
                 key={ipo.id || ipo.name}
                 ipo={ipo}
-                onClick={() => navigate(`/ipo/${ipo.id}`)}
+                onClick={() => navigate(`/ipo/${ipo.id}`, { state: { fromTab: activeTab } })}
               />
             ))}
           </div>
@@ -481,7 +513,7 @@ export default function IpoListPage() {
                       <button
                         key={tab.id}
                         type="button"
-                        onClick={() => setActiveTab(tab.id)}
+                        onClick={() => handleTabChange(tab.id)}
                         className={`flex items-center justify-between p-3 rounded-2xl text-xs font-semibold transition-all ${
                           isSel
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
