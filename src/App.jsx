@@ -24,6 +24,8 @@ import IpoListPage from './pages/IPO/IpoListPage';
 import IpoDetailPage from './pages/IPO/IpoDetailPage';
 import SetNewPasswordModal from './components/auth/SetNewPasswordModal';
 import AppGuideModal from './components/guide/AppGuideModal';
+import WhatsNewModal from './components/whatsNew/WhatsNewModal';
+import { hasSeenCurrentVersion, markCurrentVersionAsSeen } from './config/version';
 
 // ---------------------------------------------------------------------------
 // AppShell — wraps every page; renders Sidebar on Desktop & BottomNav on Mobile
@@ -75,11 +77,12 @@ function AuthLoadingScreen() {
 // App root
 // ---------------------------------------------------------------------------
 function AppContent() {
-  const { isLoggedIn, loading, signOut, isPasswordRecovery, setIsPasswordRecovery } = useAuth();
+  const { user, isLoggedIn, loading, signOut, isPasswordRecovery, setIsPasswordRecovery } = useAuth();
   const [showAutoGuide, setShowAutoGuide] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const navigate = useNavigate();
 
-  // Check if first-time user guide should be shown
+  // Check if first-time user guide or What's New release popup should be shown
   useEffect(() => {
     if (isLoggedIn && !loading) {
       const hasSeenGuide = localStorage.getItem('foliox_guide_seen');
@@ -88,9 +91,18 @@ function AppContent() {
           setShowAutoGuide(true);
         }, 500);
         return () => clearTimeout(timer);
+      } else {
+        // User has already completed onboarding guide; check for release popup
+        const seenRelease = hasSeenCurrentVersion(user);
+        if (!seenRelease) {
+          const timer = setTimeout(() => {
+            setShowWhatsNew(true);
+          }, 600);
+          return () => clearTimeout(timer);
+        }
       }
     }
-  }, [isLoggedIn, loading]);
+  }, [isLoggedIn, loading, user]);
 
   // Listen for a custom app-wide logout event (for legacy or external calls)
   useEffect(() => {
@@ -131,7 +143,19 @@ function AppContent() {
       {/* First-login Feature Tour Guide Modal */}
       <AppGuideModal
         isOpen={showAutoGuide}
-        onClose={() => setShowAutoGuide(false)}
+        onClose={() => {
+          setShowAutoGuide(false);
+          markCurrentVersionAsSeen(user);
+        }}
+      />
+
+      {/* What's New Release Popup Modal */}
+      <WhatsNewModal
+        isOpen={showWhatsNew}
+        onClose={() => {
+          markCurrentVersionAsSeen(user);
+          setShowWhatsNew(false);
+        }}
       />
 
       {/* Recovery Modal if triggered while session exists */}
