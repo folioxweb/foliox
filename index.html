@@ -13,6 +13,24 @@
     <meta name="apple-mobile-web-app-title" content="Foliox" />
     <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
 
+    <!-- Service Worker Isolation Shield: Clean up parent /foliox/ scope workers if on UAT -->
+    <script type="text/javascript">
+      (function() {
+        if (typeof window !== 'undefined' && window.location.pathname.startsWith('/foliox/uat')) {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              for (var i = 0; i < registrations.length; i++) {
+                var scope = registrations[i].scope;
+                if (scope.endsWith('/foliox/') || !scope.includes('/uat/')) {
+                  registrations[i].unregister();
+                }
+              }
+            });
+          }
+        }
+      })();
+    </script>
+
     <!-- Single Page Apps for GitHub Pages redirect recovery script -->
     <script type="text/javascript">
       (function(l) {
@@ -20,8 +38,9 @@
           var decoded = l.search.slice(1).split('&').map(function(s) { 
             return s.replace(/~and~/g, '&')
           }).join('?');
+          var basePath = l.pathname.replace(/\/+$/, '');
           window.history.replaceState(null, null,
-              l.pathname.slice(0, -1) + decoded + l.hash
+              basePath + decoded + l.hash
           );
         }
       }(window.location))
@@ -57,7 +76,7 @@
           media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: landscape)"
           href="./splash/launch-2796x1290.png" />
   </head>
-  <body>
+  <body style="background-color: #0B1120; margin: 0;">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
