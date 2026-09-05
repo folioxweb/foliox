@@ -18,7 +18,10 @@ import {
   Building2,
   Flame,
   Settings,
+  Bell,
+  BellOff,
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import IpoCard from '../../components/ipo/IpoCard';
 import { api } from '../../services/apiClient';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
@@ -71,6 +74,26 @@ export default function IpoListPage() {
   const [sortBy, setSortBy] = useState('gmp'); // 'gmp' | 'rating' | 'size' | 'date'
   const [sortDirection, setSortDirection] = useState('desc'); // 'desc' | 'asc'
   const [showSortFilter, setShowSortFilter] = useState(false);
+
+  const { user, updateAlertPreferences } = useAuth();
+  const isIpoAlertsEnabled = Boolean(user?.user_metadata?.ipo_alerts_enabled === true);
+  const [updatingAlerts, setUpdatingAlerts] = useState(false);
+
+  const handleToggleIpoAlerts = async () => {
+    if (!user) {
+      navigate('/settings');
+      return;
+    }
+    try {
+      setUpdatingAlerts(true);
+      const nextVal = !isIpoAlertsEnabled;
+      await updateAlertPreferences(nextVal);
+    } catch (err) {
+      alert(err.message || 'Failed to update alert preferences');
+    } finally {
+      setUpdatingAlerts(false);
+    }
+  };
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
@@ -218,6 +241,26 @@ export default function IpoListPage() {
                 </button>
                 <RefreshButton onRefresh={() => fetchIpos(true)} loading={refreshing} />
                 <PrivacyToggle />
+                <button
+                  type="button"
+                  onClick={handleToggleIpoAlerts}
+                  disabled={updatingAlerts}
+                  className="rounded-full p-1.5 transition-colors hover:opacity-80 relative"
+                  style={{
+                    color: isIpoAlertsEnabled ? 'var(--emerald)' : 'var(--text-muted)',
+                  }}
+                  title={
+                    isIpoAlertsEnabled
+                      ? 'IPO GMP email alerts: ENABLED (Click to disable)'
+                      : 'IPO GMP email alerts: DISABLED (Click to enable)'
+                  }
+                  aria-label="Toggle IPO email alerts"
+                >
+                  {isIpoAlertsEnabled ? <Bell size={18} /> : <BellOff size={18} />}
+                  {isIpoAlertsEnabled && (
+                    <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  )}
+                </button>
                 <button
                   onClick={() => navigate('/settings')}
                   className="flex h-8 w-8 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--emerald)]"

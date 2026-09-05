@@ -9,6 +9,7 @@ const AuthContext = createContext({
   signUpWithEmail: async () => {},
   resetPasswordForEmail: async () => {},
   updatePassword: async () => {},
+  updateAlertPreferences: async () => {},
   signOut: async () => {},
   isLoggedIn: false,
   isPasswordRecovery: false,
@@ -111,6 +112,17 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  const updateAlertPreferences = async (enabled) => {
+    const { data, error } = await supabase.auth.updateUser({
+      data: { ipo_alerts_enabled: Boolean(enabled) },
+    });
+    if (error) throw error;
+    if (data?.user) {
+      setUser(data.user);
+    }
+    return data;
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Sign out error:', error);
@@ -127,6 +139,7 @@ export function AuthProvider({ children }) {
     signUpWithEmail,
     resetPasswordForEmail,
     updatePassword,
+    updateAlertPreferences,
     signOut,
     isLoggedIn: Boolean(session && user),
     isPasswordRecovery,

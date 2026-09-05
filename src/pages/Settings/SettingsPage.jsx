@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass } from 'lucide-react';
+import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass, Bell, BellOff } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { useAuth } from '../../context/AuthContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -24,7 +24,7 @@ function formatLastUpdated(date) {
 
 export default function SettingsPage() {
   const { state, updatePaperCapital, resetPaperPortfolio } = usePortfolio();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateAlertPreferences } = useAuth();
   const { mode } = useTheme();
   const scrollRef = usePageScrollRestoration('settings');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -32,6 +32,30 @@ export default function SettingsPage() {
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [paperCapital, setPaperCapital] = useState('5000000');
   const [updatingCap, setUpdatingCap] = useState(false);
+  const [updatingAlerts, setUpdatingAlerts] = useState(false);
+  const [alertMessage, setAlertMessage] = useState(null);
+
+  // Default is OFF (opt-in): Only true if explicitly set in user_metadata
+  const isIpoAlertsEnabled = Boolean(user?.user_metadata?.ipo_alerts_enabled === true);
+
+  async function handleToggleIpoAlerts() {
+    if (!user) return;
+    try {
+      setUpdatingAlerts(true);
+      const nextVal = !isIpoAlertsEnabled;
+      await updateAlertPreferences(nextVal);
+      setAlertMessage(
+        nextVal
+          ? 'IPO email alerts enabled'
+          : 'IPO email alerts disabled'
+      );
+      setTimeout(() => setAlertMessage(null), 3000);
+    } catch (err) {
+      alert(err.message || 'Failed to update alert preferences');
+    } finally {
+      setUpdatingAlerts(false);
+    }
+  }
 
   useEffect(() => {
     const initCap = state.paperTrade?.data?.summary?.initialCapital;
@@ -146,6 +170,75 @@ export default function SettingsPage() {
             </button>
           </section>
         )}
+
+        {/* ── Alerts & Notifications ───────────────────────────────────────── */}
+        <section aria-label="Alerts and Notifications" style={sectionStyle} className="mb-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
+              Alerts & Notifications
+            </h2>
+            {alertMessage && (
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                {alertMessage}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-between gap-4 py-1">
+            <div className="flex items-start gap-3 min-w-0">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 mt-0.5"
+                style={{
+                  background: isIpoAlertsEnabled ? 'rgba(16,185,129,0.12)' : 'rgba(148,163,184,0.12)',
+                }}
+              >
+                <Bell
+                  size={20}
+                  className={isIpoAlertsEnabled ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400'}
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-semibold" style={{ color: 'var(--text)' }}>
+                    IPO GMP Email Alerts
+                  </h3>
+                  <span
+                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                      isIpoAlertsEnabled
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-black/5 dark:bg-white/5 text-[var(--text-muted)]'
+                    }`}
+                  >
+                    {isIpoAlertsEnabled ? 'ENABLED' : 'DISABLED'}
+                  </span>
+                </div>
+                <p className="text-xs mt-1 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  {isIpoAlertsEnabled
+                    ? 'Active: Receive email alerts when opening GMP > 20% or drops below 20%'
+                    : 'Off by default. Turn ON to receive real-time email notifications for 20% GMP transitions.'}
+                </p>
+              </div>
+            </div>
+
+            {/* iOS-style Switch */}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isIpoAlertsEnabled}
+              disabled={updatingAlerts || !user}
+              onClick={handleToggleIpoAlerts}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
+                isIpoAlertsEnabled ? 'bg-emerald-500' : 'bg-slate-600 dark:bg-slate-700'
+              } ${updatingAlerts ? 'opacity-50 cursor-not-allowed' : ''}`}
+              title={isIpoAlertsEnabled ? 'Disable email alerts' : 'Enable email alerts'}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  isIpoAlertsEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </section>
 
         {/* ── Appearance ──────────────────────────────────────────────────── */}
         <section aria-label="Appearance" style={sectionStyle} className="mb-4">
