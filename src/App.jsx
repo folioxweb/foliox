@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Outlet, useNavigate, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Outlet, useNavigate } from 'react-router-dom';
 
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -177,40 +177,10 @@ function AppContent() {
           <Route path="ipo" element={<IpoListPage />} />
           <Route path="ipo/:id" element={<IpoDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
-          {/* Catch-all fallback route to prevent blank white screens */}
-          <Route path="*" element={<FallbackRouteHandler />} />
         </Route>
       </Routes>
     </>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Self-healing fallback route handler:
-// If a user navigates to /foliox/uat but is served an unmatched path or parent bundle,
-// cleans up conflicting service workers and smoothly redirects to root.
-// ---------------------------------------------------------------------------
-function FallbackRouteHandler() {
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.location.pathname.includes('/uat')) {
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then((registrations) => {
-          let foundParent = false;
-          for (const reg of registrations) {
-            if (reg.scope.endsWith('/foliox/') || !reg.scope.includes('/uat/')) {
-              reg.unregister();
-              foundParent = true;
-            }
-          }
-          if (foundParent) {
-            window.location.reload();
-          }
-        });
-      }
-    }
-  }, []);
-
-  return <Navigate to="/" replace />;
 }
 
 export default function App() {

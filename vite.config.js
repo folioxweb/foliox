@@ -77,7 +77,6 @@ export default defineConfig(({ mode }) => {
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,jpeg,png,svg,woff2}'],
-        navigateFallbackDenylist: isUat ? [] : [/^\/foliox\/uat/],
         runtimeCaching: [],
       },
     }),
