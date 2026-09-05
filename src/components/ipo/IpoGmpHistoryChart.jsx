@@ -89,7 +89,11 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
   // Format data for Recharts
   const chartData = useMemo(() => {
     if (!history || history.length === 0) return [];
-    return history.map((item) => {
+    
+    // Track dates already seen to show clean, non-repeating date labels on X-axis
+    const seenDates = new Set();
+
+    return history.map((item, idx) => {
       const dateObj = new Date(item.recorded_at || item.recorded_date);
       const formattedDate = dateObj.toLocaleDateString('en-IN', {
         day: 'numeric',
@@ -102,9 +106,16 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
         minute: '2-digit',
       });
 
+      const isFirstOfDate = !seenDates.has(formattedDate);
+      if (isFirstOfDate) {
+        seenDates.add(formattedDate);
+      }
+
       return {
-        id: item.id,
+        id: item.id || idx,
+        uniqueKey: `${item.id || idx}_${dateObj.getTime()}`,
         date: formattedDate,
+        axisLabel: isFirstOfDate ? formattedDate : '',
         formattedTime,
         timestamp: dateObj.getTime(),
         gmpPercent: Number(item.gmp_percent || 0),
@@ -239,11 +250,13 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
               </defs>
 
               <XAxis
-                dataKey="date"
+                dataKey="uniqueKey"
                 stroke="var(--text-2)"
                 tick={{ fontSize: 10, fill: 'var(--text-2)' }}
                 tickLine={false}
                 axisLine={{ stroke: 'var(--divider)' }}
+                interval={0}
+                tickFormatter={(_, index) => chartData[index]?.axisLabel || ''}
               />
               <YAxis
                 stroke="var(--text-2)"
