@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, UserPlus, LogIn, KeyRound, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { api } from "../../services/apiClient";
+import { IS_UAT } from "../../config/version";
 
 export default function LoginPage({ onLogin }) {
   const { signInWithEmail, signUpWithEmail, resetPasswordForEmail, authError, setAuthError } = useAuth();
@@ -94,9 +95,16 @@ export default function LoginPage({ onLogin }) {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-center" style={{ color: 'var(--text)' }}>
-            Foliox
-          </h1>
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-3xl font-bold text-center" style={{ color: 'var(--text)' }}>
+              FolioX
+            </h1>
+            {IS_UAT && (
+              <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+                UAT
+              </span>
+            )}
+          </div>
 
           <p className="text-center mt-2 mb-6 text-sm" style={{ color: 'var(--text-muted)' }}>
             {view === 'signup'
