@@ -216,23 +216,26 @@ export default function ApmDashboardPage() {
             <ArrowLeft size={16} />
           </button>
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-lg font-bold tracking-tight text-[var(--text)]">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <h1
+                className="font-bold tracking-tight text-[var(--text)] whitespace-nowrap"
+                style={{ fontSize: 'clamp(0.925rem, 3.2vw, 1.125rem)' }}
+              >
                 System Monitor &amp; APM
               </h1>
               <span
-                className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-extrabold border whitespace-nowrap shrink-0 ${
                   hasIssues
                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/25'
                     : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
                 }`}
               >
                 <span
-                  className={`w-2 h-2 rounded-full ${
+                  className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 ${
                     hasIssues ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500 animate-pulse'
                   }`}
                 />
-                {hasIssues ? 'Failures Detected' : 'All Systems Operational'}
+                <span>{hasIssues ? 'Failures Detected' : 'All Systems Operational'}</span>
               </span>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">

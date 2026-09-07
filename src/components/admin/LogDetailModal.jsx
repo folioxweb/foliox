@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, Copy, AlertTriangle, Terminal, Clock, Activity, ArrowRight, User } from 'lucide-react';
 import { useState } from 'react';
@@ -29,15 +30,15 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
     });
   };
 
-  return (
+  const content = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
+          className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85dvh]"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -46,9 +47,9 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
         >
           {/* Header */}
           <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-[var(--card-border)] bg-[var(--header-bg)]">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <div
-                className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center border shrink-0 ${
                   isFailed
                     ? 'bg-rose-500/15 text-rose-400 border-rose-500/30'
                     : 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
@@ -56,13 +57,16 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               >
                 <Terminal size={18} />
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-mono font-bold text-[var(--text)]">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 min-w-0">
+                  <h3
+                    className="text-xs sm:text-sm md:text-base font-mono font-bold text-[var(--text)] whitespace-nowrap truncate max-w-[140px] sm:max-w-xs"
+                    title={log.function_name}
+                  >
                     {log.function_name}
                   </h3>
                   <span
-                    className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase border ${
+                    className={`text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md uppercase border whitespace-nowrap shrink-0 ${
                       isFailed
                         ? 'bg-rose-500/10 text-rose-400 border-rose-500/25'
                         : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
@@ -71,26 +75,27 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
                     {log.status}
                   </span>
                 </div>
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">
                   Execution ID #{log.id} · {formatIST(log.created_at)}
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0 ml-2">
               <button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--input-bg)] border border-[var(--card-border)] transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--input-bg)] border border-[var(--card-border)] transition-colors cursor-pointer shrink-0"
+                title="Copy JSON payload"
               >
                 {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                <span>{copied ? 'Copied' : 'Copy JSON'}</span>
+                <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy JSON'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors cursor-pointer shrink-0"
                 aria-label="Close modal"
               >
                 <X size={18} />
@@ -216,4 +221,6 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
       </div>
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
