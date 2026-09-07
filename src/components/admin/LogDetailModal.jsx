@@ -175,7 +175,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               <div
                 className="p-3.5 rounded-2xl font-mono text-xs overflow-x-auto max-h-48"
                 style={{
-                  background: 'rgba(0,0,0,0.3)',
+                  background: 'var(--input-bg)',
                   border: '1px solid var(--card-border)',
                   color: 'var(--text)',
                 }}
@@ -192,7 +192,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               <div
                 className="p-3.5 rounded-2xl font-mono text-xs overflow-x-auto max-h-56"
                 style={{
-                  background: 'rgba(0,0,0,0.3)',
+                  background: 'var(--input-bg)',
                   border: '1px solid var(--card-border)',
                   color: 'var(--text)',
                 }}
