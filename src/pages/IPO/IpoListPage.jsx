@@ -210,7 +210,7 @@ export default function IpoListPage() {
     >
       {/* ── Sticky Header Bar — matches Portfolio, Watchlist & Paper Trade pages ── */}
       <div
-        className="sticky top-0 z-20 px-4"
+        className="sticky top-0 z-20 px-3 sm:px-4 lg:px-8"
         style={{
           paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
           paddingBottom: '0.75rem',
@@ -373,7 +373,7 @@ export default function IpoListPage() {
       </div>
 
       {/* ── Control Bar — Sort & Filter Action (Matches Assets/Portfolio page) ── */}
-      <section className="px-4 pt-2.5">
+      <section className="px-3 sm:px-4 lg:px-8 pt-2.5">
         <div
           className="flex items-center justify-between pb-2"
           style={{ borderBottom: '1px solid var(--divider)' }}
@@ -401,7 +401,7 @@ export default function IpoListPage() {
       </section>
 
       {/* ── Main List Section ── */}
-      <div className="p-4 pt-2">
+      <div className="px-3 sm:px-4 lg:px-8 py-3 pt-2">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <LoadingIndicator loading={true} />
@@ -452,7 +452,7 @@ export default function IpoListPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-3.5 sm:p-5 shadow-2xl max-h-[85vh] overflow-y-auto"
               style={{
                 background: 'var(--sheet-bg)',
                 borderTop: '1px solid var(--card-border)',
@@ -492,7 +492,7 @@ export default function IpoListPage() {
                         key={opt.id}
                         type="button"
                         onClick={() => setSortBy(opt.id)}
-                        className={`flex items-center justify-between p-3 rounded-2xl text-xs font-semibold transition-all text-left ${
+                        className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all text-left ${
                           isSel
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
                             : 'bg-[var(--sheet-btn-bg)] border-[var(--card-border)] text-[var(--text)]'
@@ -519,7 +519,7 @@ export default function IpoListPage() {
                   <button
                     type="button"
                     onClick={() => setSortDirection('desc')}
-                    className={`py-3 px-4 rounded-2xl text-xs font-bold text-center transition-all ${
+                    className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-xs font-bold text-center transition-all ${
                       sortDirection === 'desc'
                         ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400'
                         : 'bg-[var(--sheet-btn-bg)] border-[var(--card-border)] text-[var(--text-2)]'
@@ -531,7 +531,7 @@ export default function IpoListPage() {
                   <button
                     type="button"
                     onClick={() => setSortDirection('asc')}
-                    className={`py-3 px-4 rounded-2xl text-xs font-bold text-center transition-all ${
+                    className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-xs font-bold text-center transition-all ${
                       sortDirection === 'asc'
                         ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400'
                         : 'bg-[var(--sheet-btn-bg)] border-[var(--card-border)] text-[var(--text-2)]'
@@ -557,7 +557,7 @@ export default function IpoListPage() {
                         key={tab.id}
                         type="button"
                         onClick={() => handleTabChange(tab.id)}
-                        className={`flex items-center justify-between p-3 rounded-2xl text-xs font-semibold transition-all ${
+                        className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all ${
                           isSel
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
                             : 'bg-[var(--sheet-btn-bg)] border-[var(--card-border)] text-[var(--text)]'

@@ -125,7 +125,7 @@ export default function AddPaperTradeModal({ isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="p-6 space-y-4">
+      <div className="p-4 sm:p-6 space-y-4">
         <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--divider)' }}>
           <h2 className="text-xl font-bold" style={{ color: 'var(--text)' }}>
             Buy Paper Stock (Delivery)

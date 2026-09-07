@@ -29,7 +29,7 @@ export default function AssetAllocation({ data, loading }) {
         Asset Allocation
       </p>
       <div
-        className="rounded-2xl p-5"
+        className="rounded-2xl p-3.5 sm:p-5"
         style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--card-border)',

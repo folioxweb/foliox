@@ -67,7 +67,7 @@ export default function OverallInvestments({ data, loading }) {
   return (
     <section className="mb-5">
       <div
-        className="relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-200"
+        className="relative overflow-hidden rounded-2xl p-3 sm:p-5 transition-all duration-200"
         style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--card-border)',
@@ -127,7 +127,7 @@ export default function OverallInvestments({ data, loading }) {
 
         {/* Overall Return (Total P&L) Full Width Card */}
         <div
-          className="p-3.5 rounded-xl flex flex-col justify-between transition-all mb-4"
+          className="p-2.5 sm:p-3.5 rounded-xl flex flex-col justify-between transition-all mb-4"
           style={{
             background: 'var(--input-bg)',
             border: `1px solid ${isOverallProfit ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,

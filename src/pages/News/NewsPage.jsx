@@ -167,7 +167,7 @@ export default function NewsPage({ isOpen, onClose }) {
 
             {/* ── Header ───────────────────────────────────────────────── */}
             <header
-              className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+              className="flex items-center justify-between px-3 sm:px-4 lg:px-8 py-3 flex-shrink-0"
               style={{
                 borderBottom: '1px solid var(--header-border)',
                 background: 'var(--header-bg)',
@@ -229,7 +229,7 @@ export default function NewsPage({ isOpen, onClose }) {
             >
               {/* Skeleton placeholders during initial load */}
               {loading && (!news || news.length === 0) && (
-                <div className="px-4 pt-2">
+                <div className="px-3 sm:px-4 lg:px-8 pt-2">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <NewsSkeletonCard key={i} />
                   ))}
@@ -271,7 +271,7 @@ export default function NewsPage({ isOpen, onClose }) {
 
               {/* Grouped news list */}
               {!error && news && news.length > 0 && (
-                <div className="px-4">
+                <div className="px-3 sm:px-4 lg:px-8">
                   {Object.entries(grouped).map(([dateLabel, articles]) => (
                     <section key={dateLabel} aria-label={dateLabel}>
                       {/* Date section header */}

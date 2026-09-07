@@ -31,13 +31,13 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
+          className="relative w-full max-w-2xl rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -45,7 +45,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
           }}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--card-border)] bg-[var(--header-bg)]">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-5 border-b border-[var(--card-border)] bg-[var(--header-bg)]">
             <div className="flex items-center gap-3">
               <div
                 className={`w-10 h-10 rounded-2xl flex items-center justify-center border ${
@@ -88,9 +88,10 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               </button>
 
               <button
+                type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors cursor-pointer"
-                aria-label="Close"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--input-bg)] transition-colors cursor-pointer"
+                aria-label="Close modal"
               >
                 <X size={18} />
               </button>
@@ -98,11 +99,11 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
           </div>
 
           {/* Body */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-5 text-sm">
+          <div className="flex-1 overflow-y-auto p-3.5 sm:p-6 space-y-4 sm:space-y-5 text-sm">
             {/* Metadata Summary Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
               <div
-                className="p-3 rounded-2xl flex flex-col"
+                className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--card-border)' }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -114,7 +115,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               </div>
 
               <div
-                className="p-3 rounded-2xl flex flex-col"
+                className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--card-border)' }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -130,7 +131,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               </div>
 
               <div
-                className="p-3 rounded-2xl flex flex-col"
+                className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--card-border)' }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -142,7 +143,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
               </div>
 
               <div
-                className="p-3 rounded-2xl flex flex-col"
+                className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex flex-col"
                 style={{ background: 'var(--input-bg)', border: '1px solid var(--card-border)' }}
               >
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -203,7 +204,7 @@ export default function LogDetailModal({ log, isOpen, onClose }) {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-[var(--card-border)] flex justify-end bg-[var(--header-bg)]">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--card-border)] flex justify-end bg-[var(--header-bg)]">
             <button
               onClick={onClose}
               className="px-5 py-2 rounded-xl text-xs font-semibold text-[var(--text)] hover:bg-[var(--input-bg)] border border-[var(--card-border)] cursor-pointer"

@@ -345,7 +345,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
     return (
       <Tag
         {...tagProps}
-        className="w-full flex items-center justify-between gap-3 rounded-[24px] px-4 py-3 shadow-lg text-left"
+        className="w-full flex items-center justify-between gap-3 rounded-[24px] px-3.5 sm:px-4 py-3 shadow-lg text-left"
         aria-label={ariaLabel}
       >
         {/* Name */}
@@ -380,7 +380,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
   return (
     <Tag
       {...tagProps}
-      className="w-full rounded-[24px] px-4 py-4 shadow-lg text-left"
+      className="w-full rounded-[24px] px-3.5 sm:px-4 py-3.5 sm:py-4 shadow-lg text-left"
       aria-label={ariaLabel}
     >
       {/* ── Header row: name + sector badge ── */}
@@ -415,7 +415,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
       </div>
 
       {/* ── Metrics grid ── */}
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+      <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2.5 sm:gap-y-3">
 
         {/* Quantity */}
         <div className="flex flex-col gap-0.5">

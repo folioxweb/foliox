@@ -63,7 +63,7 @@ export default function PaperTradePage() {
     >
       {/* Sticky Header */}
       <div
-        className="sticky top-0 z-20 px-4"
+        className="sticky top-0 z-20 px-3 sm:px-4 lg:px-8"
         style={{
           paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
           paddingBottom: '0.75rem',
@@ -144,10 +144,10 @@ export default function PaperTradePage() {
         </div>
       </div>
 
-      <div className="px-4 pt-3 space-y-4">
+      <div className="px-3 sm:px-4 lg:px-8 pt-3 space-y-3.5 sm:space-y-4">
         {/* Standard Official Paper Portfolio Summary Card */}
         <div
-          className="p-5 rounded-3xl relative overflow-hidden transition-all"
+          className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl relative overflow-hidden transition-all"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -173,7 +173,7 @@ export default function PaperTradePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t text-xs" style={{ borderColor: 'var(--divider)' }}>
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mt-3.5 sm:mt-4 pt-2.5 sm:pt-3 border-t text-xs" style={{ borderColor: 'var(--divider)' }}>
             <div>
               <span className="block text-[10px] uppercase font-semibold" style={{ color: 'var(--text-muted)' }}>Available Cash</span>
               <span className="font-bold text-sm" style={{ color: 'var(--text)' }}>₹{currentCash.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
@@ -232,7 +232,7 @@ export default function PaperTradePage() {
                 return (
                   <div
                     key={h.assetId}
-                    className="p-4 rounded-3xl relative overflow-hidden transition-all shadow-sm"
+                    className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl relative overflow-hidden transition-all shadow-sm"
                     style={{
                       background: 'var(--card-bg)',
                       border: '1px solid var(--card-border)',
@@ -260,7 +260,7 @@ export default function PaperTradePage() {
                     </div>
 
                     {/* Metrics grid showing Quantity, Avg Price, Current Price (LTP), Return PnL */}
-                    <div className="grid grid-cols-4 gap-2 p-3 rounded-2xl my-2 text-xs" style={{ background: 'var(--sheet-btn-bg)', border: '1px solid var(--card-border)' }}>
+                    <div className="grid grid-cols-4 gap-1 sm:gap-2 p-2 sm:p-3 rounded-xl sm:rounded-2xl my-2 text-xs" style={{ background: 'var(--sheet-btn-bg)', border: '1px solid var(--card-border)' }}>
                       <div>
                         <span className="block text-[10px] uppercase font-semibold" style={{ color: 'var(--text-muted)' }}>Qty</span>
                         <span className="font-bold" style={{ color: 'var(--text)' }}>{h.quantity}</span>

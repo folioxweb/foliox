@@ -291,7 +291,7 @@ export default function DetailScreen({ holding: propHolding }) {
       )}
 
       {/* ── Fundamentals & Position Details ────────────────────────── */}
-      <section className="rounded-2xl p-4 mb-4 border border-[var(--card-border)] bg-[var(--card-bg)] shadow-md" aria-label="Holding details">
+      <section className="rounded-2xl p-3 sm:p-4 mb-4 border border-[var(--card-border)] bg-[var(--card-bg)] shadow-md" aria-label="Holding details">
         <h2 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">
           Asset Fundamentals & Position Details
         </h2>

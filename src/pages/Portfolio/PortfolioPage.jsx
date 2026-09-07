@@ -255,7 +255,7 @@ export default function PortfolioPage() {
         }}
       >
         <div
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+          className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8"
           style={{
             paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
             paddingBottom: '0.5rem',
@@ -384,7 +384,7 @@ export default function PortfolioPage() {
           borderBottom: '1px solid var(--header-border)',
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <TabBar
             tabs={TAB_LABELS}
             activeTab={activeTab}
@@ -394,7 +394,7 @@ export default function PortfolioPage() {
       </div>
 
       {/* ── Holdings list ────────────────────────────────────────────────── */}
-      <section className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-2" aria-label={`${activeTab} holdings`}>
+      <section className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 pt-2" aria-label={`${activeTab} holdings`}>
         {/* View mode toggle row — matches Zerodha Sort / <> toggle */}
         <div className="flex items-center justify-between mb-1 pb-2" style={{ borderBottom: '1px solid var(--divider)' }}>
           {/* Sort button — tapping opens the sort/filter bottom sheet */}
@@ -458,7 +458,7 @@ export default function PortfolioPage() {
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               id="asset-view-controls"
-              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-3xl p-3.5 sm:p-5 shadow-2xl max-h-[85vh] overflow-y-auto"
               style={{
                 background: 'var(--sheet-bg)',
                 borderTop: '1px solid var(--card-border)',
