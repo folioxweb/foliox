@@ -20,6 +20,7 @@ import WatchlistPage from './pages/Watchlist/WatchlistPage';
 import PaperTradePage from './pages/PaperTrade/PaperTradePage';
 import DetailScreen from './pages/Portfolio/DetailScreen';
 import SettingsPage from './pages/Settings/SettingsPage';
+import ApmDashboardPage from './pages/Admin/ApmDashboardPage';
 import IpoListPage from './pages/IPO/IpoListPage';
 import IpoDetailPage from './pages/IPO/IpoDetailPage';
 import SetNewPasswordModal from './components/auth/SetNewPasswordModal';
@@ -177,6 +178,8 @@ function AppContent() {
           <Route path="ipo" element={<IpoListPage />} />
           <Route path="ipo/:id" element={<IpoDetailPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/monitoring" element={<ApmDashboardPage />} />
+          <Route path="admin/monitoring" element={<ApmDashboardPage />} />
         </Route>
       </Routes>
     </>
