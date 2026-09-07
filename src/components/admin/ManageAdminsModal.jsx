@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, ShieldAlert, UserPlus, Trash2, X, Check, Loader2, AlertCircle } from 'lucide-react';
 import { listAppAdmins, grantAdminRole, revokeAdminRole } from '../../services/adminService';
@@ -85,15 +86,15 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-4 bg-black/70 backdrop-blur-md">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 15 }}
           transition={{ duration: 0.2 }}
-          className="relative w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[85dvh]"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -278,4 +279,6 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
       </div>
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }

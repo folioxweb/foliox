@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Mail, TrendingUp, Layers, Bell, Check, X, ArrowRight } from 'lucide-react';
 import { CURRENT_RELEASE } from '../../config/version';
@@ -34,16 +35,16 @@ const BADGE_STYLES = {
 export default function WhatsNewModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
-  return (
+  const content = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-md">
+      <div className="fixed inset-0 z-[70] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-md">
         {/* Animated Modal Card */}
         <motion.div
           initial={{ opacity: 0, scale: 0.94, y: 16 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.94, y: 16 }}
           transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-full max-w-lg rounded-3xl overflow-hidden flex flex-col shadow-2xl"
+          className="relative w-full max-w-lg rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl max-h-[85dvh]"
           style={{
             background: 'var(--card-bg, #0f172a)',
             border: '1px solid var(--card-border, #334155)',
@@ -95,7 +96,7 @@ export default function WhatsNewModal({ isOpen, onClose }) {
           </div>
 
           {/* Feature List (Scrollable) */}
-          <div className="p-5 sm:p-6 space-y-3.5 max-h-[58vh] sm:max-h-[420px] overflow-y-auto">
+          <div className="p-4 sm:p-6 space-y-3.5 flex-1 min-h-0 overflow-y-auto">
             {CURRENT_RELEASE.features.map((feature) => {
               const IconComponent = ICON_MAP[feature.icon] || Sparkles;
               const style = BADGE_STYLES[feature.badgeColor] || BADGE_STYLES.emerald;
@@ -103,7 +104,7 @@ export default function WhatsNewModal({ isOpen, onClose }) {
               return (
                 <div
                   key={feature.id}
-                  className="p-3.5 rounded-2xl flex items-start gap-3.5 transition-all"
+                  className="p-3 sm:p-3.5 rounded-2xl flex items-start gap-3 transition-all"
                   style={{
                     background: 'var(--input-bg, rgba(255,255,255,0.03))',
                     border: '1px solid var(--divider, rgba(255,255,255,0.06))',
@@ -135,7 +136,7 @@ export default function WhatsNewModal({ isOpen, onClose }) {
 
           {/* Modal Footer */}
           <div
-            className="p-5 sm:p-6 pt-3.5 border-t flex flex-col sm:flex-row items-center justify-between gap-3"
+            className="p-4 sm:p-6 pt-3 border-t flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0"
             style={{
               borderColor: 'var(--divider, #1e293b)',
               background: 'var(--card-bg, #0f172a)',
@@ -148,7 +149,7 @@ export default function WhatsNewModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
               style={{
                 background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
                 boxShadow: '0 4px 14px rgba(5, 150, 105, 0.35)',
@@ -162,4 +163,6 @@ export default function WhatsNewModal({ isOpen, onClose }) {
       </div>
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
