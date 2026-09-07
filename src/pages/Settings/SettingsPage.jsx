@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass, Bell, BellOff, Check, X } from 'lucide-react';
+import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass, Bell, BellOff, Check, X, Activity, Users, Terminal } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { useAuth } from '../../context/AuthContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -10,6 +11,7 @@ import { useTheme } from '../../context/ThemeContext';
 import SetNewPasswordModal from '../../components/auth/SetNewPasswordModal';
 import AppGuideModal from '../../components/guide/AppGuideModal';
 import WhatsNewModal from '../../components/whatsNew/WhatsNewModal';
+import ManageAdminsModal from '../../components/admin/ManageAdminsModal';
 import {
   APP_VERSION,
   RELEASE_CODENAME,
@@ -27,13 +29,15 @@ function formatLastUpdated(date) {
 }
 
 export default function SettingsPage() {
+  const navigate = useNavigate();
   const { state, updatePaperCapital, resetPaperPortfolio } = usePortfolio();
-  const { user, signOut, updateAlertPreferences } = useAuth();
+  const { user, signOut, updateAlertPreferences, isAdmin, adminRole } = useAuth();
   const { mode } = useTheme();
   const isDark = mode === 'dark';
   const scrollRef = usePageScrollRestoration('settings');
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
+  const [showManageAdminsModal, setShowManageAdminsModal] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [showWhatsNewModal, setShowWhatsNewModal] = useState(false);
   const [paperCapital, setPaperCapital] = useState('5000000');
@@ -174,6 +178,77 @@ export default function SettingsPage() {
               <KeyRound size={14} className="text-emerald-400" />
               Change Password
             </button>
+          </section>
+        )}
+
+        {/* ── Admin Console (Only visible to Administrators) ─────────────── */}
+        {isAdmin && (
+          <section
+            aria-label="Admin Console"
+            style={{
+              ...sectionStyle,
+              borderColor: 'rgba(16, 185, 129, 0.35)',
+              background: isDark
+                ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.08) 0%, var(--card-bg) 100%)'
+                : 'linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--card-bg) 100%)',
+            }}
+            className="mb-4 relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-emerald-500 dark:text-emerald-400 flex items-center gap-1.5">
+                <Shield size={14} />
+                Admin Console
+              </h2>
+              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase bg-emerald-500/15 text-emerald-500 dark:text-emerald-400 border border-emerald-500/30 tracking-wider">
+                {adminRole ? adminRole.replace('_', ' ') : 'ADMIN'}
+              </span>
+            </div>
+
+            <div className="flex items-start gap-3 pt-1">
+              <div
+                className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                style={{
+                  background: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                }}
+              >
+                <Activity size={20} className="text-emerald-500 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-[var(--text)]">
+                  Performance Monitoring &amp; Logs
+                </h3>
+                <p className="text-xs text-[var(--text-2)] mt-0.5 leading-relaxed">
+                  Real-time telemetry, error diagnosis, pg_cron background schedules, and Edge Function logs.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => navigate('/settings/monitoring')}
+                className="flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold text-white transition hover:opacity-90 active:scale-98 cursor-pointer shadow-sm"
+                style={{ background: 'var(--emerald, #10B981)' }}
+              >
+                <Activity size={14} />
+                Launch APM Dashboard
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowManageAdminsModal(true)}
+                className="flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition hover:opacity-80 active:scale-98 cursor-pointer"
+                style={{
+                  background: 'var(--input-bg)',
+                  border: '1px solid var(--card-border)',
+                  color: 'var(--text)',
+                }}
+              >
+                <Users size={14} className="text-emerald-500 dark:text-emerald-400" />
+                Manage Admin Users
+              </button>
+            </div>
           </section>
         )}
 
@@ -653,6 +728,12 @@ export default function SettingsPage() {
       <WhatsNewModal
         isOpen={showWhatsNewModal}
         onClose={() => setShowWhatsNewModal(false)}
+      />
+
+      {/* Manage Admins Modal */}
+      <ManageAdminsModal
+        isOpen={showManageAdminsModal}
+        onClose={() => setShowManageAdminsModal(false)}
       />
     </>
   );

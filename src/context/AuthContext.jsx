@@ -1,10 +1,14 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
+import { getAdminStatus } from '../services/adminService';
 
 const AuthContext = createContext({
   user: null,
   session: null,
   loading: true,
+  isAdmin: false,
+  adminRole: null,
+  refreshAdminStatus: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
   resetPasswordForEmail: async () => {},
@@ -21,9 +25,28 @@ const AuthContext = createContext({
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminRole, setAdminRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
   const [authError, setAuthError] = useState(null);
+
+  const checkAdmin = async (currentUser) => {
+    if (!currentUser) {
+      setIsAdmin(false);
+      setAdminRole(null);
+      return;
+    }
+    try {
+      const res = await getAdminStatus();
+      setIsAdmin(Boolean(res?.is_admin));
+      setAdminRole(res?.role || null);
+    } catch {
+      setIsAdmin(false);
+      setAdminRole(null);
+    }
+  };
+
 
   useEffect(() => {
     // Check if URL hash or search params contains errors or recovery token
@@ -51,8 +74,9 @@ export function AuthProvider({ children }) {
     // 1. Get initial session
     supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
       setSession(initialSession);
-      setUser(initialSession?.user ?? null);
-      setLoading(false);
+      const currentUser = initialSession?.user ?? null;
+      setUser(currentUser);
+      checkAdmin(currentUser).finally(() => setLoading(false));
     });
 
     // 2. Listen for auth changes
@@ -61,14 +85,19 @@ export function AuthProvider({ children }) {
         setIsPasswordRecovery(true);
       }
       setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setLoading(false);
+      const currentUser = currentSession?.user ?? null;
+      setUser(currentUser);
+      checkAdmin(currentUser).finally(() => setLoading(false));
     });
 
     return () => {
       subscription.unsubscribe();
     };
   }, []);
+
+  const refreshAdminStatus = async () => {
+    await checkAdmin(user);
+  };
 
   const signInWithEmail = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -128,6 +157,8 @@ export function AuthProvider({ children }) {
     if (error) console.error('Sign out error:', error);
     setSession(null);
     setUser(null);
+    setIsAdmin(false);
+    setAdminRole(null);
     setIsPasswordRecovery(false);
   };
 
@@ -135,6 +166,9 @@ export function AuthProvider({ children }) {
     user,
     session,
     loading,
+    isAdmin,
+    adminRole,
+    refreshAdminStatus,
     signInWithEmail,
     signUpWithEmail,
     resetPasswordForEmail,
