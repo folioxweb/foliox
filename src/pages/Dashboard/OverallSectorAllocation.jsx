@@ -38,7 +38,7 @@ export default function OverallSectorAllocation({ data, loading }) {
         Sector Exposure
       </p>
       <div
-        className="rounded-2xl p-5 space-y-4"
+        className="rounded-2xl p-3.5 sm:p-5 space-y-3.5 sm:space-y-4"
         style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--card-border)',

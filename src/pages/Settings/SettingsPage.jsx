@@ -111,7 +111,7 @@ export default function SettingsPage() {
     border: '1px solid var(--card-border)',
     background: 'var(--card-bg)',
     boxShadow: 'var(--card-shadow)',
-    padding: '1.25rem',
+    padding: 'clamp(0.875rem, 3vw, 1.25rem)',
     display: 'flex',
     flexDirection: 'column',
     gap: '0.75rem',
@@ -132,7 +132,7 @@ export default function SettingsPage() {
     <>
       <main
         ref={scrollRef}
-        className="min-h-0 flex-1 overflow-y-auto px-4"
+        className="min-h-0 flex-1 overflow-y-auto px-3 sm:px-4 lg:px-8"
         aria-label="Settings"
         style={{
           paddingTop: 'max(1.5rem, env(safe-area-inset-top))',

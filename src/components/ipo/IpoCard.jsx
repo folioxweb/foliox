@@ -101,7 +101,7 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
   return (
     <div
       onClick={onClick}
-      className="p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:shadow-md relative overflow-hidden"
+      className="p-3 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 hover:shadow-md relative overflow-hidden"
       style={{
         background: 'var(--card-bg)',
         border: '1px solid var(--card-border)',
@@ -151,7 +151,7 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
 
       {/* Metrics Row: 3 Columns (GMP, Subscription, Est. Profit) */}
       <div
-        className="grid grid-cols-3 gap-2 p-2.5 rounded-xl mb-2.5"
+        className="grid grid-cols-3 gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-xl mb-2.5"
         style={{
           background: 'var(--input-bg)',
           border: '1px solid var(--divider)',
@@ -171,7 +171,7 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
         </div>
 
         {/* Column 2: Subscription (Highlighted Metric) */}
-        <div className="border-l border-[var(--divider)] pl-2.5">
+        <div className="border-l border-[var(--divider)] pl-1.5 sm:pl-2.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-2)] block mb-0.5">
             Subscription
           </span>
@@ -184,7 +184,7 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
         </div>
 
         {/* Column 3: Est. Profit per Lot */}
-        <div className="border-l border-[var(--divider)] pl-2.5">
+        <div className="border-l border-[var(--divider)] pl-1.5 sm:pl-2.5">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-2)] block mb-0.5">
             Est. Profit
           </span>
@@ -200,19 +200,19 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
       {/* Detailed Category Subscription Pills with Prominently Highlighted Retail */}
       {hasPills && (
         <div className="flex items-center gap-1.5 flex-wrap text-[10px] mb-2.5 px-0.5">
-          <span className="text-[var(--text-2)] font-medium">Bidding:</span>
+          <span className="text-[var(--text-2)] font-medium shrink-0">Bidding:</span>
           {qibSub && qibSub !== '-' && qibSub !== '--' && (
-            <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-500/20">
+            <span className="px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold border border-blue-500/20 whitespace-nowrap shrink-0">
               QIB: {String(qibSub).includes('x') ? qibSub : `${qibSub}x`}
             </span>
           )}
           {niiSub && niiSub !== '-' && niiSub !== '--' && (
-            <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-500/20">
+            <span className="px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold border border-indigo-500/20 whitespace-nowrap shrink-0">
               NII: {String(niiSub).includes('x') ? niiSub : `${niiSub}x`}
             </span>
           )}
           {riiSub && riiSub !== '-' && riiSub !== '--' && (
-            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-500/40 shadow-xs">
+            <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-extrabold border border-emerald-500/40 shadow-xs whitespace-nowrap shrink-0">
               Retail: {String(riiSub).includes('x') ? riiSub : `${riiSub}x`}
             </span>
           )}

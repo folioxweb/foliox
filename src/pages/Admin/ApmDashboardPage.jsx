@@ -201,7 +201,7 @@ export default function ApmDashboardPage() {
     <div className="min-h-0 flex-1 flex flex-col overflow-y-auto bg-[var(--bg)] text-[var(--text)]">
       {/* ── Top Header Bar (Safe-Area Aware for iPhone Notch / Dynamic Island) ── */}
       <header
-        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 px-6 pb-4 border-b border-[var(--card-border)] backdrop-blur-xl"
+        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-3 sm:gap-4 px-3 sm:px-6 pb-3.5 sm:pb-4 border-b border-[var(--card-border)] backdrop-blur-xl"
         style={{
           background: 'var(--header-bg)',
           paddingTop: 'max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))',
@@ -282,7 +282,7 @@ export default function ApmDashboardPage() {
 
       {/* Main Container */}
       <div
-        className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full"
+        className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 max-w-7xl mx-auto w-full"
         style={{
           paddingBottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
         }}
@@ -308,10 +308,10 @@ export default function ApmDashboardPage() {
         )}
 
         {/* ── Executive KPI Metric Cards ── */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3.5">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 sm:gap-3.5">
           {/* Card 1: Health Pulse */}
           <div
-            className="p-4 rounded-3xl flex flex-col justify-between"
+            className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex flex-col justify-between"
             style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--card-border)',
@@ -319,7 +319,7 @@ export default function ApmDashboardPage() {
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Health Status
               </span>
               <Activity
@@ -335,7 +335,7 @@ export default function ApmDashboardPage() {
               >
                 {hasIssues ? 'ATTENTION' : 'HEALTHY'}
               </span>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-0.5">
                 {overview?.cron_failures_24h || 0} cron errors (24h)
               </p>
             </div>
@@ -343,7 +343,7 @@ export default function ApmDashboardPage() {
 
           {/* Card 2: 24h Invocations */}
           <div
-            className="p-4 rounded-3xl flex flex-col justify-between"
+            className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex flex-col justify-between"
             style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--card-border)',
@@ -351,16 +351,16 @@ export default function ApmDashboardPage() {
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Invocations (24h)
               </span>
               <Zap size={16} className="text-amber-400" />
             </div>
             <div className="mt-2">
-              <span className="text-2xl font-black tracking-tight text-[var(--text)]">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text)]">
                 {overview?.total_runs_24h ?? 0}
               </span>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-0.5">
                 {overview?.success_runs_24h ?? 0} succeeded
               </p>
             </div>
@@ -368,7 +368,7 @@ export default function ApmDashboardPage() {
 
           {/* Card 3: Error Rate */}
           <div
-            className="p-4 rounded-3xl flex flex-col justify-between"
+            className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex flex-col justify-between"
             style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--card-border)',
@@ -376,7 +376,7 @@ export default function ApmDashboardPage() {
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Error Rate
               </span>
               <AlertTriangle
@@ -388,13 +388,13 @@ export default function ApmDashboardPage() {
             </div>
             <div className="mt-2">
               <span
-                className={`text-2xl font-black tracking-tight ${
+                className={`text-xl sm:text-2xl font-black tracking-tight ${
                   (overview?.error_rate_pct || 0) > 0 ? 'text-rose-400' : 'text-emerald-400'
                 }`}
               >
                 {overview?.error_rate_pct ?? '0.00'}%
               </span>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-0.5">
                 {overview?.failed_runs_24h ?? 0} failed calls
               </p>
             </div>
@@ -402,7 +402,7 @@ export default function ApmDashboardPage() {
 
           {/* Card 4: Avg Execution Latency */}
           <div
-            className="p-4 rounded-3xl flex flex-col justify-between"
+            className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex flex-col justify-between"
             style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--card-border)',
@@ -410,16 +410,16 @@ export default function ApmDashboardPage() {
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Avg Latency
               </span>
               <Clock size={16} className="text-sky-400" />
             </div>
             <div className="mt-2">
-              <span className="text-2xl font-black tracking-tight text-[var(--text)]">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text)]">
                 {overview?.avg_duration_ms ?? 0} ms
               </span>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-0.5">
                 Max: {overview?.max_duration_ms ?? 0} ms
               </p>
             </div>
@@ -427,7 +427,7 @@ export default function ApmDashboardPage() {
 
           {/* Card 5: pg_cron Active */}
           <div
-            className="p-4 rounded-3xl flex flex-col justify-between"
+            className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl flex flex-col justify-between col-span-2 md:col-span-1"
             style={{
               background: 'var(--card-bg)',
               border: '1px solid var(--card-border)',
@@ -435,16 +435,16 @@ export default function ApmDashboardPage() {
             }}
           >
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Active Crons
               </span>
               <Layers size={16} className="text-indigo-400" />
             </div>
             <div className="mt-2">
-              <span className="text-2xl font-black tracking-tight text-[var(--text)]">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-[var(--text)]">
                 {overview?.active_crons_count ?? 10}/10
               </span>
-              <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              <p className="text-[10px] sm:text-[11px] text-[var(--text-muted)] mt-0.5">
                 Scheduled in pg_cron
               </p>
             </div>
@@ -452,10 +452,10 @@ export default function ApmDashboardPage() {
         </div>
 
         {/* ── Navigation Tabs ── */}
-        <div className="flex items-center gap-2 border-b border-[var(--card-border)] pb-2">
+        <div className="flex items-center gap-2 border-b border-[var(--card-border)] pb-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab('functions')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 rounded-xl sm:rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
               activeTab === 'functions'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                 : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--card-bg)]'
@@ -467,7 +467,7 @@ export default function ApmDashboardPage() {
 
           <button
             onClick={() => setActiveTab('crons')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 py-2 sm:px-4 rounded-xl sm:rounded-2xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
               activeTab === 'crons'
                 ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
                 : 'text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--card-bg)]'
@@ -480,10 +480,10 @@ export default function ApmDashboardPage() {
 
         {/* ── TAB 1: Edge Functions Performance & Live Log Stream ── */}
         {activeTab === 'functions' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Function Breakdown Matrix */}
             <div
-              className="rounded-3xl p-5 overflow-hidden"
+              className="rounded-2xl sm:rounded-3xl p-3 sm:p-5 overflow-hidden"
               style={{
                 background: 'var(--card-bg)',
                 border: '1px solid var(--card-border)',
@@ -570,7 +570,7 @@ export default function ApmDashboardPage() {
 
             {/* Live Execution Logs Filter Bar & Table */}
             <div
-              className="rounded-3xl p-5 overflow-hidden space-y-4"
+              className="rounded-2xl sm:rounded-3xl p-3 sm:p-5 overflow-hidden space-y-3.5 sm:space-y-4"
               style={{
                 background: 'var(--card-bg)',
                 border: '1px solid var(--card-border)',
@@ -588,9 +588,9 @@ export default function ApmDashboardPage() {
                 </div>
 
                 {/* Filter Controls */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                   {/* Search box */}
-                  <div className="relative">
+                  <div className="relative flex-1 sm:flex-initial min-w-[150px]">
                     <Search
                       size={13}
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
@@ -600,7 +600,7 @@ export default function ApmDashboardPage() {
                       placeholder="Search function, user, error..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      className="w-full sm:w-auto pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-emerald-500/50"
                       style={{
                         background: 'var(--input-bg)',
                         border: '1px solid var(--card-border)',
@@ -613,7 +613,7 @@ export default function ApmDashboardPage() {
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold outline-none cursor-pointer"
+                    className="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-xl text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       background: 'var(--input-bg)',
                       border: '1px solid var(--card-border)',
@@ -629,7 +629,7 @@ export default function ApmDashboardPage() {
                   <select
                     value={filterCaller}
                     onChange={(e) => setFilterCaller(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-semibold outline-none cursor-pointer"
+                    className="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-xl text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       background: 'var(--input-bg)',
                       border: '1px solid var(--card-border)',
@@ -738,10 +738,10 @@ export default function ApmDashboardPage() {
 
         {/* ── TAB 2: pg_cron Schedules & Execution History ── */}
         {activeTab === 'crons' && (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Scheduled Cron Jobs */}
             <div
-              className="rounded-3xl p-5 overflow-hidden"
+              className="rounded-2xl sm:rounded-3xl p-3 sm:p-5 overflow-hidden"
               style={{
                 background: 'var(--card-bg)',
                 border: '1px solid var(--card-border)',
@@ -761,7 +761,7 @@ export default function ApmDashboardPage() {
                 {(cronData.jobs || []).map((job) => (
                   <div
                     key={job.jobid}
-                    className="p-4 rounded-2xl flex flex-col justify-between space-y-3"
+                    className="p-3 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col justify-between space-y-2.5 sm:space-y-3"
                     style={{
                       background: 'var(--input-bg)',
                       border: '1px solid var(--card-border)',
@@ -811,7 +811,7 @@ export default function ApmDashboardPage() {
 
             {/* Cron Run History Table */}
             <div
-              className="rounded-3xl p-5 overflow-hidden space-y-4"
+              className="rounded-2xl sm:rounded-3xl p-3 sm:p-5 overflow-hidden space-y-3.5 sm:space-y-4"
               style={{
                 background: 'var(--card-bg)',
                 border: '1px solid var(--card-border)',

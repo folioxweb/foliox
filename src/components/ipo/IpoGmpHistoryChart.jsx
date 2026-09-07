@@ -154,7 +154,7 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
 
   return (
     <div
-      className="rounded-2xl p-4 space-y-3"
+      className="rounded-2xl p-3 sm:p-4 space-y-3"
       style={{
         background: 'var(--card-bg)',
         border: '1px solid var(--card-border)',
@@ -188,8 +188,8 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
       </div>
 
       {/* Stats Summary Bar */}
-      <div className="grid grid-cols-3 gap-2 pt-1">
-        <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2 pt-1">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
           <span className="text-[10px] text-[var(--text-2)] font-semibold block">Latest GMP</span>
           <div className="flex items-baseline gap-1 mt-0.5">
             <span
@@ -205,7 +205,7 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
           </div>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
           <span className="text-[10px] text-[var(--text-2)] font-semibold flex items-center gap-0.5">
             <ArrowUpRight size={11} className="text-emerald-500" /> Peak GMP
           </span>
@@ -214,7 +214,7 @@ export default function IpoGmpHistoryChart({ ipoId, currentGmpPercent = 0, curre
           </span>
         </div>
 
-        <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
+        <div className="p-2 sm:p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
           <span className="text-[10px] text-[var(--text-2)] font-semibold flex items-center gap-0.5">
             <ArrowDownRight size={11} className="text-rose-500" /> Lowest GMP
           </span>

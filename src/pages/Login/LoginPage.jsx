@@ -75,10 +75,10 @@ export default function LoginPage({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6" style={{ background: 'var(--bg)' }}>
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6" style={{ background: 'var(--bg)' }}>
       <div className="w-full max-w-sm">
         <div
-          className="rounded-3xl p-8 shadow-2xl transition-all"
+          className="rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl transition-all"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',

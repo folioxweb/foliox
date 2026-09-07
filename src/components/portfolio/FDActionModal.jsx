@@ -168,7 +168,7 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="p-6">
+      <div className="p-4 sm:p-6">
         <h2 className="text-2xl font-bold mb-6" style={{ color: 'var(--text)' }}>Manage Fixed Deposit</h2>
 
         {/* Action Tabs */}

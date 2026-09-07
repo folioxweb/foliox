@@ -67,7 +67,7 @@ function FullSectorList({ data }) {
         return (
           <div
             key={item.sector}
-            className="relative px-4 py-3"
+            className="relative px-3 sm:px-4 py-3"
             style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none' }}
           >
             <motion.div
@@ -124,7 +124,7 @@ function FullStocksList({ data }) {
         return (
           <div
             key={item.name}
-            className="relative px-4 py-3 flex items-center gap-3"
+            className="relative px-3 sm:px-4 py-3 flex items-center gap-3"
             style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none' }}
           >
             <motion.div
@@ -147,16 +147,18 @@ function FullStocksList({ data }) {
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
                 {isPrivacyMode ? '••••••••' : item.name}
               </p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
+              <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                {isPrivacyMode ? '••••' : item.sector}
               </p>
             </div>
-            <span
-              className="relative z-10 text-sm font-bold flex-shrink-0"
-              style={{ color: i < 3 ? rankColor : 'var(--text-2)' }}
-            >
-              {item.allocation.toFixed(2)}%
-            </span>
+            <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
+              </span>
+              <span className="text-sm font-bold w-12 text-right" style={{ color: rankColor }}>
+                {item.allocation.toFixed(2)}%
+              </span>
+            </div>
           </div>
         );
       })}
@@ -187,7 +189,7 @@ export default function AnalyticsPage() {
     >
       {/* Sticky Header */}
       <div
-        className="sticky top-0 z-20 px-4 flex items-center justify-between"
+        className="sticky top-0 z-20 px-3 sm:px-4 lg:px-8 flex items-center justify-between"
         style={{
           paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
           paddingBottom: '0.75rem',
@@ -201,7 +203,6 @@ export default function AnalyticsPage() {
           <LoadingIndicator loading={refreshing} />
         </div>
         <div className="flex items-center gap-2">
-          {/* Market News button */}
           <button
             id="analytics-news-btn"
             onClick={() => setNewsPageOpen(true)}
@@ -229,7 +230,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Content */}
-      <div className="px-4 pt-5 space-y-6">
+      <div className="px-3 sm:px-4 lg:px-8 pt-3.5 sm:pt-5 space-y-4 sm:space-y-6">
         <section>
           <SectionHeading icon={PieChart} title="Full Sector Allocation" color="#6366F1" />
           <FullSectorList data={sectorData} />

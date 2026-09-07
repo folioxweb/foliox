@@ -223,7 +223,7 @@ export default function WatchlistPage() {
     >
       {/* Sticky Header */}
       <div
-        className="sticky top-0 z-20 px-4"
+        className="sticky top-0 z-20 px-3 sm:px-4 lg:px-8"
         style={{
           paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
           paddingBottom: '0.75rem',
@@ -308,7 +308,7 @@ export default function WatchlistPage() {
       </div>
 
       {/* Main Watchlist Container */}
-      <div className="px-4 pt-3 space-y-3">
+      <div className="px-3 sm:px-4 lg:px-8 pt-3 space-y-3">
         {loading && watchlistItems.length === 0 ? (
           <div className="p-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
             Loading watchlist stocks...
@@ -341,7 +341,7 @@ export default function WatchlistPage() {
             return (
               <div
                 key={item.watchlistId || item.symbol}
-                className="p-4 rounded-3xl relative overflow-hidden transition-all shadow-sm"
+                className="p-3 sm:p-4 rounded-2xl sm:rounded-3xl relative overflow-hidden transition-all shadow-sm"
                 style={{
                   background: 'var(--card-bg)',
                   border: '1px solid var(--card-border)',
@@ -381,7 +381,7 @@ export default function WatchlistPage() {
                 </div>
 
                 {/* Returns Since Added Row */}
-                <div className="p-3 rounded-2xl flex items-center justify-between my-2" style={{ background: 'var(--sheet-btn-bg)', border: '1px solid var(--card-border)' }}>
+                <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl flex items-center justify-between my-2" style={{ background: 'var(--sheet-btn-bg)', border: '1px solid var(--card-border)' }}>
                   <div>
                     <span className="text-[10px] font-semibold uppercase tracking-wider block" style={{ color: 'var(--text-muted)' }}>
                       Return Since Added

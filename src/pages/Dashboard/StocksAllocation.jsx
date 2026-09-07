@@ -46,7 +46,7 @@ export default function StocksAllocation({ data, loading }) {
           return (
             <div
               key={item.name}
-              className="relative px-4 py-3 flex items-center gap-3"
+              className="relative px-3 sm:px-4 py-3 flex items-center gap-2.5 sm:gap-3"
               style={{ borderBottom: i < topStocks.length - 1 ? '1px solid var(--divider)' : 'none' }}
             >
               {/* Animated background bar */}

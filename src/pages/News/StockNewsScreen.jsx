@@ -118,7 +118,7 @@ export default function StockNewsScreen({ holding, isOpen, onClose }) {
 
             {/* ── Header ───────────────────────────────────────────────── */}
             <header
-              className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+              className="flex items-center justify-between px-3 sm:px-4 lg:px-8 py-3 flex-shrink-0"
               style={{
                 borderBottom: '1px solid var(--header-border)',
                 background: 'var(--header-bg)',
@@ -186,7 +186,7 @@ export default function StockNewsScreen({ holding, isOpen, onClose }) {
 
             {/* ── News content (scrollable full-page) ────────────────────── */}
             <div
-              className="flex-1 overflow-y-auto px-4"
+              className="flex-1 overflow-y-auto px-3 sm:px-4 lg:px-8"
               style={{ paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}
             >
               {/* Skeleton placeholders during initial load */}

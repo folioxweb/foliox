@@ -108,7 +108,7 @@ export default function AISummaryScreen({ isOpen, onClose, doc }) {
         >
           {/* ── Header ─────────────────────────────────────────────── */}
           <header
-            className="flex-shrink-0 flex items-center gap-3 px-4 py-3"
+            className="flex-shrink-0 flex items-center gap-3 px-3 sm:px-4 lg:px-8 py-3"
             style={{
               borderBottom: '1px solid var(--header-border)',
               background: 'var(--header-bg)',
@@ -195,7 +195,7 @@ export default function AISummaryScreen({ isOpen, onClose, doc }) {
               className="flex-1 overflow-y-auto overscroll-y-contain"
               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 24px)' }}
             >
-              <div className="max-w-2xl mx-auto px-4 pt-5 space-y-4">
+              <div className="max-w-2xl mx-auto px-3 sm:px-4 lg:px-8 pt-3.5 sm:pt-5 space-y-4">
 
                 {/* Type + Sentiment badges */}
                 <div className="flex items-center gap-2 flex-wrap">

@@ -71,7 +71,7 @@ export default function DashboardPage() {
         }}
       >
         <div
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between"
+          className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 flex items-center justify-between"
           style={{
             paddingTop: 'max(1.25rem, env(safe-area-inset-top))',
             paddingBottom: '0.75rem',
@@ -114,7 +114,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Container with Responsive Multi-Column Desktop Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3.5 sm:pt-6">
         <AnimatePresence>
           {hasError && <ErrorBanner key="err" onRetry={refreshAll} />}
         </AnimatePresence>
