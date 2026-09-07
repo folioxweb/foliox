@@ -153,12 +153,10 @@ export async function fetchStockCandlesticks(symbol, rangeKey = '1D', basePrice 
     console.warn('Supabase edge function get-stock-chart not reachable, trying direct fallback:', e.message);
   }
 
-  // 2. Try direct public fetch / cors proxy
+  // 2. Try direct public fetch (for native or non-CORS environments)
   try {
     const directUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySymbol)}?interval=${interval}&range=${range}`;
-    const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
-
-    const res = await fetch(corsProxyUrl).catch(() => fetch(directUrl));
+    const res = await fetch(directUrl);
     if (res.ok) {
       const json = await res.json();
       const result = json?.chart?.result?.[0];
@@ -234,11 +232,26 @@ export async function fetchLiveStockPrice(symbol) {
   if (!symbol) return null;
   const ySymbol = toYahooSymbol(symbol);
 
+  // 1. Primary: Use Supabase Edge Function 'get-stock-chart' (reliable server-side fetch)
+  try {
+    if (supabase?.functions) {
+      const { data, error } = await supabase.functions.invoke('get-stock-chart', {
+        body: { symbol: ySymbol, range: '1d', interval: '1d' },
+      });
+      if (!error && data?.success && data?.regularMarketPrice != null) {
+        const price = Number(data.regularMarketPrice);
+        const prevClose = Number(data.previousClose ?? data.candles?.[0]?.open ?? price);
+        return { price, prevClose };
+      }
+    }
+  } catch (err) {
+    console.warn('Edge function fetchLiveStockPrice failed for', ySymbol, err?.message);
+  }
+
+  // 2. Direct fetch fallback (for native or non-CORS environments)
   try {
     const directUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySymbol)}?interval=1d`;
-    const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
-
-    const res = await fetch(corsProxyUrl).catch(() => fetch(directUrl));
+    const res = await fetch(directUrl);
     if (res.ok) {
       const json = await res.json();
       const meta = json?.chart?.result?.[0]?.meta;
@@ -250,7 +263,7 @@ export async function fetchLiveStockPrice(symbol) {
       }
     }
   } catch (err) {
-    console.warn('Live price fetch fallback error:', err.message);
+    console.warn('Live price direct fetch fallback error:', err.message);
   }
   return null;
 }

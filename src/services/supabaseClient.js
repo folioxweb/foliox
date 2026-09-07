@@ -24,11 +24,26 @@ async function fetchYahooStockQuote(symbol) {
   let s = String(symbol).trim().replace(/^NSE:/i, '').replace(/^BSE:/i, '');
   if (!s.endsWith('.NS') && !s.endsWith('.BO')) s += '.NS';
 
+  // 1. Primary: Use Supabase Edge Function 'get-stock-chart' (no CORS issues, fast, secure)
+  try {
+    if (supabase?.functions) {
+      const { data, error } = await supabase.functions.invoke('get-stock-chart', {
+        body: { symbol: s, range: '1d', interval: '1d' },
+      });
+      if (!error && data?.success && data?.regularMarketPrice != null) {
+        const price = Number(data.regularMarketPrice);
+        const prevClose = Number(data.previousClose ?? data.candles?.[0]?.open ?? price);
+        return { price, prevClose };
+      }
+    }
+  } catch (err) {
+    console.warn('Edge function quote fetch failed for', symbol, err);
+  }
+
+  // 2. Direct fetch fallback (for native/non-CORS environments)
   try {
     const directUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?interval=1d`;
-    const corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(directUrl)}`;
-
-    const res = await fetch(corsProxyUrl).catch(() => fetch(directUrl));
+    const res = await fetch(directUrl);
     if (res.ok) {
       const json = await res.json();
       const meta = json?.chart?.result?.[0]?.meta;
