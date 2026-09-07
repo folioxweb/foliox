@@ -186,12 +186,12 @@ export default function IpoDetailPage() {
         )}
       </div>
 
-      <div className="p-4 space-y-4 max-w-4xl mx-auto">
+      <div className="px-2.5 py-3 sm:p-4 space-y-3.5 sm:space-y-4 max-w-4xl mx-auto">
         {/* ========================================================================= */}
         {/* 1. HERO SECTION & ALLOTMENT BANNER                                        */}
         {/* ========================================================================= */}
         <div
-          className="rounded-2xl p-4 relative overflow-hidden"
+          className="rounded-2xl p-3 sm:p-4 relative overflow-hidden"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -236,7 +236,7 @@ export default function IpoDetailPage() {
             href={ipo.allotmentUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-between p-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md transition active:scale-[0.99]"
+            className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-sm shadow-md transition active:scale-[0.99]"
           >
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-white">Allotment Declared — Check Allotment Status</span>
@@ -249,7 +249,7 @@ export default function IpoDetailPage() {
         {/* 2. SECTION: DETAILED SUBSCRIPTION STATUS (TABLE ONLY, CLEAN NUMBERS)     */}
         {/* ========================================================================= */}
         <div
-          className="rounded-2xl p-4 space-y-3.5"
+          className="rounded-2xl p-3 sm:p-4 space-y-3 sm:space-y-3.5"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -279,21 +279,21 @@ export default function IpoDetailPage() {
           </div>
 
           {hasSubData ? (
-            <div className="space-y-3.5">
+            <div className="space-y-3 sm:space-y-3.5">
               {/* Overall Total Subscription Highlight Banner (Progress line removed, % removed) */}
               <div
-                className="p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden"
+                className="p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 relative overflow-hidden"
                 style={{
                   background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(99, 102, 241, 0.12) 100%)',
                   border: '1px solid rgba(59, 130, 246, 0.3)',
                 }}
               >
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-start gap-1.5 mb-1">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300">
                       Total Overall Subscription
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-600 text-white whitespace-nowrap shrink-0">
                       {totalNum >= 1 ? `${totalNum.toFixed(2)}x Booked` : (totalNum > 0 ? `${totalNum.toFixed(2)}x Subscribed` : 'Bidding Open')}
                     </span>
                   </div>
@@ -306,7 +306,7 @@ export default function IpoDetailPage() {
                   </p>
                 </div>
 
-                <div className="text-left sm:text-right shrink-0">
+                <div className="text-left sm:text-right shrink-0 mt-1 sm:mt-0">
                   <span className="text-3xl sm:text-4xl font-black text-blue-600 dark:text-blue-300 tracking-tight block">
                     {totalText}
                   </span>
@@ -321,78 +321,78 @@ export default function IpoDetailPage() {
                 <table className="w-full text-xs text-left">
                   <thead className="bg-[var(--input-bg)] text-[var(--text-2)] border-b border-[var(--divider)]">
                     <tr>
-                      <th className="p-3 font-bold uppercase text-[10px]">Investor Category</th>
-                      <th className="p-3 font-bold uppercase text-[10px]">Bidder Scope</th>
-                      <th className="p-3 font-bold uppercase text-[10px] text-right">Subscription</th>
+                      <th className="p-2 sm:p-3 font-bold uppercase text-[10px]">Investor Category</th>
+                      <th className="p-2 sm:p-3 font-bold uppercase text-[10px]">Bidder Scope</th>
+                      <th className="p-2 sm:p-3 font-bold uppercase text-[10px] text-right">Subscription</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--divider)]" style={{ color: 'var(--text)' }}>
                     {/* QIB Row */}
                     <tr>
-                      <td className="p-3 font-extrabold flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                      <td className="p-2 sm:p-3 font-extrabold flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                         <Building2 size={14} className="shrink-0" />
                         <span>QIB</span>
                       </td>
-                      <td className="p-3 text-[var(--text-2)]">Qualified Institutional Buyers (MFs &amp; FPIs)</td>
-                      <td className="p-3 font-black text-right text-blue-600 dark:text-blue-400 text-sm">
+                      <td className="p-2 sm:p-3 text-[var(--text-2)]">Qualified Institutional Buyers (MFs &amp; FPIs)</td>
+                      <td className="p-2 sm:p-3 font-black text-right text-blue-600 dark:text-blue-400 text-sm">
                         {qibText}
                       </td>
                     </tr>
 
                     {/* NII Total Row */}
                     <tr>
-                      <td className="p-3 font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                      <td className="p-2 sm:p-3 font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
                         <TrendingUp size={14} className="shrink-0" />
                         <span>NII Total</span>
                       </td>
-                      <td className="p-3 text-[var(--text-2)]">Non-Institutional (High Net-Worth &gt; ₹2 Lakhs)</td>
-                      <td className="p-3 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                      <td className="p-2 sm:p-3 text-[var(--text-2)]">Non-Institutional (High Net-Worth &gt; ₹2 Lakhs)</td>
+                      <td className="p-2 sm:p-3 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
                         {niiText}
                       </td>
                     </tr>
 
                     {/* sHNI Sub-Row */}
                     <tr className="bg-[var(--input-bg)]/50 text-xs">
-                      <td className="p-2.5 pl-7 font-semibold text-[var(--text-2)]">
+                      <td className="p-1.5 sm:p-2.5 pl-5 sm:pl-7 font-semibold text-[var(--text-2)]">
                         ↳ sHNI
                       </td>
-                      <td className="p-2.5 text-[var(--text-2)]">Small HNI (Applications ₹2L – ₹10L)</td>
-                      <td className="p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                      <td className="p-1.5 sm:p-2.5 text-[var(--text-2)]">Small HNI (Applications ₹2L – ₹10L)</td>
+                      <td className="p-1.5 sm:p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
                         {shniText}
                       </td>
                     </tr>
 
                     {/* bHNI Sub-Row */}
                     <tr className="bg-[var(--input-bg)]/50 text-xs">
-                      <td className="p-2.5 pl-7 font-semibold text-[var(--text-2)]">
+                      <td className="p-1.5 sm:p-2.5 pl-5 sm:pl-7 font-semibold text-[var(--text-2)]">
                         ↳ bHNI
                       </td>
-                      <td className="p-2.5 text-[var(--text-2)]">Big HNI (Applications Above ₹10L)</td>
-                      <td className="p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
+                      <td className="p-1.5 sm:p-2.5 text-[var(--text-2)]">Big HNI (Applications Above ₹10L)</td>
+                      <td className="p-1.5 sm:p-2.5 font-black text-right text-indigo-600 dark:text-indigo-400 text-sm">
                         {bhniText}
                       </td>
                     </tr>
 
                     {/* Retail Row */}
                     <tr>
-                      <td className="p-3 font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <td className="p-2 sm:p-3 font-extrabold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
                         <Users size={14} className="shrink-0" />
                         <span>Retail (RII)</span>
                       </td>
-                      <td className="p-3 text-[var(--text-2)]">Individual Retail Investors (≤ ₹2 Lakhs)</td>
-                      <td className="p-3 font-black text-right text-emerald-600 dark:text-emerald-400 text-sm">
+                      <td className="p-2 sm:p-3 text-[var(--text-2)]">Individual Retail Investors (≤ ₹2 Lakhs)</td>
+                      <td className="p-2 sm:p-3 font-black text-right text-emerald-600 dark:text-emerald-400 text-sm">
                         {riiText}
                       </td>
                     </tr>
 
                     {/* Anchor Book Row */}
                     <tr>
-                      <td className="p-3 font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                      <td className="p-2 sm:p-3 font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
                         <PieChart size={14} className="shrink-0" />
                         <span>Anchor Book</span>
                       </td>
-                      <td className="p-3 text-[var(--text-2)]">Anchor Institutional Placement (Pre-Issue)</td>
-                      <td className="p-3 font-bold text-right text-emerald-600 dark:text-emerald-400 text-xs">
+                      <td className="p-2 sm:p-3 text-[var(--text-2)]">Anchor Institutional Placement (Pre-Issue)</td>
+                      <td className="p-2 sm:p-3 font-bold text-right text-emerald-600 dark:text-emerald-400 text-xs">
                         <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold">
                           {anchorStatusText}
                         </span>
@@ -425,7 +425,7 @@ export default function IpoDetailPage() {
         {/* 3. SECTION: TIMELINE & IMPORTANT DATES                                   */}
         {/* ========================================================================= */}
         <div
-          className="rounded-2xl p-4 space-y-3"
+          className="rounded-2xl p-3 sm:p-4 space-y-3"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -487,7 +487,7 @@ export default function IpoDetailPage() {
         {/* 4. SECTION: EST. PROFIT PER LOT                                          */}
         {/* ========================================================================= */}
         <div
-          className="rounded-2xl p-4 space-y-3"
+          className="rounded-2xl p-3 sm:p-4 space-y-3"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -527,7 +527,7 @@ export default function IpoDetailPage() {
           </div>
 
           <div
-            className="rounded-xl p-4 flex flex-col justify-between"
+            className="rounded-xl p-3 sm:p-4 flex flex-col justify-between"
             style={{
               background: 'rgba(16, 185, 129, 0.08)',
               border: '1px solid rgba(16, 185, 129, 0.25)',
@@ -568,7 +568,7 @@ export default function IpoDetailPage() {
         {/* 5. SECTION: EST. LISTING PRICE                                           */}
         {/* ========================================================================= */}
         <div
-          className="rounded-2xl p-4 space-y-3"
+          className="rounded-2xl p-3 sm:p-4 space-y-3"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -583,7 +583,7 @@ export default function IpoDetailPage() {
           </div>
 
           <div
-            className="rounded-xl p-4 flex flex-col justify-between"
+            className="rounded-xl p-3 sm:p-4 flex flex-col justify-between"
             style={{
               background: 'rgba(59, 130, 246, 0.08)',
               border: '1px solid rgba(59, 130, 246, 0.25)',
@@ -627,7 +627,7 @@ export default function IpoDetailPage() {
         {/* 6. SECTION: IPO KEY DETAILS / FINANCIALS METRICS GRID                    */}
         {/* ========================================================================= */}
         <div
-          className="rounded-2xl p-4 space-y-3"
+          className="rounded-2xl p-3 sm:p-4 space-y-3"
           style={{
             background: 'var(--card-bg)',
             border: '1px solid var(--card-border)',
@@ -641,7 +641,7 @@ export default function IpoDetailPage() {
             </h2>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 pt-1">
             <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
               <span className="text-[11px] text-[var(--text-2)] block mb-0.5">Issue Price</span>
               <span className="text-sm font-extrabold" style={{ color: 'var(--text)' }}>₹{ipo.priceStr || 'N/A'}</span>
