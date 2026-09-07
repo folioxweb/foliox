@@ -142,14 +142,14 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
               <label className="block text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 Grant Admin Access
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2.5">
                 <input
                   type="email"
                   required
                   placeholder="Registered user's email..."
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/50"
+                  className="w-full sm:flex-1 min-w-0 px-4 py-2.5 rounded-xl text-sm outline-none transition focus:ring-2 focus:ring-emerald-500/50"
                   style={{
                     background: 'var(--input-bg)',
                     border: '1px solid var(--card-border)',
@@ -159,7 +159,13 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
                 <button
                   type="submit"
                   disabled={submitting || !newEmail.trim()}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 transition-all cursor-pointer shrink-0"
+                  className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 disabled:opacity-40"
+                  style={{
+                    background: 'var(--emerald, #10B981)',
+                    color: '#FFFFFF',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                  }}
                 >
                   {submitting ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -202,8 +208,8 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
                         <div
                           className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
                             isSuper
-                              ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                              : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                              : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                           }`}
                         >
                           <Shield size={16} />
@@ -214,7 +220,7 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
                               {adm.email}
                             </span>
                             {isCurrent && (
-                              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-700/50 text-slate-300 font-medium">
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--card-border)] text-[var(--text-2)] font-semibold">
                                 You
                               </span>
                             )}
@@ -229,8 +235,8 @@ export default function ManageAdminsModal({ isOpen, onClose }) {
                         <span
                           className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wide border ${
                             isSuper
-                              ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
-                              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                              ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                              : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                           }`}
                         >
                           {adm.role.replace('_', ' ')}

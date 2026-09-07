@@ -199,10 +199,13 @@ export default function ApmDashboardPage() {
 
   return (
     <div className="min-h-0 flex-1 flex flex-col overflow-y-auto bg-[var(--bg)] text-[var(--text)]">
-      {/* ── Top Header Bar ── */}
+      {/* ── Top Header Bar (Safe-Area Aware for iPhone Notch / Dynamic Island) ── */}
       <header
-        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 px-6 py-4 border-b border-[var(--card-border)] backdrop-blur-xl"
-        style={{ background: 'var(--header-bg)' }}
+        className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 px-6 pb-4 border-b border-[var(--card-border)] backdrop-blur-xl"
+        style={{
+          background: 'var(--header-bg)',
+          paddingTop: 'max(1rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))',
+        }}
       >
         <div className="flex items-center gap-3">
           <button
@@ -278,7 +281,12 @@ export default function ApmDashboardPage() {
       </header>
 
       {/* Main Container */}
-      <div className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full">
+      <div
+        className="flex-1 p-6 space-y-6 max-w-7xl mx-auto w-full"
+        style={{
+          paddingBottom: 'calc(6.5rem + env(safe-area-inset-bottom, 0px))',
+        }}
+      >
         {/* Toast Feedback */}
         {triggerToast && (
           <motion.div
@@ -765,7 +773,7 @@ export default function ApmDashboardPage() {
                           <span className="font-mono font-bold text-sm text-[var(--text)]">
                             {job.jobname}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-700/50 text-slate-300 font-mono">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--card-border)] text-[var(--text-2)] font-mono">
                             #{job.jobid}
                           </span>
                         </div>
@@ -786,8 +794,12 @@ export default function ApmDashboardPage() {
                     </div>
 
                     <div
-                      className="p-2.5 rounded-xl font-mono text-[10px] text-[var(--text-muted)] truncate"
-                      style={{ background: 'rgba(0,0,0,0.25)' }}
+                      className="p-2.5 rounded-xl font-mono text-[11px] font-medium truncate select-all"
+                      style={{
+                        background: 'var(--input-bg)',
+                        border: '1px solid var(--card-border)',
+                        color: 'var(--text)',
+                      }}
                       title={job.command}
                     >
                       {job.command}
@@ -867,7 +879,7 @@ export default function ApmDashboardPage() {
                           <td className="py-3 px-3 text-right font-mono">
                             {run.duration_ms ?? 0} ms
                           </td>
-                          <td className="py-3 pl-3 text-[11px] font-mono text-[var(--text-muted)] truncate max-w-xs">
+                          <td className="py-3 pl-3 text-[11px] font-mono text-[var(--text)] truncate max-w-xs">
                             {run.return_message || '—'}
                           </td>
                         </tr>
