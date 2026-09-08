@@ -301,7 +301,11 @@ export default function LoginPage({ onLogin }) {
             <button
               type="button"
               onClick={() => scrollToAuth("signin")}
-              className="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95"
+              className="px-4 py-2 rounded-xl font-bold text-xs sm:text-sm text-white shadow-sm transition active:scale-95 hover:opacity-90 cursor-pointer"
+              style={{
+                backgroundColor: '#059669',
+                color: '#FFFFFF'
+              }}
             >
               Sign In
             </button>
@@ -487,15 +491,15 @@ export default function LoginPage({ onLogin }) {
               id="auth-card"
               className="w-full max-w-md rounded-3xl p-6 sm:p-8 shadow-xl transition-all duration-300 border relative overflow-hidden"
               style={{
-                background: isDark ? "rgba(17, 24, 39, 0.9)" : "rgba(255, 255, 255, 0.98)",
+                background: isDark ? "rgba(17, 24, 39, 0.95)" : "#FFFFFF",
                 borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.08)",
                 boxShadow: isDark
-                  ? "0 20px 40px rgba(0, 0, 0, 0.4)"
-                  : "0 10px 30px rgba(0, 0, 0, 0.08)"
+                  ? "0 20px 40px rgba(0, 0, 0, 0.5)"
+                  : "0 12px 36px rgba(0, 0, 0, 0.08)"
               }}
             >
               {/* Card Top Accent Bar */}
-              <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500" />
+              <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-600 dark:bg-emerald-500" />
 
               {/* View Selector Tabs (Sign In / Create Account) */}
               {isSupabase && view !== "forgot" && (
@@ -513,11 +517,14 @@ export default function LoginPage({ onLogin }) {
                       setError("");
                       setSuccessMsg("");
                     }}
-                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 ${
-                      view === "signin"
-                        ? "bg-emerald-600 text-white shadow-sm"
-                        : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                    }`}
+                    className="flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
+                    style={view === "signin" ? {
+                      backgroundColor: "#059669",
+                      color: "#FFFFFF",
+                      boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)"
+                    } : {
+                      color: isDark ? "#94A3B8" : "#475569"
+                    }}
                   >
                     <LogIn size={15} />
                     <span>Sign In</span>
@@ -529,11 +536,14 @@ export default function LoginPage({ onLogin }) {
                       setError("");
                       setSuccessMsg("");
                     }}
-                    className={`flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 ${
-                      view === "signup"
-                        ? "bg-emerald-600 text-white shadow-sm"
-                        : "text-[var(--text-muted)] hover:text-[var(--text)]"
-                    }`}
+                    className="flex-1 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all duration-150 flex items-center justify-center gap-1.5 cursor-pointer"
+                    style={view === "signup" ? {
+                      backgroundColor: "#059669",
+                      color: "#FFFFFF",
+                      boxShadow: "0 2px 8px rgba(5, 150, 105, 0.3)"
+                    } : {
+                      color: isDark ? "#94A3B8" : "#475569"
+                    }}
                   >
                     <UserPlus size={15} />
                     <span>Create Account</span>
@@ -544,15 +554,19 @@ export default function LoginPage({ onLogin }) {
               {/* View Header */}
               <div className="text-center mb-6">
                 <div
-                  className="w-13 h-13 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-inner"
-                  style={{ background: "rgba(16, 185, 129, 0.12)" }}
+                  className="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center mb-3 shadow-sm border"
+                  style={{
+                    background: isDark ? "rgba(16, 185, 129, 0.12)" : "rgba(16, 185, 129, 0.15)",
+                    borderColor: isDark ? "rgba(16, 185, 129, 0.25)" : "rgba(16, 185, 129, 0.3)",
+                    color: isDark ? "#34D399" : "#059669"
+                  }}
                 >
                   {view === "forgot" ? (
-                    <KeyRound size={26} className="text-emerald-600 dark:text-emerald-400" />
+                    <KeyRound size={24} />
                   ) : view === "signup" ? (
-                    <UserPlus size={26} className="text-emerald-600 dark:text-emerald-400" />
+                    <UserPlus size={24} />
                   ) : (
-                    <ShieldCheck size={26} className="text-emerald-600 dark:text-emerald-400" />
+                    <ShieldCheck size={24} />
                   )}
                 </div>
 
@@ -577,13 +591,13 @@ export default function LoginPage({ onLogin }) {
                 {/* Email Address Field */}
                 {isSupabase && (
                   <div>
-                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider mb-1.5 pl-1">
+                    <label className="block text-xs font-bold text-[var(--text-2)] uppercase tracking-wider mb-1.5 pl-0.5">
                       Email Address
                     </label>
                     <div className="relative">
                       <Mail
                         size={18}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
                       />
                       <input
                         ref={emailInputRef}
@@ -593,12 +607,12 @@ export default function LoginPage({ onLogin }) {
                         onChange={(e) => setEmail(e.target.value)}
                         autoComplete="email"
                         required
-                        className="w-full rounded-2xl py-3 pl-12 pr-4 outline-none transition focus:ring-2 focus:ring-emerald-500/50"
+                        className="w-full h-11 sm:h-12 rounded-xl pl-10 pr-4 text-sm font-medium outline-none transition focus:ring-2 focus:ring-emerald-500/30"
                         style={{
                           background: "var(--input-bg)",
-                          border: "1px solid var(--input-border)",
+                          border: "1.5px solid var(--input-border)",
                           color: "var(--text)",
-                          fontSize: "16px"
+                          fontSize: "15px"
                         }}
                       />
                     </div>
@@ -608,8 +622,8 @@ export default function LoginPage({ onLogin }) {
                 {/* Password Field */}
                 {view !== "forgot" && (
                   <div>
-                    <div className="flex items-center justify-between mb-1.5 pl-1">
-                      <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                    <div className="flex items-center justify-between mb-1.5 pl-0.5">
+                      <label className="block text-xs font-bold text-[var(--text-2)] uppercase tracking-wider">
                         Password
                       </label>
                       {isSupabase && view === "signin" && (
@@ -620,7 +634,8 @@ export default function LoginPage({ onLogin }) {
                             setError("");
                             setSuccessMsg("");
                           }}
-                          className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                          className="text-xs font-bold hover:underline transition cursor-pointer"
+                          style={{ color: isDark ? "#34D399" : "#059669" }}
                         >
                           Forgot Password?
                         </button>
@@ -629,7 +644,7 @@ export default function LoginPage({ onLogin }) {
                     <div className="relative">
                       <Lock
                         size={18}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+                        className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
                       />
                       <input
                         type={showPassword ? "text" : "password"}
@@ -638,18 +653,18 @@ export default function LoginPage({ onLogin }) {
                         onChange={(e) => setPassword(e.target.value)}
                         autoComplete={view === "signup" ? "new-password" : "current-password"}
                         required
-                        className="w-full rounded-2xl py-3 pl-12 pr-12 outline-none transition focus:ring-2 focus:ring-emerald-500/50"
+                        className="w-full h-11 sm:h-12 rounded-xl pl-10 pr-11 text-sm font-medium outline-none transition focus:ring-2 focus:ring-emerald-500/30"
                         style={{
                           background: "var(--input-bg)",
-                          border: "1px solid var(--input-border)",
+                          border: "1.5px solid var(--input-border)",
                           color: "var(--text)",
-                          fontSize: "16px"
+                          fontSize: "15px"
                         }}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] transition"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] transition p-1 cursor-pointer"
                         aria-label={showPassword ? "Hide password" : "Show password"}
                       >
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -695,7 +710,12 @@ export default function LoginPage({ onLogin }) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-2xl py-3.5 text-white font-extrabold text-sm sm:text-base tracking-wide transition-all duration-150 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:opacity-50 mt-2 shadow-sm"
+                  className="w-full h-12 rounded-xl text-white font-extrabold text-sm sm:text-base tracking-wide transition-all duration-150 flex items-center justify-center gap-2 hover:opacity-95 active:scale-[0.98] disabled:opacity-50 mt-3 shadow-md cursor-pointer"
+                  style={{
+                    backgroundColor: "#059669",
+                    color: "#FFFFFF",
+                    boxShadow: "0 4px 14px rgba(5, 150, 105, 0.25)"
+                  }}
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -715,7 +735,7 @@ export default function LoginPage({ onLogin }) {
                   ) : (
                     <>
                       <LogIn size={18} />
-                      <span>Enter Terminal</span>
+                      <span>Sign In to Terminal</span>
                     </>
                   )}
                 </button>
@@ -731,7 +751,7 @@ export default function LoginPage({ onLogin }) {
                       setError("");
                       setSuccessMsg("");
                     }}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline transition cursor-pointer"
                   >
                     <ArrowLeft size={14} /> Back to Sign In
                   </button>
@@ -747,7 +767,6 @@ export default function LoginPage({ onLogin }) {
                 <span>•</span>
                 <span>Private Vault</span>
                 <span>•</span>
-                <span>Zero Ads</span>
               </div>
             </div>
           </div>
@@ -816,11 +835,17 @@ export default function LoginPage({ onLogin }) {
                 key={feat.id}
                 type="button"
                 onClick={() => setActiveFeatureTab(index)}
-                className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 border ${
-                  isSelected
-                    ? "bg-emerald-600 text-white shadow-sm border-emerald-600"
-                    : "border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text-muted)] hover:text-[var(--text)]"
-                }`}
+                className="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2 border cursor-pointer"
+                style={isSelected ? {
+                  backgroundColor: "#059669",
+                  color: "#FFFFFF",
+                  borderColor: "#059669",
+                  boxShadow: "0 4px 12px rgba(5, 150, 105, 0.25)"
+                } : {
+                  backgroundColor: "var(--card-bg)",
+                  color: "var(--text-2)",
+                  borderColor: "var(--card-border)"
+                }}
               >
                 {index === 0 && <PieChart size={15} />}
                 {index === 1 && <FileText size={15} />}
@@ -1072,7 +1097,12 @@ export default function LoginPage({ onLogin }) {
                 <button
                   type="button"
                   onClick={() => scrollToAuth("signup")}
-                  className="px-6 py-3 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition active:scale-95"
+                  className="px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-white shadow-sm transition active:scale-95 hover:opacity-90 cursor-pointer"
+                  style={{
+                    backgroundColor: "#059669",
+                    color: "#FFFFFF",
+                    boxShadow: "0 4px 14px rgba(5, 150, 105, 0.25)"
+                  }}
                 >
                   Create Free Account
                 </button>
