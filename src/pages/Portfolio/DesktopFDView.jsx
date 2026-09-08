@@ -92,20 +92,20 @@ export default function DesktopFDView({ fds = [], onPress }) {
 
   return (
     <div
-      className="w-full rounded-2xl overflow-hidden border transition-all"
+      className="w-full rounded-2xl overflow-hidden border transition-all mt-2"
       style={{
-        background: 'var(--header-bg)',
+        background: 'var(--card-bg)',
         borderColor: 'var(--card-border)',
-        boxShadow: 'none',
+        boxShadow: 'var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05))',
       }}
     >
       <table className="w-full text-left border-collapse">
         {/* Table Header */}
         <thead>
           <tr
-            className="border-b text-[12px] font-semibold tracking-wide select-none"
+            className="text-[12px] font-semibold tracking-wide select-none"
             style={{
-              borderColor: 'var(--divider)',
+              borderBottom: '1px solid var(--divider)',
               color: 'var(--text-muted)',
               background: 'transparent',
             }}
@@ -173,8 +173,8 @@ export default function DesktopFDView({ fds = [], onPress }) {
         </thead>
 
         {/* Table Body */}
-        <tbody className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-          {sortedFds.map((fd) => {
+        <tbody>
+          {sortedFds.map((fd, idx) => {
             const {
               name,
               principal = 0,
@@ -191,7 +191,10 @@ export default function DesktopFDView({ fds = [], onPress }) {
               <tr
                 key={fd.id ?? fd.symbol ?? name}
                 onClick={() => onPress && onPress(fd)}
-                className="cursor-pointer"
+                className="cursor-pointer transition-colors hover:bg-[var(--sheet-btn-bg)]"
+                style={{
+                  borderBottom: idx < sortedFds.length - 1 ? '1px solid var(--divider)' : 'none',
+                }}
               >
                 {/* 1. Bank / Scheme Name & Maturity Subtitle */}
                 <td className="py-4 px-6">

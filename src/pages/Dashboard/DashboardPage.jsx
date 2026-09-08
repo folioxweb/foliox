@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, RefreshCw, Settings, Newspaper, Flame } from 'lucide-react';
+import { AlertCircle, RefreshCw, Settings, Newspaper } from 'lucide-react';
 import { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
 
@@ -119,20 +119,25 @@ export default function DashboardPage() {
           {hasError && <ErrorBanner key="err" onRetry={refreshAll} />}
         </AnimatePresence>
 
-        {/* Responsive Layout: 1 Column on Mobile/Tablet (<1024px), 2 Columns on Desktop (>=1024px) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 lg:gap-6 items-start">
-          {/* Left / Primary Column (7 Cols on Desktop) */}
+        {/* Row 1: Verified Portfolio (Left) & Today's Market Breakdown (Right on Desktop, Below on Mobile) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start mb-5 lg:mb-6">
           <div className="lg:col-span-7">
             <OverallInvestments
               data={overallInvestments.data}
               todayData={todayPerformance.data}
               loading={overallInvestments.loading || todayPerformance.loading}
             />
+          </div>
+          <div className="lg:col-span-5">
             <TodayPerformance data={todayPerformance.data} loading={todayPerformance.loading} />
+          </div>
+        </div>
+
+        {/* Row 2: Stocks Allocation (Left) & Asset Allocation / Sector Exposure (Right) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+          <div className="lg:col-span-7">
             <StocksAllocation data={stocksAllocation.data} loading={stocksAllocation.loading} />
           </div>
-
-          {/* Right / Allocation Column (5 Cols on Desktop) */}
           <div className="lg:col-span-5">
             <AssetAllocation data={assetAllocation.data} loading={assetAllocation.loading} />
             <OverallSectorAllocation data={overallSectorAllocation.data} loading={overallSectorAllocation.loading} />

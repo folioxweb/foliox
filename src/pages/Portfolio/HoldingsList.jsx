@@ -149,12 +149,21 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
       {/* ── 2. Mobile UI (Smartphones: < md) ── */}
       <motion.section
         aria-label="Holdings list"
-        className="md:hidden"
+        className={`md:hidden ${isFdList ? 'space-y-3' : 'rounded-2xl overflow-hidden border mt-2 px-1 py-0.5'}`}
+        style={
+          isFdList
+            ? undefined
+            : {
+                background: 'var(--card-bg)',
+                borderColor: 'var(--card-border)',
+                boxShadow: 'var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05))',
+              }
+        }
         variants={listVariants}
         initial="hidden"
         animate="visible"
       >
-        {holdings.map((holding) => (
+        {holdings.map((holding, idx) => (
           <motion.div
             key={holding.id ?? holding.symbol ?? holding.srNo ?? holding.name}
             variants={itemVariants}
@@ -169,6 +178,7 @@ export default function HoldingsList({ holdings, loading, error, onRetry, onPres
                 holding={holding}
                 variant="list"
                 viewMode={viewMode}
+                isLast={idx === holdings.length - 1}
                 onPress={onPress ? () => onPress(holding) : undefined}
                 onNewsPress={onNewsPress ? () => onNewsPress(holding) : undefined}
                 onReportsPress={onReportsPress ? () => onReportsPress(holding) : undefined}
