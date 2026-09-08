@@ -235,12 +235,22 @@ export default function AddHoldingModal({ isOpen, onClose, initialAssetType }) {
     }
   }
 
+const SECTOR_ALIASES = {
+  "Information Technology": "Technology",
+  "Oil Gas & Consumable Fuels": "Oil, Gas & Consumable Fuels",
+  "Media Entertainment & Publication": "Media, Entertainment & Publication",
+  "Forest Materials": "Basic Materials"
+};
+
   function handleSelectInstrument(item) {
     setIsMasterSelected(true);
     setSymbol(item.symbol || "");
     setName(item.name || "");
     setIsin(item.isin || "");
-    if (item.sector && SECTORS.includes(item.sector)) {
+    const resolvedSec = SECTOR_ALIASES[item.sector] || item.sector;
+    if (resolvedSec && SECTORS.includes(resolvedSec)) {
+      setSector(resolvedSec);
+    } else if (item.sector) {
       setSector(item.sector);
     } else if (assetType === ASSET_TYPES.ETF) {
       setSector(item.sector || "ETF");

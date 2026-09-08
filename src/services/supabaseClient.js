@@ -1013,11 +1013,25 @@ export const supabaseApi = {
             }
           }
 
+          let assetSector = payload.sector || null;
+          if (!assetSector && (targetType === 'STOCK' || targetType === 'ETF') && targetSymbol) {
+            try {
+              const { data: nseStock } = await supabase
+                .from('nse_stocks')
+                .select('sector')
+                .eq('symbol', targetSymbol)
+                .maybeSingle();
+              if (nseStock?.sector) assetSector = nseStock.sector;
+            } catch (_secErr) {
+              // ignore
+            }
+          }
+
           const { data: newAsset, error: createErr } = await supabase.from('assets').insert({
             symbol: targetSymbol || (targetType === 'MF' && (payload.mfApiCode || payload.api_code) ? `AMFI_${payload.mfApiCode || payload.api_code}` : `ASSET_${Date.now()}`),
             name: payload.name ? payload.name.trim() : targetSymbol,
             asset_type: targetType,
-            sector: payload.sector || null,
+            sector: assetSector,
             category: payload.category || null,
             confidence: payload.confidence || 'Medium',
             trade_type: payload.badge || payload.tradeType || 'Trade',
