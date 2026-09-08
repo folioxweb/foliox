@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { TrendingUp, TrendingDown, ChevronDown, ShieldCheck } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
@@ -50,7 +49,7 @@ export default function OverallInvestments({ data, loading }) {
 
   if (loading && (!data || !Array.isArray(data))) {
     return (
-      <section className="mb-5">
+      <section>
         <Skeleton width="100%" height={240} rounded="xl" />
       </section>
     );
@@ -65,13 +64,13 @@ export default function OverallInvestments({ data, loading }) {
   const portfolioCurrentVal = Number(total.current || 0);
 
   return (
-    <section className="mb-5">
+    <section>
       <div
-        className="relative overflow-hidden rounded-2xl p-3 sm:p-5 transition-all duration-200"
+        className="relative overflow-hidden rounded-2xl p-3 sm:p-5"
         style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--card-border)',
-          boxShadow: 'var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.06))',
+          boxShadow: 'var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05))',
         }}
       >
         {/* Top Official Broker Header Strip */}
@@ -86,7 +85,7 @@ export default function OverallInvestments({ data, loading }) {
           <div className="flex items-center gap-2">
             {marketStatus.isOpen ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 NSE / BSE Live
               </span>
             ) : (
@@ -119,7 +118,7 @@ export default function OverallInvestments({ data, loading }) {
               <span>{expanded ? 'Hide Breakdown' : 'Show Breakdown'}</span>
               <ChevronDown
                 size={14}
-                className={`transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`}
+                className={expanded ? 'rotate-180' : ''}
               />
             </button>
           </div>
@@ -127,7 +126,7 @@ export default function OverallInvestments({ data, loading }) {
 
         {/* Overall Return (Total P&L) Full Width Card */}
         <div
-          className="p-2.5 sm:p-3.5 rounded-xl flex flex-col justify-between transition-all mb-4"
+          className="p-2.5 sm:p-3.5 rounded-xl flex flex-col justify-between mb-4"
           style={{
             background: 'var(--input-bg)',
             border: `1px solid ${isOverallProfit ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
@@ -186,60 +185,54 @@ export default function OverallInvestments({ data, loading }) {
           </div>
         )}
 
-        {/* Collapsible Asset Class Breakdown Table */}
-        <AnimatePresence>
-          {expanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              className="space-y-2 pt-2 border-t"
-              style={{ borderColor: 'var(--divider)' }}
-            >
-              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--text-2)] pb-1">
-                <span>Asset Class</span>
-                <span>Value & Return</span>
-              </div>
+        {/* Collapsible Asset Class Breakdown Table (Static, without framer-motion) */}
+        {expanded && (
+          <div
+            className="space-y-2 pt-2 border-t"
+            style={{ borderColor: 'var(--divider)' }}
+          >
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-[var(--text-2)] pb-1">
+              <span>Asset Class</span>
+              <span>Value & Return</span>
+            </div>
 
-              {others.map((item) => {
-                const itemIsProfit = (item.profit ?? 0) >= 0;
-                const color = ASSET_COLORS[item.assetClass] ?? '#94A3B8';
-                const cur = Number(item.current || 0);
-                const weightPct = portfolioCurrentVal > 0 ? (cur / portfolioCurrentVal) * 100 : 0;
+            {others.map((item) => {
+              const itemIsProfit = (item.profit ?? 0) >= 0;
+              const color = ASSET_COLORS[item.assetClass] ?? '#94A3B8';
+              const cur = Number(item.current || 0);
+              const weightPct = portfolioCurrentVal > 0 ? (cur / portfolioCurrentVal) * 100 : 0;
 
-                return (
-                  <div
-                    key={item.assetClass}
-                    className="flex items-center justify-between p-2 rounded-xl text-xs transition-colors hover:bg-[var(--input-bg)]"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
-                      <div>
-                        <span className="font-bold text-[var(--text)]">{item.assetClass}</span>
-                        <span className="text-[10px] text-[var(--text-2)] block font-medium">
-                          {weightPct.toFixed(1)}% allocation
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="font-bold tabular-nums block" style={{ color: 'var(--text)' }}>
-                        {isPrivacyMode ? '₹ •••' : formatCurrency(item.current)}
-                      </span>
-                      <span
-                        className="text-[11px] font-bold tabular-nums"
-                        style={{ color: itemIsProfit ? 'var(--profit)' : 'var(--loss)' }}
-                      >
-                        {formatPercent(item.returnPercentage)}
+              return (
+                <div
+                  key={item.assetClass}
+                  className="flex items-center justify-between p-2 rounded-xl text-xs transition-colors hover:bg-[var(--input-bg)]"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+                    <div>
+                      <span className="font-bold text-[var(--text)]">{item.assetClass}</span>
+                      <span className="text-[10px] text-[var(--text-2)] block font-medium">
+                        {weightPct.toFixed(1)}% allocation
                       </span>
                     </div>
                   </div>
-                );
-              })}
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+                  <div className="text-right">
+                    <span className="font-bold tabular-nums block" style={{ color: 'var(--text)' }}>
+                      {isPrivacyMode ? '₹ •••' : formatCurrency(item.current)}
+                    </span>
+                    <span
+                      className="text-[11px] font-bold tabular-nums"
+                      style={{ color: itemIsProfit ? 'var(--profit)' : 'var(--loss)' }}
+                    >
+                      {formatPercent(item.returnPercentage)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

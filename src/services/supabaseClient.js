@@ -875,6 +875,9 @@ export const supabaseApi = {
       currentValue: Number(h.current_value || 0),
       pnl: Number(h.pnl || 0),
       pnlPercent: Number((h.pnl_pct || 0).toFixed(2)),
+      returnPct: Number((h.return_pct != null ? h.return_pct : (h.pnl_pct || 0)).toFixed(2)),
+      stopLoss: h.stop_loss != null ? Number(h.stop_loss) : null,
+      targetPrice: h.target_price != null ? Number(h.target_price) : null,
       dayChange: Number(h.day_change || 0),
       dayChangePercent: Number((h.day_change_pct || 0).toFixed(2)),
       portfolioPercentage: totalCur > 0 ? Number(((Number(h.current_value || 0) / totalCur) * 100).toFixed(2)) : 0,
@@ -900,6 +903,10 @@ export const supabaseApi = {
 
   addPaperHolding: async (payload) => {
     return supabaseApi.executeTrade({ action: 'addPaperHolding', ...payload });
+  },
+
+  updatePaperHolding: async (payload) => {
+    return supabaseApi.executeTrade({ action: 'updatePaperHolding', ...payload });
   },
 
   sellPaperHolding: async (payload) => {
@@ -1013,11 +1020,25 @@ export const supabaseApi = {
             }
           }
 
+          let assetSector = payload.sector || null;
+          if (!assetSector && (targetType === 'STOCK' || targetType === 'ETF') && targetSymbol) {
+            try {
+              const { data: nseStock } = await supabase
+                .from('nse_stocks')
+                .select('sector')
+                .eq('symbol', targetSymbol)
+                .maybeSingle();
+              if (nseStock?.sector) assetSector = nseStock.sector;
+            } catch (_secErr) {
+              // ignore
+            }
+          }
+
           const { data: newAsset, error: createErr } = await supabase.from('assets').insert({
             symbol: targetSymbol || (targetType === 'MF' && (payload.mfApiCode || payload.api_code) ? `AMFI_${payload.mfApiCode || payload.api_code}` : `ASSET_${Date.now()}`),
             name: payload.name ? payload.name.trim() : targetSymbol,
             asset_type: targetType,
-            sector: payload.sector || null,
+            sector: assetSector,
             category: payload.category || null,
             confidence: payload.confidence || 'Medium',
             trade_type: payload.badge || payload.tradeType || 'Trade',
@@ -1270,10 +1291,29 @@ export const supabaseApi = {
           current_price: buyPrice,
           prev_close: buyPrice,
           isin: payload.isin || null,
+          stop_loss: payload.stopLoss !== undefined ? (payload.stopLoss ? Number(payload.stopLoss) : null) : (payload.stop_loss ? Number(payload.stop_loss) : null),
+          target_price: payload.targetPrice !== undefined ? (payload.targetPrice ? Number(payload.targetPrice) : null) : (payload.target_price ? Number(payload.target_price) : null),
           last_updated: new Date().toISOString()
         }).select().single();
         if (pCreateErr) throw pCreateErr;
         pAsset = newPAsset;
+      } else {
+        const updates = {};
+        if (payload.stopLoss !== undefined || payload.stop_loss !== undefined) {
+          const sl = payload.stopLoss ?? payload.stop_loss;
+          updates.stop_loss = sl ? Number(sl) : null;
+        }
+        if (payload.targetPrice !== undefined || payload.target_price !== undefined) {
+          const tp = payload.targetPrice ?? payload.target_price;
+          updates.target_price = tp ? Number(tp) : null;
+        }
+        if (payload.confidence) updates.confidence = payload.confidence;
+        if (payload.badge || payload.tradeType) updates.trade_type = payload.badge || payload.tradeType;
+        if (payload.sector) updates.sector = payload.sector;
+        if (Object.keys(updates).length > 0) {
+          updates.last_updated = new Date().toISOString();
+          await supabase.from('paper_assets').update(updates).eq('asset_id', pAsset.asset_id);
+        }
       }
 
       const { data: txData, error: txErr } = await supabase.from('paper_transactions').insert({
@@ -1291,6 +1331,37 @@ export const supabaseApi = {
       }).eq('user_id', userId);
 
       return { success: true, transaction: txData };
+    }
+
+    if (action === 'updatePaperHolding') {
+      const targetPaperId = payload.assetId || payload.asset_id;
+      if (!targetPaperId) throw new Error('Paper Asset ID is required to update holding');
+
+      const updates = {};
+      if (payload.stopLoss !== undefined || payload.stop_loss !== undefined) {
+        const sl = payload.stopLoss ?? payload.stop_loss;
+        updates.stop_loss = sl ? Number(sl) : null;
+      }
+      if (payload.targetPrice !== undefined || payload.target_price !== undefined) {
+        const tp = payload.targetPrice ?? payload.target_price;
+        updates.target_price = tp ? Number(tp) : null;
+      }
+      if (payload.confidence) updates.confidence = payload.confidence;
+      if (payload.badge || payload.tradeType) updates.trade_type = payload.badge || payload.tradeType;
+      if (payload.sector) updates.sector = payload.sector;
+      if (userId) updates.user_id = userId;
+      updates.last_updated = new Date().toISOString();
+
+      const { data, error } = await supabase
+        .from('paper_assets')
+        .update(updates)
+        .eq('asset_id', targetPaperId)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      if (!data) throw new Error(`Paper asset ${targetPaperId} not found`);
+      return { success: true, updatedAsset: data };
     }
 
     if (action === 'sellPaperHolding') {

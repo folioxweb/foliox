@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Clock, Activity } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
 import Skeleton from '../../components/ui/Skeleton';
 import { usePrivacy } from '../../context/PrivacyContext';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
@@ -30,7 +30,7 @@ export default function TodayPerformance({ data, loading }) {
 
   if (loading && !data) {
     return (
-      <section className="mb-5">
+      <section>
         <Skeleton width="100%" height={200} rounded="xl" />
       </section>
     );
@@ -53,13 +53,13 @@ export default function TodayPerformance({ data, loading }) {
   const maxGain = Math.max(...assetRows.map((r) => Math.abs(r.gain)), 1);
 
   return (
-    <section className="mb-5">
+    <section>
       <div
-        className="relative overflow-hidden rounded-2xl p-3 sm:p-5 transition-all duration-200"
+        className="relative overflow-hidden rounded-2xl p-3 sm:p-5"
         style={{
           background: 'var(--card-bg)',
           border: '1px solid var(--card-border)',
-          boxShadow: 'var(--card-shadow, 0 2px 12px rgba(0, 0, 0, 0.06))',
+          boxShadow: 'var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05))',
         }}
       >
         <div className="relative z-10">

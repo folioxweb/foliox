@@ -1,31 +1,11 @@
 import { memo } from 'react';
-import { Flame, Calendar, ChevronRight, ExternalLink } from 'lucide-react';
+import { Calendar, ChevronRight, ExternalLink } from 'lucide-react';
 
 /**
- * Flame Rating component displaying 1-5 flames
+ * Flame Rating component (disabled per requirements)
  */
-export function FlameRating({ rating = 0 }) {
-  const safeRating = Math.max(0, Math.min(5, Number(rating) || 0));
-  if (safeRating === 0) return null;
-
-  return (
-    <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Flame
-          key={i}
-          size={12}
-          className={
-            i < safeRating
-              ? 'text-amber-500 fill-amber-500'
-              : 'text-slate-300 dark:text-slate-700'
-          }
-        />
-      ))}
-      <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 ml-1">
-        {safeRating}/5
-      </span>
-    </div>
-  );
+export function FlameRating() {
+  return null;
 }
 
 /**
@@ -145,7 +125,6 @@ export const IpoCard = memo(function IpoCard({ ipo, onClick }) {
 
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           <StatusBadge status={ipo.status} statusBadge={ipo.statusBadge} />
-          <FlameRating rating={ipo.ratingFlames} />
         </div>
       </div>
 

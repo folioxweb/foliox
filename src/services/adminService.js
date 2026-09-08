@@ -100,30 +100,48 @@ export async function getApmOverview() {
  * @param {number} [params.offset]
  * @returns {Promise<{ total: number, logs: Array<any> }>}
  */
-export async function getExecutionLogs({ functionName = null, status = null, callerType = null, limit = 50, offset = 0 } = {}) {
+export async function getExecutionLogs({ functionName = null, status = null, callerType = null, limit = 50, offset = 0, search = null } = {}) {
   const { data, error } = await supabase.rpc('get_admin_execution_logs', {
     p_function_name: functionName || null,
     p_status: status || null,
     p_caller_type: callerType || null,
     p_limit: limit,
     p_offset: offset,
+    p_search: search ? search.trim() : null,
   });
   if (error) throw error;
   return data || { total: 0, logs: [] };
 }
 
 /**
- * Fetches pg_cron active schedules and recent run history
- * @param {number} [limit=50]
+ * Fetches pg_cron active schedules and recent run history (supports limit/offset pagination)
+ * @param {number|{ limit?: number, offset?: number, failureOnly?: boolean, search?: string }} [optionsOrLimit=50]
  * @returns {Promise<{
  *   jobs: Array<{ jobid: number, jobname: string, schedule: string, active: boolean, command: string }>,
- *   runs: Array<{ runid: number, jobid: number, jobname: string, status: string, return_message: string, start_time: string, end_time: string, duration_ms: number }>
+ *   runs: Array<{ runid: number, jobid: number, jobname: string, status: string, return_message: string, start_time: string, end_time: string, duration_ms: number }>,
+ *   total_runs: number
  * }>}
  */
-export async function getCronMonitoring(limit = 50) {
-  const { data, error } = await supabase.rpc('get_admin_cron_monitoring', { p_limit: limit });
+export async function getCronMonitoring(optionsOrLimit = 50) {
+  const params = {
+    p_limit: 50,
+    p_offset: 0,
+    p_failure_only: false,
+    p_search: null,
+  };
+
+  if (typeof optionsOrLimit === 'number') {
+    params.p_limit = optionsOrLimit;
+  } else if (typeof optionsOrLimit === 'object' && optionsOrLimit !== null) {
+    if (optionsOrLimit.limit !== undefined) params.p_limit = optionsOrLimit.limit;
+    if (optionsOrLimit.offset !== undefined) params.p_offset = optionsOrLimit.offset;
+    if (optionsOrLimit.failureOnly !== undefined) params.p_failure_only = Boolean(optionsOrLimit.failureOnly);
+    if (optionsOrLimit.search) params.p_search = optionsOrLimit.search.trim();
+  }
+
+  const { data, error } = await supabase.rpc('get_admin_cron_monitoring', params);
   if (error) throw error;
-  return data || { jobs: [], runs: [] };
+  return data || { jobs: [], runs: [], total_runs: 0 };
 }
 
 /**

@@ -300,6 +300,7 @@ export function PortfolioProvider({ children }) {
   const addWatchlistItem = useCallback((payload) => executeHoldingAction(api.addWatchlistItem, payload), [executeHoldingAction]);
   const removeWatchlistItem = useCallback((payload) => executeHoldingAction(api.removeWatchlistItem, payload), [executeHoldingAction]);
   const addPaperHolding = useCallback((payload) => executeHoldingAction(api.addPaperHolding, payload), [executeHoldingAction]);
+  const updatePaperHolding = useCallback((payload) => executeHoldingAction(api.updatePaperHolding, payload), [executeHoldingAction]);
   const sellPaperHolding = useCallback((payload) => executeHoldingAction(api.sellPaperHolding, payload), [executeHoldingAction]);
   const updatePaperCapital = useCallback((payload) => executeHoldingAction(api.updatePaperCapital, payload), [executeHoldingAction]);
   const resetPaperPortfolio = useCallback(() => executeHoldingAction(api.resetPaperPortfolio, {}), [executeHoldingAction]);
@@ -422,6 +423,7 @@ export function PortfolioProvider({ children }) {
     addWatchlistItem,
     removeWatchlistItem,
     addPaperHolding,
+    updatePaperHolding,
     sellPaperHolding,
     updatePaperCapital,
     resetPaperPortfolio,

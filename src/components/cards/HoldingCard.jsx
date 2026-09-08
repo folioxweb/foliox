@@ -146,7 +146,7 @@ export const renderStockBadge = (badge) => {
  * @param {() => void}              [onPress]   — callback; renders card as <button> when provided
  * @param {'currentInvested'|'returns'|'marketPrice1D'} [viewMode='currentInvested']
  */
-export default function HoldingCard({ holding, variant = 'full', onPress, onNewsPress, onReportsPress, viewMode = 'currentInvested' }) {
+export default function HoldingCard({ holding, variant = 'full', onPress, onNewsPress, onReportsPress, viewMode = 'currentInvested', isLast = false }) {
   const {
     name,
     sector,
@@ -191,22 +191,12 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
 
   const isStock = holding.assetType === 'stocks' || holding.asset_type === 'STOCK' || (!holding.assetType && !holding.mfApiCode && !holding.interestRate && !holding.category?.includes('ETF') && holding.category !== 'Mutual Fund');
 
-  // Shared interactive props when onPress is provided
-  const interactiveProps = onPress
-    ? {
-      role: 'button',
-      tabIndex: 0,
-      onClick: onPress,
-      style: { ...glassStyle, cursor: 'pointer' },
-    }
-    : { style: glassStyle };
-
   /* ─── LIST VARIANT (Zerodha-style row) ──────────────────────────────── */
   if (variant === 'list') {
     const Tag = 'div';
     const listRowStyle = {
       background: 'transparent',
-      borderBottom: '1px solid var(--divider)',
+      borderBottom: isLast ? 'none' : '1px solid var(--divider)',
       cursor: onPress ? 'pointer' : 'default',
     };
     const tagProps = onPress

@@ -143,3 +143,29 @@ body {
     font-size: 16px !important;
   }
 }
+
+/* ─── Landing Page Animations ───────────────────────────────────────────────── */
+@keyframes tickerSlide {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-ticker-tape {
+  display: flex;
+  width: max-content;
+  animation: tickerSlide 42s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker-tape:hover {
+  animation-play-state: paused;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.06); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 5s ease-in-out infinite;
+}

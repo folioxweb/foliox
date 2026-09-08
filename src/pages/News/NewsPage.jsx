@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Newspaper, RefreshCw, AlertCircle, Inbox } from 'lucide-react';
+import { X, Newspaper, RefreshCw, AlertCircle, Calendar } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNewsData } from '../../hooks/useNewsData';
 import NewsCard from '../../components/ui/NewsCard';
 import Skeleton from '../../components/ui/Skeleton';
@@ -65,23 +65,57 @@ export default function NewsPage({ isOpen, onClose }) {
     }
   }, [isOpen, handleKeyDown]);
 
+  const [dateFilter, setDateFilter] = useState('ALL'); // 'ALL' | 'TODAY' | 'YESTERDAY' | 'WEEK' | YYYY-MM-DD
+
+  // Filter news by selected date
+  const filteredNews = useMemo(() => {
+    if (!news || !Array.isArray(news)) return [];
+    if (dateFilter === 'ALL') return news;
+
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString().slice(0, 10);
+    const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString().slice(0, 10);
+
+    return news.filter((a) => {
+      const raw = a.publishedAt || a.published_at || a.publishedDate || a.date;
+      if (!raw) return false;
+      const d = new Date(raw);
+      if (isNaN(d.getTime())) return false;
+      const iso = d.toISOString().slice(0, 10);
+
+      if (dateFilter === 'TODAY') return iso === today;
+      if (dateFilter === 'YESTERDAY') return iso === yesterday;
+      if (dateFilter === 'WEEK') return iso >= weekAgo;
+      return iso === dateFilter;
+    });
+  }, [news, dateFilter]);
+
   // Group news by date label
   function groupByDate(articles) {
     const groups = {};
-    const today = new Date().toISOString().slice(0, 10);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString().slice(0, 10);
 
     (articles || []).forEach((a) => {
-      let label = a.publishedDate;
-      if (label === today) label = 'Today';
-      else if (label === yesterday) label = 'Yesterday';
-      else {
-        try {
-          label = new Date(a.publishedDate).toLocaleDateString('en-IN', {
-            weekday: 'short', day: 'numeric', month: 'short',
-          });
-        } catch {
-          // keep raw date
+      const raw = a.publishedAt || a.published_at || a.publishedDate || a.date;
+      let label = 'Recent News';
+      if (raw) {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) {
+          const iso = d.toISOString().slice(0, 10);
+          if (iso === today) {
+            label = 'Today';
+          } else if (iso === yesterday) {
+            label = 'Yesterday';
+          } else {
+            label = d.toLocaleDateString('en-IN', {
+              weekday: 'short',
+              day: 'numeric',
+              month: 'short',
+            });
+          }
         }
       }
       if (!groups[label]) groups[label] = [];
@@ -90,8 +124,7 @@ export default function NewsPage({ isOpen, onClose }) {
     return groups;
   }
 
-  const grouped = groupByDate(news);
-  const unreadCount = (news || []).filter((n) => !n.isRead).length;
+  const grouped = groupByDate(filteredNews);
 
   const content = (
     <AnimatePresence>
@@ -188,11 +221,6 @@ export default function NewsPage({ isOpen, onClose }) {
                   <h1 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
                     Market News
                   </h1>
-                  {unreadCount > 0 && (
-                    <p className="text-[11px] font-medium" style={{ color: 'var(--emerald)' }}>
-                      {unreadCount} unread
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -202,7 +230,7 @@ export default function NewsPage({ isOpen, onClose }) {
                   type="button"
                   onClick={refresh}
                   disabled={loading}
-                  className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-70 disabled:opacity-40"
+                  className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-70 disabled:opacity-40 cursor-pointer"
                   style={{ color: 'var(--text-muted)', background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                   aria-label="Refresh news"
                 >
@@ -213,7 +241,7 @@ export default function NewsPage({ isOpen, onClose }) {
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-70"
+                  className="flex items-center justify-center w-9 h-9 rounded-full transition-opacity hover:opacity-70 cursor-pointer"
                   style={{ color: 'var(--text-muted)', background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}
                   aria-label="Close news"
                 >
@@ -221,6 +249,69 @@ export default function NewsPage({ isOpen, onClose }) {
                 </button>
               </div>
             </header>
+
+            {/* ── Date Filter Bar ─────────────────────────────────────────── */}
+            <div
+              className="flex items-center justify-between gap-2 px-3 sm:px-4 lg:px-8 py-2.5 overflow-x-auto border-b no-scrollbar flex-shrink-0"
+              style={{
+                background: 'var(--header-bg)',
+                borderColor: 'var(--card-border)',
+              }}
+            >
+              <div className="flex items-center gap-1.5 text-xs">
+                {[
+                  { id: 'ALL', label: 'All Dates' },
+                  { id: 'TODAY', label: 'Today' },
+                  { id: 'YESTERDAY', label: 'Yesterday' },
+                  { id: 'WEEK', label: 'Last 7 Days' },
+                ].map((chip) => {
+                  const active = dateFilter === chip.id;
+                  return (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => setDateFilter(chip.id)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
+                        active
+                          ? 'bg-emerald-500 text-white shadow-sm'
+                          : 'bg-[var(--card-bg)] text-[var(--text-2)] hover:text-[var(--text)] border border-[var(--card-border)]'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Specific Date Picker input */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <label className="flex items-center gap-1 text-[11px] font-semibold text-[var(--text-muted)] cursor-pointer">
+                  <Calendar size={13} />
+                  <input
+                    type="date"
+                    value={dateFilter.match(/^\d{4}-\d{2}-\d{2}$/) ? dateFilter : ''}
+                    onChange={(e) => {
+                      if (e.target.value) setDateFilter(e.target.value);
+                    }}
+                    className="text-xs rounded-lg px-2 py-0.5 outline-none cursor-pointer"
+                    style={{
+                      background: 'var(--card-bg)',
+                      border: '1px solid var(--card-border)',
+                      color: 'var(--text)',
+                    }}
+                  />
+                </label>
+                {dateFilter.match(/^\d{4}-\d{2}-\d{2}$/) && (
+                  <button
+                    type="button"
+                    onClick={() => setDateFilter('ALL')}
+                    className="text-[10px] text-emerald-500 hover:underline font-bold cursor-pointer"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
 
             {/* ── News content (scrollable) ─────────────────────────────── */}
             <div

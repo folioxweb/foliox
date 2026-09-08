@@ -15,8 +15,6 @@ import {
   RefreshCw,
   Info,
   Check,
-  Building2,
-  Flame,
   Settings,
   Bell,
   BellOff,
@@ -39,7 +37,6 @@ const TABS = [
 
 const SORT_OPTIONS = [
   { id: 'gmp', label: 'Highest GMP %' },
-  { id: 'rating', label: 'Highest Rating' },
   { id: 'size', label: 'Est. Profit' },
   { id: 'date', label: 'Open Date' },
 ];
@@ -184,8 +181,6 @@ export default function IpoListPage() {
         let comp = 0;
         if (sortBy === 'gmp') {
           comp = (b.gmpPercent || 0) - (a.gmpPercent || 0);
-        } else if (sortBy === 'rating') {
-          comp = (b.ratingFlames || 0) - (a.ratingFlames || 0);
         } else if (sortBy === 'size') {
           comp = (b.expectedProfit || 0) - (a.expectedProfit || 0);
         } else if (sortBy === 'date') {

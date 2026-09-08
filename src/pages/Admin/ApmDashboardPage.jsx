@@ -83,6 +83,7 @@ export default function ApmDashboardPage() {
   const [filterStatus, setFilterStatus] = useState(''); // '' | 'SUCCESS' | 'FAILED'
   const [filterCaller, setFilterCaller] = useState(''); // '' | 'CRON' | 'USER' | 'SYSTEM'
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [cronFailureOnly, setCronFailureOnly] = useState(false);
 
   // Pagination state for execution logs
@@ -90,9 +91,22 @@ export default function ApmDashboardPage() {
   const LOGS_PER_PAGE = 50;
   const [logsLoading, setLogsLoading] = useState(false);
 
+  // Pagination state for pg_cron runs
+  const [cronPage, setCronPage] = useState(1);
+  const CRON_PER_PAGE = 50;
+  const [cronLoading, setCronLoading] = useState(false);
+
   // Trigger function test state
   const [triggeringFn, setTriggeringFn] = useState(null);
   const [triggerToast, setTriggerToast] = useState(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
   // Fetch logs specifically for the current page & filters
   const fetchLogs = useCallback(async (page = logsPage, isSilent = false) => {
@@ -103,6 +117,7 @@ export default function ApmDashboardPage() {
         functionName: filterFunction || null,
         status: filterStatus || null,
         callerType: filterCaller || null,
+        search: debouncedSearch || null,
         limit: LOGS_PER_PAGE,
         offset: (page - 1) * LOGS_PER_PAGE,
       });
@@ -112,7 +127,25 @@ export default function ApmDashboardPage() {
     } finally {
       setLogsLoading(false);
     }
-  }, [isAdmin, filterFunction, filterStatus, filterCaller, logsPage]);
+  }, [isAdmin, filterFunction, filterStatus, filterCaller, debouncedSearch, logsPage]);
+
+  // Fetch crons specifically for the current page & filters
+  const fetchCrons = useCallback(async (page = cronPage, isSilent = false) => {
+    if (!isAdmin) return;
+    try {
+      if (!isSilent) setCronLoading(true);
+      const crons = await getCronMonitoring({
+        limit: CRON_PER_PAGE,
+        offset: (page - 1) * CRON_PER_PAGE,
+        failureOnly: cronFailureOnly,
+      });
+      if (crons) setCronData(crons);
+    } catch (err) {
+      console.warn('Crons err:', err);
+    } finally {
+      setCronLoading(false);
+    }
+  }, [isAdmin, cronPage, cronFailureOnly]);
 
   // Fetch all APM data (overview, initial page logs, crons)
   const loadData = useCallback(async (isSilent = false) => {
@@ -125,10 +158,15 @@ export default function ApmDashboardPage() {
           functionName: filterFunction || null,
           status: filterStatus || null,
           callerType: filterCaller || null,
+          search: debouncedSearch || null,
           limit: LOGS_PER_PAGE,
           offset: (logsPage - 1) * LOGS_PER_PAGE,
         }).catch((err) => { console.warn('Logs err:', err); return { total: 0, logs: [] }; }),
-        getCronMonitoring(50).catch((err) => { console.warn('Crons err:', err); return { jobs: [], runs: [] }; }),
+        getCronMonitoring({
+          limit: CRON_PER_PAGE,
+          offset: (cronPage - 1) * CRON_PER_PAGE,
+          failureOnly: cronFailureOnly,
+        }).catch((err) => { console.warn('Crons err:', err); return { jobs: [], runs: [], total_runs: 0 }; }),
       ]);
 
       if (ov) setOverview(ov);
@@ -140,14 +178,37 @@ export default function ApmDashboardPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [isAdmin, filterFunction, filterStatus, filterCaller, logsPage]);
+  }, [isAdmin, filterFunction, filterStatus, filterCaller, debouncedSearch, logsPage, cronPage, cronFailureOnly]);
 
-  // Refetch logs when page changes
+  // Refetch logs when logs page changes
   useEffect(() => {
     if (isAdmin) {
       fetchLogs(logsPage, true);
     }
   }, [logsPage]);
+
+  // Reset to page 1 and refetch when filters change
+  useEffect(() => {
+    if (isAdmin) {
+      setLogsPage(1);
+      fetchLogs(1, true);
+    }
+  }, [filterFunction, filterStatus, filterCaller, debouncedSearch]);
+
+  // Refetch crons when cron page changes
+  useEffect(() => {
+    if (isAdmin) {
+      fetchCrons(cronPage, true);
+    }
+  }, [cronPage]);
+
+  // Reset to page 1 and refetch crons when failure toggle changes
+  useEffect(() => {
+    if (isAdmin) {
+      setCronPage(1);
+      fetchCrons(1, true);
+    }
+  }, [cronFailureOnly]);
 
   // Initial load
   useEffect(() => {
@@ -191,22 +252,11 @@ export default function ApmDashboardPage() {
     }
   };
 
-  // Filtered logs by search query
-  const filteredLogs = useMemo(() => {
-    if (!searchQuery.trim()) return logsData.logs;
-    const q = searchQuery.toLowerCase();
-    return logsData.logs.filter((l) =>
-      (l.function_name && l.function_name.toLowerCase().includes(q)) ||
-      (l.user_email && l.user_email.toLowerCase().includes(q)) ||
-      (l.error_message && l.error_message.toLowerCase().includes(q))
-    );
-  }, [logsData.logs, searchQuery]);
+  // Server-side filtered logs (searched across entire database)
+  const filteredLogs = logsData.logs || [];
 
-  // Filtered cron runs
-  const filteredCronRuns = useMemo(() => {
-    if (!cronFailureOnly) return cronData.runs;
-    return cronData.runs.filter((r) => r.status !== 'succeeded');
-  }, [cronData.runs, cronFailureOnly]);
+  // Server-side filtered cron runs
+  const filteredCronRuns = cronData.runs || [];
 
   // Guard against non-admin
   if (!authLoading && !isAdmin) {
@@ -923,7 +973,7 @@ export default function ApmDashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-[var(--text)]">
-                    Recent pg_cron Execution Runs ({filteredCronRuns.length})
+                    Recent pg_cron Execution Runs ({cronData.total_runs ?? cronData.runs?.length ?? 0})
                   </h3>
                   <p className="text-xs text-[var(--text-muted)]">
                     Execution status, timestamps, and return codes from pg_cron
@@ -998,6 +1048,63 @@ export default function ApmDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls for pg_cron */}
+              {(cronData.total_runs ?? 0) > CRON_PER_PAGE && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[var(--card-border)] text-xs">
+                  <span className="text-[var(--text-muted)]">
+                    Showing <span className="font-semibold text-[var(--text)]">{(cronPage - 1) * CRON_PER_PAGE + 1}</span> to{' '}
+                    <span className="font-semibold text-[var(--text)]">
+                      {Math.min(cronPage * CRON_PER_PAGE, cronData.total_runs)}
+                    </span>{' '}
+                    of <span className="font-semibold text-[var(--text)]">{cronData.total_runs}</span> cron runs
+                  </span>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={cronPage <= 1 || cronLoading}
+                      onClick={() => setCronPage(1)}
+                      className="p-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all cursor-pointer"
+                      title="First Page"
+                    >
+                      <ChevronsLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={cronPage <= 1 || cronLoading}
+                      onClick={() => setCronPage((p) => Math.max(1, p - 1))}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] font-semibold hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronLeft size={14} />
+                      <span className="hidden sm:inline">Prev</span>
+                    </button>
+
+                    <div className="px-3 py-1 font-mono font-bold text-[var(--text)] rounded-lg bg-[var(--input-bg)]/80 border border-[var(--card-border)]">
+                      Page {cronPage} of {Math.max(1, Math.ceil(cronData.total_runs / CRON_PER_PAGE))}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={cronPage >= Math.ceil(cronData.total_runs / CRON_PER_PAGE) || cronLoading}
+                      onClick={() => setCronPage((p) => Math.min(Math.ceil(cronData.total_runs / CRON_PER_PAGE), p + 1))}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] font-semibold hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={cronPage >= Math.ceil(cronData.total_runs / CRON_PER_PAGE) || cronLoading}
+                      onClick={() => setCronPage(Math.max(1, Math.ceil(cronData.total_runs / CRON_PER_PAGE)))}
+                      className="p-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all cursor-pointer"
+                      title="Last Page"
+                    >
+                      <ChevronsRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

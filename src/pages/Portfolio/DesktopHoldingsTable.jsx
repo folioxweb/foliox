@@ -58,8 +58,8 @@ export default function DesktopHoldingsTable({
         break;
 
       case 'returns':
-        aVal = Number(a.gainLoss ?? (a.currentValue - a.investedValue) ?? 0);
-        bVal = Number(b.gainLoss ?? (b.currentValue - b.investedValue) ?? 0);
+        aVal = Number(a.gainLoss ?? ((a.currentValue ?? 0) - (a.investedValue ?? 0)));
+        bVal = Number(b.gainLoss ?? ((b.currentValue ?? 0) - (b.investedValue ?? 0)));
         break;
 
       case 'currentValue':
@@ -76,20 +76,20 @@ export default function DesktopHoldingsTable({
 
   return (
     <div
-      className="w-full rounded-2xl overflow-hidden border transition-all"
+      className="w-full rounded-2xl overflow-hidden border transition-all mt-2"
       style={{
-        background: 'var(--header-bg)',
+        background: 'var(--card-bg)',
         borderColor: 'var(--card-border)',
-        boxShadow: 'none',
+        boxShadow: 'var(--card-shadow, 0 1px 3px rgba(0, 0, 0, 0.05))',
       }}
     >
       <table className="w-full text-left border-collapse">
         {/* Table Header */}
         <thead>
           <tr
-            className="border-b text-[12px] font-semibold tracking-wide select-none"
+            className="text-[12px] font-semibold tracking-wide select-none"
             style={{
-              borderColor: 'var(--divider)',
+              borderBottom: '1px solid var(--divider)',
               color: 'var(--text-muted)',
               background: 'transparent',
             }}
@@ -157,8 +157,8 @@ export default function DesktopHoldingsTable({
         </thead>
 
         {/* Table Body */}
-        <tbody className="divide-y" style={{ borderColor: 'var(--divider)' }}>
-          {sortedHoldings.map((holding) => {
+        <tbody>
+          {sortedHoldings.map((holding, idx) => {
             const {
               name,
               quantity = 0,
@@ -196,7 +196,10 @@ export default function DesktopHoldingsTable({
               <tr
                 key={holding.id ?? holding.symbol ?? holding.srNo ?? name}
                 onClick={() => onPress && onPress(holding)}
-                className="cursor-pointer"
+                className="cursor-pointer transition-colors hover:bg-[var(--sheet-btn-bg)]"
+                style={{
+                  borderBottom: idx < sortedHoldings.length - 1 ? '1px solid var(--divider)' : 'none',
+                }}
               >
                 {/* 1. Company Name & Holdings Subtitle */}
                 <td className="py-4 px-6">

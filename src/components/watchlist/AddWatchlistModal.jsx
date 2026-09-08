@@ -44,9 +44,19 @@ export default function AddWatchlistModal({ isOpen, onClose }) {
     }
   }, [isOpen]);
 
+const SECTOR_ALIASES = {
+  "Information Technology": "Technology",
+  "Oil Gas & Consumable Fuels": "Oil, Gas & Consumable Fuels",
+  "Media Entertainment & Publication": "Media, Entertainment & Publication",
+  "Forest Materials": "Basic Materials"
+};
+
   async function handleSelectStock(stock) {
     setSelectedStock(stock);
-    if (stock.sector && SECTORS.includes(stock.sector)) {
+    const resolvedSec = SECTOR_ALIASES[stock.sector] || stock.sector;
+    if (resolvedSec && SECTORS.includes(resolvedSec)) {
+      setSector(resolvedSec);
+    } else if (stock.sector) {
       setSector(stock.sector);
     }
     if (stock.symbol) {
