@@ -963,7 +963,7 @@ export const supabaseApi = {
     // 1. ADD / BUY MORE HOLDING
     if (action === 'buyMore' || action === 'addHolding') {
       let targetAssetId = payload.assetId || payload.asset_id;
-      let targetSymbol = payload.symbol ? payload.symbol.trim().toUpperCase() : '';
+      let targetSymbol = payload.symbol ? payload.symbol.trim().replace(/^(NSE:|BSE:)/i, '').toUpperCase() : '';
       let targetType = (payload.assetType || payload.asset_type || 'STOCK').toUpperCase();
 
       if (!targetAssetId) {
