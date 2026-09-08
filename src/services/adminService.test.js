@@ -121,6 +121,42 @@ describe('adminService', () => {
         p_search: null,
       });
     });
+
+    it('falls back to legacy signature if PGRST202 schema cache error occurs', async () => {
+      supabase.rpc
+        .mockResolvedValueOnce({
+          data: null,
+          error: { code: 'PGRST202', message: 'Function not found in schema cache' },
+        })
+        .mockResolvedValueOnce({
+          data: { total: 2, logs: [{ id: 1 }] },
+          error: null,
+        });
+
+      const res = await adminService.getExecutionLogs({
+        functionName: 'sync-prices',
+        limit: 10,
+        offset: 0,
+        search: 'test',
+      });
+
+      expect(supabase.rpc).toHaveBeenNthCalledWith(1, 'get_admin_execution_logs', {
+        p_function_name: 'sync-prices',
+        p_status: null,
+        p_caller_type: null,
+        p_limit: 10,
+        p_offset: 0,
+        p_search: 'test',
+      });
+      expect(supabase.rpc).toHaveBeenNthCalledWith(2, 'get_admin_execution_logs', {
+        p_function_name: 'sync-prices',
+        p_status: null,
+        p_caller_type: null,
+        p_limit: 10,
+        p_offset: 0,
+      });
+      expect(res.total).toBe(2);
+    });
   });
 
   describe('getCronMonitoring', () => {
@@ -155,6 +191,37 @@ describe('adminService', () => {
         p_search: 'sync-prices',
       });
       expect(res).toEqual(mockData);
+    });
+
+    it('falls back to legacy signature if PGRST202 schema cache error occurs', async () => {
+      const mockLegacyData = { jobs: [{ jobid: 1 }], runs: [{ runid: 10 }] };
+      supabase.rpc
+        .mockResolvedValueOnce({
+          data: null,
+          error: { code: 'PGRST202', message: 'Function not found in schema cache' },
+        })
+        .mockResolvedValueOnce({
+          data: mockLegacyData,
+          error: null,
+        });
+
+      const res = await adminService.getCronMonitoring({
+        limit: 50,
+        offset: 0,
+        failureOnly: false,
+        search: 'job',
+      });
+
+      expect(supabase.rpc).toHaveBeenNthCalledWith(1, 'get_admin_cron_monitoring', {
+        p_limit: 50,
+        p_offset: 0,
+        p_failure_only: false,
+        p_search: 'job',
+      });
+      expect(supabase.rpc).toHaveBeenNthCalledWith(2, 'get_admin_cron_monitoring', {
+        p_limit: 50,
+      });
+      expect(res).toEqual(mockLegacyData);
     });
   });
 
