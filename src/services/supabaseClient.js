@@ -18,11 +18,20 @@ export const supabase = createClient(SUPABASE_URL || '', SUPABASE_ANON_KEY || ''
   }
 });
 
+// Cache for stock quotes to prevent redundant network invocations
+const quoteCache = new Map();
+const QUOTE_CACHE_TTL_MS = 60 * 1000; // 1 minute cache
+
 // Helper to fetch live stock quote for watchlist & paper trades
 async function fetchYahooStockQuote(symbol) {
   if (!symbol) return null;
   let s = String(symbol).trim().replace(/^NSE:/i, '').replace(/^BSE:/i, '');
   if (!s.endsWith('.NS') && !s.endsWith('.BO')) s += '.NS';
+
+  const cached = quoteCache.get(s);
+  if (cached && Date.now() - cached.timestamp < QUOTE_CACHE_TTL_MS) {
+    return { price: cached.price, prevClose: cached.prevClose };
+  }
 
   // 1. Primary: Use Supabase Edge Function 'get-stock-chart' (no CORS issues, fast, secure)
   try {
@@ -33,7 +42,9 @@ async function fetchYahooStockQuote(symbol) {
       if (!error && data?.success && data?.regularMarketPrice != null) {
         const price = Number(data.regularMarketPrice);
         const prevClose = Number(data.previousClose ?? data.candles?.[0]?.open ?? price);
-        return { price, prevClose };
+        const res = { price, prevClose };
+        quoteCache.set(s, { ...res, timestamp: Date.now() });
+        return res;
       }
     }
   } catch (err) {
@@ -48,10 +59,12 @@ async function fetchYahooStockQuote(symbol) {
       const json = await res.json();
       const meta = json?.chart?.result?.[0]?.meta;
       if (meta && meta.regularMarketPrice !== undefined) {
-        return {
+        const result = {
           price: Number(meta.regularMarketPrice),
           prevClose: Number(meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPrice)
         };
+        quoteCache.set(s, { ...result, timestamp: Date.now() });
+        return result;
       }
     }
   } catch (_err) {}
@@ -762,17 +775,26 @@ export const supabaseApi = {
       let prevClose = Number(item.prev_close || 0);
       let addedPrice = Number(item.added_price || 0);
 
-      // If price or addedPrice is 0 (e.g. newly watched stock not in portfolio), fetch live quote
-      if (curPrice <= 0 || addedPrice <= 0 || prevClose <= 0) {
+      // If stock is not in active portfolio or price matches added_price (vw_watchlist synthetic fallback), fetch live quote
+      const isDefaultPrice = curPrice === addedPrice && prevClose === addedPrice;
+      const needsLiveQuote = !item.in_portfolio || isDefaultPrice || curPrice <= 0 || prevClose <= 0;
+
+      if (needsLiveQuote) {
         try {
           const live = await fetchYahooStockQuote(item.symbol);
           if (live && live.price > 0) {
-            if (curPrice <= 0) curPrice = live.price;
-            if (prevClose <= 0) prevClose = live.prevClose || live.price;
+            curPrice = live.price;
+            prevClose = live.prevClose || live.price;
             if (addedPrice <= 0) {
               addedPrice = live.price;
               supabase.from('watchlist_items').update({ added_price: live.price }).eq('watchlist_id', item.watchlist_id).then();
             }
+            // Update watchlist_items table in background with latest live price
+            supabase.from('watchlist_items').update({
+              current_price: live.price,
+              prev_close: live.prevClose || live.price,
+              last_price_updated: new Date().toISOString()
+            }).eq('watchlist_id', item.watchlist_id).then().catch(() => {});
           }
         } catch (_e) {}
       }
