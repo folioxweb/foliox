@@ -124,7 +124,7 @@ describe('adminService', () => {
   });
 
   describe('getCronMonitoring', () => {
-    it('fetches cron monitoring data', async () => {
+    it('fetches cron monitoring data with number limit', async () => {
       const mockData = { jobs: [], runs: [], total_runs: 0 };
       supabase.rpc.mockResolvedValueOnce({ data: mockData, error: null });
 
@@ -134,6 +134,25 @@ describe('adminService', () => {
         p_offset: 0,
         p_failure_only: false,
         p_search: null,
+      });
+      expect(res).toEqual(mockData);
+    });
+
+    it('fetches cron monitoring data with options object and search query', async () => {
+      const mockData = { jobs: [], runs: [], total_runs: 0 };
+      supabase.rpc.mockResolvedValueOnce({ data: mockData, error: null });
+
+      const res = await adminService.getCronMonitoring({
+        limit: 25,
+        offset: 50,
+        failureOnly: true,
+        search: 'sync-prices',
+      });
+      expect(supabase.rpc).toHaveBeenCalledWith('get_admin_cron_monitoring', {
+        p_limit: 25,
+        p_offset: 50,
+        p_failure_only: true,
+        p_search: 'sync-prices',
       });
       expect(res).toEqual(mockData);
     });
