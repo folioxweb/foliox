@@ -101,7 +101,7 @@ export async function getApmOverview() {
  * @returns {Promise<{ total: number, logs: Array<any> }>}
  */
 export async function getExecutionLogs({ functionName = null, status = null, callerType = null, limit = 50, offset = 0, search = null } = {}) {
-  const { data, error } = await supabase.rpc('get_admin_execution_logs', {
+  let { data, error } = await supabase.rpc('get_admin_execution_logs', {
     p_function_name: functionName || null,
     p_status: status || null,
     p_caller_type: callerType || null,
@@ -109,6 +109,20 @@ export async function getExecutionLogs({ functionName = null, status = null, cal
     p_offset: offset,
     p_search: search ? search.trim() : null,
   });
+
+  // Backward compatibility fallback for legacy schema cache without p_search
+  if (error && error.code === 'PGRST202') {
+    const fallback = await supabase.rpc('get_admin_execution_logs', {
+      p_function_name: functionName || null,
+      p_status: status || null,
+      p_caller_type: callerType || null,
+      p_limit: limit,
+      p_offset: offset,
+    });
+    data = fallback.data;
+    error = fallback.error;
+  }
+
   if (error) throw error;
   return data || { total: 0, logs: [] };
 }
@@ -139,7 +153,17 @@ export async function getCronMonitoring(optionsOrLimit = 50) {
     if (optionsOrLimit.search) params.p_search = optionsOrLimit.search.trim();
   }
 
-  const { data, error } = await supabase.rpc('get_admin_cron_monitoring', params);
+  let { data, error } = await supabase.rpc('get_admin_cron_monitoring', params);
+
+  // Backward compatibility fallback for legacy schema cache with only p_limit
+  if (error && error.code === 'PGRST202') {
+    const fallback = await supabase.rpc('get_admin_cron_monitoring', {
+      p_limit: params.p_limit,
+    });
+    data = fallback.data;
+    error = fallback.error;
+  }
+
   if (error) throw error;
   return data || { jobs: [], runs: [], total_runs: 0 };
 }

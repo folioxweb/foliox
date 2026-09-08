@@ -22,7 +22,8 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ExternalLink,
-  Users
+  Users,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -85,6 +86,8 @@ export default function ApmDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [cronFailureOnly, setCronFailureOnly] = useState(false);
+  const [cronSearchQuery, setCronSearchQuery] = useState('');
+  const [debouncedCronSearch, setDebouncedCronSearch] = useState('');
 
   // Pagination state for execution logs
   const [logsPage, setLogsPage] = useState(1);
@@ -107,6 +110,14 @@ export default function ApmDashboardPage() {
     }, 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
+
+  // Debounce cron search query
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedCronSearch(cronSearchQuery);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [cronSearchQuery]);
 
   // Fetch logs specifically for the current page & filters
   const fetchLogs = useCallback(async (page = logsPage, isSilent = false) => {
@@ -138,6 +149,7 @@ export default function ApmDashboardPage() {
         limit: CRON_PER_PAGE,
         offset: (page - 1) * CRON_PER_PAGE,
         failureOnly: cronFailureOnly,
+        search: debouncedCronSearch || null,
       });
       if (crons) setCronData(crons);
     } catch (err) {
@@ -145,7 +157,7 @@ export default function ApmDashboardPage() {
     } finally {
       setCronLoading(false);
     }
-  }, [isAdmin, cronPage, cronFailureOnly]);
+  }, [isAdmin, cronPage, cronFailureOnly, debouncedCronSearch]);
 
   // Fetch all APM data (overview, initial page logs, crons)
   const loadData = useCallback(async (isSilent = false) => {
@@ -166,6 +178,7 @@ export default function ApmDashboardPage() {
           limit: CRON_PER_PAGE,
           offset: (cronPage - 1) * CRON_PER_PAGE,
           failureOnly: cronFailureOnly,
+          search: debouncedCronSearch || null,
         }).catch((err) => { console.warn('Crons err:', err); return { jobs: [], runs: [], total_runs: 0 }; }),
       ]);
 
@@ -178,7 +191,7 @@ export default function ApmDashboardPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [isAdmin, filterFunction, filterStatus, filterCaller, debouncedSearch, logsPage, cronPage, cronFailureOnly]);
+  }, [isAdmin, filterFunction, filterStatus, filterCaller, debouncedSearch, logsPage, cronPage, cronFailureOnly, debouncedCronSearch]);
 
   // Refetch logs when logs page changes
   useEffect(() => {
@@ -202,13 +215,13 @@ export default function ApmDashboardPage() {
     }
   }, [cronPage]);
 
-  // Reset to page 1 and refetch crons when failure toggle changes
+  // Reset to page 1 and refetch crons when failure toggle or search changes
   useEffect(() => {
     if (isAdmin) {
       setCronPage(1);
       fetchCrons(1, true);
     }
-  }, [cronFailureOnly]);
+  }, [cronFailureOnly, debouncedCronSearch]);
 
   // Initial load
   useEffect(() => {
@@ -970,7 +983,7 @@ export default function ApmDashboardPage() {
                 boxShadow: 'var(--card-shadow)',
               }}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-bold text-[var(--text)]">
                     Recent pg_cron Execution Runs ({cronData.total_runs ?? cronData.runs?.length ?? 0})
@@ -980,15 +993,48 @@ export default function ApmDashboardPage() {
                   </p>
                 </div>
 
-                <label className="flex items-center gap-2 text-xs font-semibold text-[var(--text)] cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={cronFailureOnly}
-                    onChange={(e) => setCronFailureOnly(e.target.checked)}
-                    className="rounded text-emerald-500 focus:ring-emerald-500"
-                  />
-                  <span>Failures Only</span>
-                </label>
+                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                  {/* Cron Search box */}
+                  <div className="relative flex-1 sm:flex-initial min-w-[180px] sm:min-w-[240px]">
+                    <Search
+                      size={13}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Search job, message, run ID..."
+                      value={cronSearchQuery}
+                      onChange={(e) => setCronSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-emerald-500/50"
+                      style={{
+                        background: 'var(--input-bg)',
+                        border: '1px solid var(--card-border)',
+                        color: 'var(--text)',
+                      }}
+                    />
+                    {cronSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setCronSearchQuery('')}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text)] text-xs cursor-pointer"
+                        title="Clear Search"
+                      >
+                        <X size={13} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Failures Only Toggle */}
+                  <label className="flex items-center gap-2 text-xs font-semibold text-[var(--text)] cursor-pointer px-2.5 py-1.5 rounded-xl border border-[var(--card-border)] bg-[var(--input-bg)]">
+                    <input
+                      type="checkbox"
+                      checked={cronFailureOnly}
+                      onChange={(e) => setCronFailureOnly(e.target.checked)}
+                      className="rounded text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span>Failures Only</span>
+                  </label>
+                </div>
               </div>
 
               <div className="overflow-x-auto">
@@ -1041,7 +1087,11 @@ export default function ApmDashboardPage() {
                     {filteredCronRuns.length === 0 && (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-xs text-[var(--text-muted)]">
-                          No cron executions match the filter.
+                          {cronLoading
+                            ? 'Searching execution runs...'
+                            : (debouncedCronSearch
+                                ? `No cron executions match "${debouncedCronSearch}".`
+                                : 'No cron executions match the filter.')}
                         </td>
                       </tr>
                     )}
@@ -1050,14 +1100,14 @@ export default function ApmDashboardPage() {
               </div>
 
               {/* Pagination Controls for pg_cron */}
-              {(cronData.total_runs ?? 0) > CRON_PER_PAGE && (
+              {((cronData.total_runs ?? 0) > CRON_PER_PAGE || cronPage > 1) && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[var(--card-border)] text-xs">
                   <span className="text-[var(--text-muted)]">
                     Showing <span className="font-semibold text-[var(--text)]">{(cronPage - 1) * CRON_PER_PAGE + 1}</span> to{' '}
                     <span className="font-semibold text-[var(--text)]">
-                      {Math.min(cronPage * CRON_PER_PAGE, cronData.total_runs)}
+                      {Math.min(cronPage * CRON_PER_PAGE, cronData.total_runs ?? 0)}
                     </span>{' '}
-                    of <span className="font-semibold text-[var(--text)]">{cronData.total_runs}</span> cron runs
+                    of <span className="font-semibold text-[var(--text)]">{cronData.total_runs ?? 0}</span> cron runs
                   </span>
 
                   <div className="flex items-center gap-1.5">
@@ -1081,13 +1131,13 @@ export default function ApmDashboardPage() {
                     </button>
 
                     <div className="px-3 py-1 font-mono font-bold text-[var(--text)] rounded-lg bg-[var(--input-bg)]/80 border border-[var(--card-border)]">
-                      Page {cronPage} of {Math.max(1, Math.ceil(cronData.total_runs / CRON_PER_PAGE))}
+                      Page {cronPage} of {Math.max(1, Math.ceil((cronData.total_runs ?? 0) / CRON_PER_PAGE))}
                     </div>
 
                     <button
                       type="button"
-                      disabled={cronPage >= Math.ceil(cronData.total_runs / CRON_PER_PAGE) || cronLoading}
-                      onClick={() => setCronPage((p) => Math.min(Math.ceil(cronData.total_runs / CRON_PER_PAGE), p + 1))}
+                      disabled={cronPage >= Math.max(1, Math.ceil((cronData.total_runs ?? 0) / CRON_PER_PAGE)) || cronLoading}
+                      onClick={() => setCronPage((p) => Math.min(Math.max(1, Math.ceil((cronData.total_runs ?? 0) / CRON_PER_PAGE)), p + 1))}
                       className="px-2.5 py-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] font-semibold hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all flex items-center gap-1 cursor-pointer"
                     >
                       <span className="hidden sm:inline">Next</span>
@@ -1095,8 +1145,8 @@ export default function ApmDashboardPage() {
                     </button>
                     <button
                       type="button"
-                      disabled={cronPage >= Math.ceil(cronData.total_runs / CRON_PER_PAGE) || cronLoading}
-                      onClick={() => setCronPage(Math.max(1, Math.ceil(cronData.total_runs / CRON_PER_PAGE)))}
+                      disabled={cronPage >= Math.max(1, Math.ceil((cronData.total_runs ?? 0) / CRON_PER_PAGE)) || cronLoading}
+                      onClick={() => setCronPage(Math.max(1, Math.ceil((cronData.total_runs ?? 0) / CRON_PER_PAGE)))}
                       className="p-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all cursor-pointer"
                       title="Last Page"
                     >
