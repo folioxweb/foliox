@@ -17,7 +17,10 @@ import {
   Shield,
   Zap,
   Terminal,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   ExternalLink,
   Users
 } from 'lucide-react';
@@ -82,11 +85,36 @@ export default function ApmDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [cronFailureOnly, setCronFailureOnly] = useState(false);
 
+  // Pagination state for execution logs
+  const [logsPage, setLogsPage] = useState(1);
+  const LOGS_PER_PAGE = 50;
+  const [logsLoading, setLogsLoading] = useState(false);
+
   // Trigger function test state
   const [triggeringFn, setTriggeringFn] = useState(null);
   const [triggerToast, setTriggerToast] = useState(null);
 
-  // Fetch all APM data
+  // Fetch logs specifically for the current page & filters
+  const fetchLogs = useCallback(async (page = logsPage, isSilent = false) => {
+    if (!isAdmin) return;
+    try {
+      if (!isSilent) setLogsLoading(true);
+      const logs = await getExecutionLogs({
+        functionName: filterFunction || null,
+        status: filterStatus || null,
+        callerType: filterCaller || null,
+        limit: LOGS_PER_PAGE,
+        offset: (page - 1) * LOGS_PER_PAGE,
+      });
+      if (logs) setLogsData(logs);
+    } catch (err) {
+      console.warn('Logs err:', err);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [isAdmin, filterFunction, filterStatus, filterCaller, logsPage]);
+
+  // Fetch all APM data (overview, initial page logs, crons)
   const loadData = useCallback(async (isSilent = false) => {
     if (!isAdmin) return;
     try {
@@ -97,8 +125,8 @@ export default function ApmDashboardPage() {
           functionName: filterFunction || null,
           status: filterStatus || null,
           callerType: filterCaller || null,
-          limit: 60,
-          offset: 0,
+          limit: LOGS_PER_PAGE,
+          offset: (logsPage - 1) * LOGS_PER_PAGE,
         }).catch((err) => { console.warn('Logs err:', err); return { total: 0, logs: [] }; }),
         getCronMonitoring(50).catch((err) => { console.warn('Crons err:', err); return { jobs: [], runs: [] }; }),
       ]);
@@ -112,7 +140,14 @@ export default function ApmDashboardPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [isAdmin, filterFunction, filterStatus, filterCaller]);
+  }, [isAdmin, filterFunction, filterStatus, filterCaller, logsPage]);
+
+  // Refetch logs when page changes
+  useEffect(() => {
+    if (isAdmin) {
+      fetchLogs(logsPage, true);
+    }
+  }, [logsPage]);
 
   // Initial load
   useEffect(() => {
@@ -615,7 +650,10 @@ export default function ApmDashboardPage() {
                   {/* Status filter */}
                   <select
                     value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value)}
+                    onChange={(e) => {
+                      setFilterStatus(e.target.value);
+                      setLogsPage(1);
+                    }}
                     className="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-xl text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       background: 'var(--input-bg)',
@@ -631,7 +669,10 @@ export default function ApmDashboardPage() {
                   {/* Caller Type filter */}
                   <select
                     value={filterCaller}
-                    onChange={(e) => setFilterCaller(e.target.value)}
+                    onChange={(e) => {
+                      setFilterCaller(e.target.value);
+                      setLogsPage(1);
+                    }}
                     className="flex-1 sm:flex-initial px-2.5 py-1.5 rounded-xl text-xs font-semibold outline-none cursor-pointer"
                     style={{
                       background: 'var(--input-bg)',
@@ -735,6 +776,64 @@ export default function ApmDashboardPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls */}
+              {logsData?.total > 0 && (
+                <div
+                  className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t text-xs"
+                  style={{ borderColor: 'var(--card-border)' }}
+                >
+                  <div className="text-[var(--text-muted)] font-medium text-center sm:text-left">
+                    Showing <span className="font-bold text-[var(--text)]">{((logsPage - 1) * LOGS_PER_PAGE) + 1}</span> to{' '}
+                    <span className="font-bold text-[var(--text)]">{Math.min(logsPage * LOGS_PER_PAGE, logsData.total)}</span> of{' '}
+                    <span className="font-bold text-[var(--text)]">{logsData.total}</span> execution logs
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={logsPage <= 1 || logsLoading}
+                      onClick={() => setLogsPage(1)}
+                      className="p-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all cursor-pointer"
+                      title="First Page"
+                    >
+                      <ChevronsLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={logsPage <= 1 || logsLoading}
+                      onClick={() => setLogsPage((p) => Math.max(1, p - 1))}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] font-semibold hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <ChevronLeft size={14} />
+                      <span className="hidden sm:inline">Prev</span>
+                    </button>
+
+                    <div className="px-3 py-1 font-mono font-bold text-[var(--text)] rounded-lg bg-[var(--input-bg)]/80 border border-[var(--card-border)]">
+                      Page {logsPage} of {Math.max(1, Math.ceil(logsData.total / LOGS_PER_PAGE))}
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={logsPage >= Math.ceil(logsData.total / LOGS_PER_PAGE) || logsLoading}
+                      onClick={() => setLogsPage((p) => Math.min(Math.ceil(logsData.total / LOGS_PER_PAGE), p + 1))}
+                      className="px-2.5 py-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] font-semibold hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all flex items-center gap-1 cursor-pointer"
+                    >
+                      <span className="hidden sm:inline">Next</span>
+                      <ChevronRight size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      disabled={logsPage >= Math.ceil(logsData.total / LOGS_PER_PAGE) || logsLoading}
+                      onClick={() => setLogsPage(Math.max(1, Math.ceil(logsData.total / LOGS_PER_PAGE)))}
+                      className="p-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--input-bg)] text-[var(--text)] hover:bg-emerald-500/20 hover:border-emerald-500/50 disabled:opacity-30 disabled:hover:bg-[var(--input-bg)] disabled:hover:border-[var(--card-border)] transition-all cursor-pointer"
+                      title="Last Page"
+                    >
+                      <ChevronsRight size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
