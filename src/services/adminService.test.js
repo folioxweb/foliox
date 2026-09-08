@@ -118,17 +118,23 @@ describe('adminService', () => {
         p_caller_type: 'CRON',
         p_limit: 20,
         p_offset: 0,
+        p_search: null,
       });
     });
   });
 
   describe('getCronMonitoring', () => {
     it('fetches cron monitoring data', async () => {
-      const mockData = { jobs: [], runs: [] };
+      const mockData = { jobs: [], runs: [], total_runs: 0 };
       supabase.rpc.mockResolvedValueOnce({ data: mockData, error: null });
 
       const res = await adminService.getCronMonitoring(30);
-      expect(supabase.rpc).toHaveBeenCalledWith('get_admin_cron_monitoring', { p_limit: 30 });
+      expect(supabase.rpc).toHaveBeenCalledWith('get_admin_cron_monitoring', {
+        p_limit: 30,
+        p_offset: 0,
+        p_failure_only: false,
+        p_search: null,
+      });
       expect(res).toEqual(mockData);
     });
   });

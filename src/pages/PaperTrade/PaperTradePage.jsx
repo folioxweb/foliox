@@ -1,19 +1,20 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, TrendingUp, TrendingDown, RefreshCw, Plus, Briefcase, Search, X, Settings } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Plus, Briefcase, Search, X, Settings, SlidersHorizontal, ShieldAlert, Target } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import PrivacyToggle from '../../components/ui/PrivacyToggle';
 import RefreshButton from '../../components/ui/RefreshButton';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import AddPaperTradeModal from '../../components/paperTrade/AddPaperTradeModal';
 import SellPaperTradeModal from '../../components/paperTrade/SellPaperTradeModal';
+import UpdatePaperTradeModal from '../../components/paperTrade/UpdatePaperTradeModal';
 
 export default function PaperTradePage() {
   const navigate = useNavigate();
   const { state, refreshAll, refreshing } = usePortfolio();
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [sellingHolding, setSellingHolding] = useState(null);
+  const [updatingHolding, setUpdatingHolding] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
@@ -228,6 +229,8 @@ export default function PaperTradePage() {
                 const isDayProfit = h.dayChangePercent >= 0;
                 const dayChangeFormatted = Number(h.dayChangePercent || 0).toFixed(2);
                 const returnPctFormatted = Number(h.returnPct || 0).toFixed(2);
+                const isStopLossHit = Boolean(h.stopLoss != null && h.currentPrice <= h.stopLoss);
+                const isTargetReached = Boolean(h.targetPrice != null && h.currentPrice >= h.targetPrice);
 
                 return (
                   <div
@@ -241,7 +244,19 @@ export default function PaperTradePage() {
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
-                        <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>{h.name}</h3>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-bold text-base" style={{ color: 'var(--text)' }}>{h.name}</h3>
+                          {isStopLossHit && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-500 border border-rose-500/25 animate-pulse">
+                              <ShieldAlert size={11} /> Stop Loss Triggered
+                            </span>
+                          )}
+                          {isTargetReached && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/25">
+                              <Target size={11} /> Target Reached
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-xs font-bold" style={{ color: 'var(--emerald)' }}>{h.symbol}</span>
                           {h.sector && <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>• {h.sector}</span>}
@@ -281,6 +296,30 @@ export default function PaperTradePage() {
                       </div>
                     </div>
 
+                    {/* Stop Loss & Target Price Row (if defined) */}
+                    {(h.stopLoss != null || h.targetPrice != null) && (
+                      <div
+                        className="flex items-center gap-3 mb-2 px-3 py-1.5 rounded-xl text-[11px] font-semibold flex-wrap"
+                        style={{ background: 'var(--input-bg)', border: '1px solid var(--card-border)' }}
+                      >
+                        {h.stopLoss != null && (
+                          <div className={`flex items-center gap-1.5 ${isStopLossHit ? 'text-rose-500 font-extrabold' : 'text-[var(--text-2)]'}`}>
+                            <ShieldAlert size={13} className={isStopLossHit ? 'text-rose-500 animate-bounce' : 'text-rose-400'} />
+                            <span>SL: ₹{h.stopLoss.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
+                        {h.stopLoss != null && h.targetPrice != null && (
+                          <span className="text-[var(--divider)] hidden sm:inline">•</span>
+                        )}
+                        {h.targetPrice != null && (
+                          <div className={`flex items-center gap-1.5 ${isTargetReached ? 'text-emerald-500 font-extrabold' : 'text-[var(--text-2)]'}`}>
+                            <Target size={13} className={isTargetReached ? 'text-emerald-500' : 'text-emerald-400'} />
+                            <span>Target: ₹{h.targetPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Footer */}
                     <div className="flex items-center justify-between pt-1">
                       <div className="flex items-center gap-1.5">
@@ -296,13 +335,22 @@ export default function PaperTradePage() {
                         )}
                       </div>
 
-                      <button
-                        onClick={() => setSellingHolding(h)}
-                        className="px-4 py-1.5 rounded-full text-xs font-bold text-white transition hover:opacity-90"
-                        style={{ background: 'var(--loss)' }}
-                      >
-                        Sell Position
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setUpdatingHolding(h)}
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold transition hover:opacity-90 flex items-center gap-1"
+                          style={{ background: 'var(--sheet-btn-bg)', border: '1px solid var(--card-border)', color: 'var(--text)' }}
+                        >
+                          <SlidersHorizontal size={12} /> Update
+                        </button>
+                        <button
+                          onClick={() => setSellingHolding(h)}
+                          className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white transition hover:opacity-90"
+                          style={{ background: 'var(--loss)' }}
+                        >
+                          Sell Position
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -314,6 +362,7 @@ export default function PaperTradePage() {
 
       <AddPaperTradeModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />
       <SellPaperTradeModal holding={sellingHolding} isOpen={Boolean(sellingHolding)} onClose={() => setSellingHolding(null)} />
+      <UpdatePaperTradeModal holding={updatingHolding} isOpen={Boolean(updatingHolding)} onClose={() => setUpdatingHolding(null)} />
     </main>
   );
 }

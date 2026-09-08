@@ -32,6 +32,8 @@ export default function AddPaperTradeModal({ isOpen, onClose }) {
   const [confidence, setConfidence] = useState('Medium');
   const [badge, setBadge] = useState('Trade');
   const [sector, setSector] = useState('');
+  const [stopLoss, setStopLoss] = useState('');
+  const [targetPrice, setTargetPrice] = useState('');
 
   const currentCash = state.paperTrade?.data?.summary?.currentCash || 5000000;
 
@@ -45,6 +47,8 @@ export default function AddPaperTradeModal({ isOpen, onClose }) {
       setConfidence('Medium');
       setBadge('Trade');
       setSector('');
+      setStopLoss('');
+      setTargetPrice('');
     }
   }, [isOpen]);
 
@@ -102,7 +106,9 @@ const SECTOR_ALIASES = {
         confidence,
         badge,
         quantity: qty,
-        price: buyPrice
+        price: buyPrice,
+        stopLoss: stopLoss ? Number(stopLoss) : null,
+        targetPrice: targetPrice ? Number(targetPrice) : null,
       });
       onClose();
     } catch (err) {
@@ -262,6 +268,79 @@ const SECTOR_ALIASES = {
           </div>
         </div>
 
+        {/* Risk Management: Stop Loss & Target Price */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                Stop Loss (₹)
+              </label>
+              {buyPrice > 0 && (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setStopLoss(String(Number((buyPrice * 0.95).toFixed(2))))}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold"
+                  >
+                    -5%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStopLoss(String(Number((buyPrice * 0.92).toFixed(2))))}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 font-bold"
+                  >
+                    -8%
+                  </button>
+                </div>
+              )}
+            </div>
+            <input
+              type="number"
+              step="any"
+              placeholder="Optional SL"
+              value={stopLoss}
+              onChange={(e) => setStopLoss(e.target.value)}
+              style={inputStyle}
+              className="w-full focus:ring-1 focus:ring-rose-500"
+            />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
+                Target Price (₹)
+              </label>
+              {buyPrice > 0 && (
+                <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setTargetPrice(String(Number((buyPrice * 1.10).toFixed(2))))}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold"
+                  >
+                    +10%
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTargetPrice(String(Number((buyPrice * 1.20).toFixed(2))))}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 font-bold"
+                  >
+                    +20%
+                  </button>
+                </div>
+              )}
+            </div>
+            <input
+              type="number"
+              step="any"
+              placeholder="Optional Target"
+              value={targetPrice}
+              onChange={(e) => setTargetPrice(e.target.value)}
+              style={inputStyle}
+              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+            />
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block mb-1 text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
@@ -289,8 +368,9 @@ const SECTOR_ALIASES = {
               style={selectStyle}
               className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
             >
-              <option value="Longterm" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>Longterm</option>
               <option value="Trade" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>Trade</option>
+              <option value="Swing" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>Swing</option>
+              <option value="Longterm" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>Longterm</option>
               <option value="None" style={{ background: 'var(--sheet-bg)', color: 'var(--text)' }}>No Badge</option>
             </select>
           </div>

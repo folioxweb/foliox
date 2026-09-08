@@ -272,6 +272,7 @@ const realApi = {
   removeWatchlistItem: (payload) => supabaseApi.removeWatchlistItem(payload),
   getPaperPortfolio: () => supabaseApi.getPaperPortfolio(),
   addPaperHolding: (payload) => supabaseApi.addPaperHolding(payload),
+  updatePaperHolding: (payload) => supabaseApi.updatePaperHolding(payload),
   sellPaperHolding: (payload) => supabaseApi.sellPaperHolding(payload),
   updatePaperCapital: (payload) => supabaseApi.updatePaperCapital(payload),
   resetPaperPortfolio: () => supabaseApi.resetPaperPortfolio(),

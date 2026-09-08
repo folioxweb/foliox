@@ -15,8 +15,7 @@ import {
   Minus,
   Clock
 } from 'lucide-react';
-import { api } from '../../services/apiClient';
-import { FlameRating, StatusBadge } from '../../components/ipo/IpoCard';
+import { StatusBadge } from '../../components/ipo/IpoCard';
 import IpoGmpHistoryChart from '../../components/ipo/IpoGmpHistoryChart';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -171,19 +170,7 @@ export default function IpoDetailPage() {
           {ipo.name}
         </span>
 
-        {ipo.investorGainUrl ? (
-          <a
-            href={ipo.investorGainUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
-          >
-            <span>Source</span>
-            <ExternalLink size={13} />
-          </a>
-        ) : (
-          <div className="w-8" />
-        )}
+        <div className="w-8" />
       </div>
 
       <div className="px-2.5 py-3 sm:p-4 space-y-3.5 sm:space-y-4 max-w-4xl mx-auto">
@@ -223,9 +210,8 @@ export default function IpoDetailPage() {
               )}
             </div>
 
-            <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <div className="flex flex-col items-end shrink-0">
               <StatusBadge status={ipo.status} statusBadge={ipo.statusBadge} />
-              <FlameRating rating={ipo.ratingFlames} />
             </div>
           </div>
         </div>
@@ -665,13 +651,6 @@ export default function IpoDetailPage() {
             <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
               <span className="text-[11px] text-[var(--text-2)] block mb-0.5">P/E Ratio</span>
               <span className="text-sm font-extrabold" style={{ color: 'var(--text)' }}>{ipo.peRatio || '--'}</span>
-            </div>
-
-            <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
-              <span className="text-[11px] text-[var(--text-2)] block mb-0.5">Flame Score</span>
-              <div className="mt-0.5">
-                <FlameRating rating={ipo.ratingFlames} />
-              </div>
             </div>
 
             <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)]">
