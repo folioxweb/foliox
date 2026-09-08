@@ -1349,6 +1349,7 @@ export const supabaseApi = {
       if (payload.confidence) updates.confidence = payload.confidence;
       if (payload.badge || payload.tradeType) updates.trade_type = payload.badge || payload.tradeType;
       if (payload.sector) updates.sector = payload.sector;
+      if (userId) updates.user_id = userId;
       updates.last_updated = new Date().toISOString();
 
       const { data, error } = await supabase
@@ -1356,9 +1357,10 @@ export const supabaseApi = {
         .update(updates)
         .eq('asset_id', targetPaperId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) throw new Error(`Paper asset ${targetPaperId} not found`);
       return { success: true, updatedAsset: data };
     }
 
