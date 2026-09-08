@@ -15,6 +15,7 @@ import {
   Minus,
   Clock
 } from 'lucide-react';
+import { api } from '../../services/apiClient';
 import { StatusBadge } from '../../components/ipo/IpoCard';
 import IpoGmpHistoryChart from '../../components/ipo/IpoGmpHistoryChart';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
