@@ -465,7 +465,7 @@ export default function IpoDetailPage() {
                         <div>Individual Retail Investors (≤ ₹2 Lakhs)</div>
                         {biddingCategories && (
                           <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold mt-0.5">
-                            Min: 1 lot • Max: {biddingCategories.retail.maxLots} lots ({biddingCategories.retail.maxShares.toLocaleString('en-IN')} sh • ₹{biddingCategories.retail.maxAmount.toLocaleString('en-IN')})
+                            1 lot ({biddingCategories.retail.minShares} shares • ₹{biddingCategories.retail.minAmount.toLocaleString('en-IN')})
                           </div>
                         )}
                       </td>
@@ -632,48 +632,24 @@ export default function IpoDetailPage() {
               <button
                 type="button"
                 onClick={() => setLots(1)}
-                className={`px-2 py-1 rounded-lg font-bold border text-[11px] transition shrink-0 ${
+                className={`px-2.5 py-1 rounded-lg font-bold border text-[11px] transition shrink-0 ${
                   lots === 1
                     ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
                     : 'bg-[var(--input-bg)] text-[var(--text-2)] hover:text-[var(--text)] border-[var(--divider)]'
                 }`}
               >
-                1 Lot (Retail Min)
+                1 Lot (Retail)
               </button>
-              {biddingCategories.retail.maxLots > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setLots(biddingCategories.retail.maxLots)}
-                  className={`px-2 py-1 rounded-lg font-bold border text-[11px] transition shrink-0 ${
-                    lots === biddingCategories.retail.maxLots
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
-                      : 'bg-[var(--input-bg)] text-[var(--text-2)] hover:text-[var(--text)] border-[var(--divider)]'
-                  }`}
-                >
-                  {biddingCategories.retail.maxLots} Lots (Retail Max)
-                </button>
-              )}
               <button
                 type="button"
                 onClick={() => setLots(biddingCategories.shni.minLots)}
-                className={`px-2 py-1 rounded-lg font-bold border text-[11px] transition shrink-0 ${
+                className={`px-2.5 py-1 rounded-lg font-bold border text-[11px] transition shrink-0 ${
                   lots === biddingCategories.shni.minLots
                     ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                     : 'bg-[var(--input-bg)] text-[var(--text-2)] hover:text-[var(--text)] border-[var(--divider)]'
                 }`}
               >
                 {biddingCategories.shni.minLots} Lots (sHNI Min)
-              </button>
-              <button
-                type="button"
-                onClick={() => setLots(biddingCategories.bhni.minLots)}
-                className={`px-2 py-1 rounded-lg font-bold border text-[11px] transition shrink-0 ${
-                  lots === biddingCategories.bhni.minLots
-                    ? 'bg-purple-600 text-white border-purple-600 shadow-sm'
-                    : 'bg-[var(--input-bg)] text-[var(--text-2)] hover:text-[var(--text)] border-[var(--divider)]'
-                }`}
-              >
-                {biddingCategories.bhni.minLots} Lots (bHNI Min)
               </button>
             </div>
           )}
@@ -842,28 +818,19 @@ export default function IpoDetailPage() {
                   </div>
 
                   <div className="space-y-2 text-xs">
-                    <div className="p-2 rounded-lg bg-[var(--card-bg)]/80 border border-emerald-500/15">
+                    <div className="p-2.5 rounded-lg bg-[var(--card-bg)]/80 border border-emerald-500/15 shadow-xs">
                       <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="text-[11px] text-[var(--text-2)] font-medium">Minimum Bid (1 Lot)</span>
+                        <span className="text-[11px] text-[var(--text-2)] font-medium">Application (1 Lot)</span>
                         <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
                           ₹{biddingCategories.retail.minAmount.toLocaleString('en-IN')}
                         </span>
                       </div>
-                      <div className="text-[11px] text-[var(--text-2)]">
-                        <strong>1 Lot</strong> = <strong>{biddingCategories.retail.minShares} shares</strong>
+                      <div className="text-[11px] text-[var(--text)] font-semibold">
+                        1 Lot = {biddingCategories.retail.minShares} shares
                       </div>
-                    </div>
-
-                    <div className="p-2 rounded-lg bg-[var(--card-bg)]/80 border border-emerald-500/15">
-                      <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="text-[11px] text-[var(--text-2)] font-medium">Maximum Bid</span>
-                        <span className="text-xs font-black text-emerald-600 dark:text-emerald-400">
-                          ₹{biddingCategories.retail.maxAmount.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-[var(--text-2)]">
-                        <strong>{biddingCategories.retail.maxLots} Lots</strong> = <strong>{biddingCategories.retail.maxShares.toLocaleString('en-IN')} shares</strong>
-                      </div>
+                      <p className="text-[10px] text-[var(--text-2)] mt-1 leading-tight">
+                        In good / oversubscribed IPOs, each successful retail applicant is allotted strictly 1 lot.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -921,14 +888,12 @@ export default function IpoDetailPage() {
 
                     <div className="p-2 rounded-lg bg-[var(--card-bg)]/80 border border-indigo-500/15">
                       <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="text-[11px] text-[var(--text-2)] font-medium">Maximum sHNI Bid</span>
-                        <span className="text-xs font-black text-indigo-600 dark:text-indigo-400">
-                          ₹{biddingCategories.shni.maxAmount.toLocaleString('en-IN')}
-                        </span>
+                        <span className="text-[11px] text-[var(--text-2)] font-medium">Allotment Benchmark</span>
+                        <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{biddingCategories.shni.minLots} Lots</span>
                       </div>
-                      <div className="text-[11px] text-[var(--text-2)]">
-                        <strong>{biddingCategories.shni.maxLots} Lots</strong> = <strong>{biddingCategories.shni.maxShares.toLocaleString('en-IN')} shares</strong>
-                      </div>
+                      <p className="text-[10px] text-[var(--text-2)] leading-tight">
+                        Primary allotment size for NII applicants in oversubscribed IPOs.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -967,7 +932,7 @@ export default function IpoDetailPage() {
                     <div className="p-2.5 rounded-lg bg-[var(--card-bg)]/90 border border-purple-500/25 shadow-xs">
                       <div className="flex justify-between items-baseline mb-1">
                         <span className="text-[11px] text-purple-700 dark:text-purple-300 font-bold uppercase tracking-wider">
-                          Minimum to Qualify
+                          Minimum to Apply
                         </span>
                         <span className="text-sm font-black text-purple-600 dark:text-purple-400">
                           ₹{biddingCategories.bhni.minAmount.toLocaleString('en-IN')}
@@ -980,39 +945,35 @@ export default function IpoDetailPage() {
                         </span>
                       </div>
                       <p className="text-[10px] text-[var(--text-2)] mt-1 leading-tight">
-                        Strictly above ₹10,00,000 threshold for Big HNI allocation.
+                        Required application amount strictly &gt; ₹10 Lakhs to bid in bHNI quota.
                       </p>
                     </div>
 
                     <div className="p-2 rounded-lg bg-[var(--card-bg)]/80 border border-purple-500/15">
                       <div className="flex justify-between items-baseline mb-0.5">
-                        <span className="text-[11px] text-[var(--text-2)] font-medium">Bidding Scope</span>
-                        <span className="text-xs font-bold text-purple-600 dark:text-purple-400">High Weightage</span>
+                        <span className="text-[11px] text-[var(--text-2)] font-medium">Expected Allotment</span>
+                        <span className="text-xs font-bold text-purple-600 dark:text-purple-400">sHNI Min Lots</span>
                       </div>
                       <p className="text-[10px] text-[var(--text-2)] leading-tight">
-                        bHNI receives 2/3rd portion of total NII reservation.
+                        In good IPOs, bHNI applicants also receive the minimum sHNI allotment ({biddingCategories.shni.minLots} lots).
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setLots(biddingCategories.bhni.minLots)}
-                  className="w-full py-1.5 px-2 rounded-lg text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 active:scale-98 transition shadow-sm flex items-center justify-center gap-1"
-                >
-                  <span>Select bHNI Min ({biddingCategories.bhni.minLots} Lots)</span>
-                </button>
+                <div className="p-2 rounded-lg bg-[var(--input-bg)] border border-[var(--divider)] text-center text-[11px] text-[var(--text-2)] font-medium">
+                  Allotment based on sHNI min ({biddingCategories.shni.minLots} Lots)
+                </div>
               </div>
             </div>
 
             {/* Explanatory Footer Bar */}
             <div className="p-2.5 rounded-xl bg-[var(--input-bg)] border border-[var(--divider)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-[11px] text-[var(--text-2)]">
               <span>
-                <strong>Rules:</strong> Retail ≤ ₹2L • sHNI &gt; ₹2L to ₹10L • bHNI &gt; ₹10L.
+                <strong>Allotment Rule:</strong> In oversubscribed IPOs, Retail gets 1 lot; bHNI &amp; sHNI get min sHNI allotment ({biddingCategories.shni.minLots} lots).
               </span>
               <span className="font-medium">
-                Tap any category button above to calculate its exact profit &amp; value.
+                Tap Retail or sHNI buttons to calculate exact returns.
               </span>
             </div>
           </div>

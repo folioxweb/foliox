@@ -79,8 +79,12 @@ describe('IpoDetailPage Component', () => {
     expect(screen.getByText(/Big HNI \(bHNI\)/i)).toBeInTheDocument();
     expect(screen.getAllByText(/Retail \(RII\)/i).length).toBeGreaterThanOrEqual(1);
 
-    // Verify sHNI min calculation: 14 lots (462 shares @ 14,850 = ₹2,07,900)
+    // Verify sHNI min and Retail 1 lot can be selected
     expect(screen.getByText(/Select sHNI Min \(14 Lots\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/Select bHNI Min \(68 Lots\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Select Retail \(1 Lot\)/i)).toBeInTheDocument();
+
+    // Verify Retail Max and bHNI Min selection buttons are NOT present
+    expect(screen.queryByText(/Retail Max/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Select bHNI Min/i)).not.toBeInTheDocument();
   });
 });
