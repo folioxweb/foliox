@@ -194,15 +194,17 @@ export default function IpoListPage() {
         return true;
       })
       .sort((a, b) => {
-        // Special default sorting for "Open" tab: Closing Soonest at top, then GMP High -> Low
-        if (activeTab === 'open' && sortBy === 'gmp') {
+        // Special sorting for "Open" tab: Closing Soonest at top, then GMP High -> Low, then Issue Size
+        if (activeTab === 'open' && (sortBy === 'gmp' || sortBy === 'gmp_and_size')) {
           const timeA = a.sortClose ? new Date(a.sortClose).getTime() : Infinity;
           const timeB = b.sortClose ? new Date(b.sortClose).getTime() : Infinity;
 
           if (timeA !== timeB) {
             return timeA - timeB; // Earliest closing date first
           }
-          return (b.gmpPercent || 0) - (a.gmpPercent || 0); // Tie-breaker: Highest GMP %
+          const gmpDiff = (b.gmpPercent || 0) - (a.gmpPercent || 0);
+          if (gmpDiff !== 0) return gmpDiff;
+          return getIssueSizeNum(b) - getIssueSizeNum(a);
         }
 
         let comp = 0;
@@ -229,6 +231,8 @@ export default function IpoListPage() {
   const activeSortLabel =
     activeTab === 'open' && sortBy === 'gmp'
       ? 'Closing Soonest & GMP %'
+      : activeTab === 'open' && sortBy === 'gmp_and_size'
+      ? 'Closing Soonest, GMP & Size'
       : SORT_OPTIONS.find((s) => s.id === sortBy)?.label || 'Highest GMP %';
 
   return (
