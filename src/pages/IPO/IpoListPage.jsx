@@ -18,9 +18,12 @@ import {
   Settings,
   Bell,
   BellOff,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import IpoCard from '../../components/ipo/IpoCard';
+import IpoListItem from '../../components/ipo/IpoListItem';
 import { api } from '../../services/apiClient';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
 import RefreshButton from '../../components/ui/RefreshButton';
@@ -37,9 +40,19 @@ const TABS = [
 
 const SORT_OPTIONS = [
   { id: 'gmp', label: 'Highest GMP %' },
-  { id: 'size', label: 'Est. Profit' },
+  { id: 'issue_size', label: 'Highest Issue Size' },
+  { id: 'gmp_and_size', label: 'Highest GMP & Size' },
+  { id: 'profit', label: 'Est. Profit' },
   { id: 'date', label: 'Open Date' },
 ];
+
+function getIssueSizeNum(ipo) {
+  if (ipo?.ipoSizeNum != null && !isNaN(ipo.ipoSizeNum)) return ipo.ipoSizeNum;
+  if (!ipo?.ipoSize || ipo.ipoSize === 'N/A' || ipo.ipoSize === '-') return 0;
+  const cleaned = String(ipo.ipoSize).replace(/,/g, '');
+  const match = cleaned.match(/([0-9]+(?:\.[0-9]+)?)/);
+  return match ? parseFloat(match[1]) : 0;
+}
 
 export default function IpoListPage() {
   const navigate = useNavigate();
@@ -68,9 +81,23 @@ export default function IpoListPage() {
   const [activeTab, setActiveTab] = useState(() => {
     return location.state?.fromTab || sessionStorage.getItem('ipo_active_tab') || 'open';
   });
-  const [sortBy, setSortBy] = useState('gmp'); // 'gmp' | 'rating' | 'size' | 'date'
+  const [sortBy, setSortBy] = useState('gmp'); // 'gmp' | 'issue_size' | 'gmp_and_size' | 'profit' | 'date'
   const [sortDirection, setSortDirection] = useState('desc'); // 'desc' | 'asc'
   const [showSortFilter, setShowSortFilter] = useState(false);
+  const [viewMode, setViewMode] = useState(() => {
+    try {
+      return localStorage.getItem('ipo_view_mode') || 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem('ipo_view_mode', mode);
+    } catch {}
+  };
 
   const { user, updateAlertPreferences } = useAuth();
   const isIpoAlertsEnabled = Boolean(user?.user_metadata?.ipo_alerts_enabled === true);
@@ -180,8 +207,15 @@ export default function IpoListPage() {
 
         let comp = 0;
         if (sortBy === 'gmp') {
-          comp = (b.gmpPercent || 0) - (a.gmpPercent || 0);
-        } else if (sortBy === 'size') {
+          const gmpDiff = (b.gmpPercent || 0) - (a.gmpPercent || 0);
+          comp = gmpDiff !== 0 ? gmpDiff : (getIssueSizeNum(b) - getIssueSizeNum(a));
+        } else if (sortBy === 'issue_size') {
+          const sizeDiff = getIssueSizeNum(b) - getIssueSizeNum(a);
+          comp = sizeDiff !== 0 ? sizeDiff : ((b.gmpPercent || 0) - (a.gmpPercent || 0));
+        } else if (sortBy === 'gmp_and_size') {
+          const gmpDiff = (b.gmpPercent || 0) - (a.gmpPercent || 0);
+          comp = gmpDiff !== 0 ? gmpDiff : (getIssueSizeNum(b) - getIssueSizeNum(a));
+        } else if (sortBy === 'profit' || sortBy === 'size') {
           comp = (b.expectedProfit || 0) - (a.expectedProfit || 0);
         } else if (sortBy === 'date') {
           const timeA = a.sortClose ? new Date(a.sortClose).getTime() : 0;
@@ -367,31 +401,61 @@ export default function IpoListPage() {
         </nav>
       </div>
 
-      {/* ── Control Bar — Sort & Filter Action (Matches Assets/Portfolio page) ── */}
+      {/* ── Control Bar — Sort & Filter Action & View Toggle ── */}
       <section className="px-3 sm:px-4 lg:px-8 pt-2.5">
         <div
-          className="flex items-center justify-between pb-2"
+          className="flex items-center justify-between pb-2 gap-2"
           style={{ borderBottom: '1px solid var(--divider)' }}
         >
           {/* Sort / Filter Button */}
           <button
             onClick={() => setShowSortFilter(true)}
             aria-label="Open sort and filter"
-            className="flex items-center gap-1.5 text-xs font-semibold transition-opacity active:opacity-60"
+            className="flex items-center gap-1.5 text-xs font-semibold transition-opacity active:opacity-60 min-w-0"
             style={{ color: 'var(--text)' }}
           >
-            <SlidersHorizontal size={13} className="text-emerald-500" strokeWidth={2.2} />
-            <span>Sort &amp; Filter</span>
+            <SlidersHorizontal size={13} className="text-emerald-500 shrink-0" strokeWidth={2.2} />
+            <span className="shrink-0">Sort:</span>
+            <span className="text-[11px] font-semibold text-[var(--text-2)] truncate">
+              {activeSortLabel} ({sortDirection === 'desc' ? 'High → Low' : 'Low → High'})
+            </span>
           </button>
 
-          {/* Active Sort Label Badge */}
-          <button
-            onClick={() => setShowSortFilter(true)}
-            className="flex items-center gap-1 text-[11px] font-semibold transition-opacity active:opacity-60"
-            style={{ color: 'var(--text-2)' }}
+          {/* View Mode Toggle: Grid (Cards) vs List */}
+          <div
+            className="flex items-center p-0.5 rounded-lg shrink-0"
+            style={{
+              background: 'var(--input-bg)',
+              border: '1px solid var(--card-border)',
+            }}
           >
-            <span>{activeSortLabel} ({sortDirection === 'desc' ? 'High → Low' : 'Low → High'})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('grid')}
+              className={`p-1.5 rounded-md transition-all flex items-center justify-center ${
+                viewMode === 'grid'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+              }`}
+              title="Grid View (Cards)"
+              aria-label="Grid View"
+            >
+              <LayoutGrid size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewModeChange('list')}
+              className={`p-1.5 rounded-md transition-all flex items-center justify-center ${
+                viewMode === 'list'
+                  ? 'bg-emerald-500 text-white shadow-xs'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)]'
+              }`}
+              title="List View"
+              aria-label="List View"
+            >
+              <List size={14} />
+            </button>
+          </div>
         </div>
       </section>
 
@@ -417,6 +481,37 @@ export default function IpoListPage() {
             <p className="text-xs text-[var(--text-2)] max-w-xs mb-4">
               {searchQuery ? `No IPOs match "${searchQuery}".` : `There are currently no ${activeTab} mainboard IPOs.`}
             </p>
+          </div>
+        ) : viewMode === 'list' ? (
+          <div
+            className="rounded-2xl border overflow-hidden shadow-xs"
+            style={{
+              background: 'var(--card-bg)',
+              borderColor: 'var(--card-border)',
+            }}
+          >
+            {/* List Header */}
+            <div
+              className="flex items-center justify-between py-2 px-3 sm:px-4 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
+              style={{
+                background: 'var(--input-bg)',
+                borderBottom: '1px solid var(--divider)',
+              }}
+            >
+              <div className="flex-1 min-w-0 pr-3">Company Name</div>
+              <div className="text-right w-24 sm:w-28 shrink-0 pr-3">GMP</div>
+              <div className="text-right w-20 sm:w-24 shrink-0">Subscription</div>
+            </div>
+
+            {/* List Rows */}
+            {filteredIpos.map((ipo, idx) => (
+              <IpoListItem
+                key={ipo.id || ipo.name}
+                ipo={ipo}
+                isLast={idx === filteredIpos.length - 1}
+                onClick={() => navigate(`/ipo/${ipo.id}`, { state: { fromTab: activeTab } })}
+              />
+            ))}
           </div>
         ) : (
           <div className="space-y-4">
@@ -488,6 +583,8 @@ export default function IpoListPage() {
                         type="button"
                         onClick={() => setSortBy(opt.id)}
                         className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all text-left ${
+                          opt.id === 'gmp_and_size' ? 'col-span-2' : ''
+                        } ${
                           isSel
                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
                             : 'bg-[var(--sheet-btn-bg)] border-[var(--card-border)] text-[var(--text)]'
