@@ -563,7 +563,7 @@ export default function IpoListPage() {
                 <div className="flex items-center gap-2">
                   <SlidersHorizontal size={18} className="text-emerald-500" />
                   <h2 className="text-lg font-bold" style={{ color: 'var(--text)' }}>
-                    Filters &amp; Sorting
+                    Sorting Options
                   </h2>
                 </div>
                 <button
@@ -611,7 +611,7 @@ export default function IpoListPage() {
               </div>
 
               {/* ORDER DIRECTION SECTION */}
-              <div className="mb-5">
+              <div className="mb-6">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-3">
                   Order Direction
                 </span>
@@ -643,37 +643,6 @@ export default function IpoListPage() {
                 </div>
               </div>
 
-              {/* FILTER POSITIONS / TABS SECTION */}
-              <div className="mb-6">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] block mb-3">
-                  Filter IPO Status
-                </span>
-                <div className="grid grid-cols-2 gap-2.5">
-                  {TABS.map((tab) => {
-                    const isSel = activeTab === tab.id;
-                    const count = counts[tab.id] || 0;
-                    return (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => handleTabChange(tab.id)}
-                        className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all ${
-                          isSel
-                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold'
-                            : 'bg-[var(--sheet-btn-bg)] border-[var(--card-border)] text-[var(--text)]'
-                        }`}
-                        style={{ borderWidth: '1px', borderStyle: 'solid' }}
-                      >
-                        <span>{tab.label} IPOs</span>
-                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/5">
-                          {count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* Apply Button */}
               <button
                 type="button"
@@ -681,7 +650,7 @@ export default function IpoListPage() {
                 className="w-full py-3.5 rounded-2xl text-sm font-bold text-white shadow-lg transition hover:opacity-90 text-center"
                 style={{ background: 'var(--emerald)' }}
               >
-                Apply Filters
+                Apply
               </button>
             </motion.div>
           </>
