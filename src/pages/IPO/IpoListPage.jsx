@@ -499,7 +499,7 @@ export default function IpoListPage() {
               }}
             >
               <div className="flex-1 min-w-0 pr-3">Company Name</div>
-              <div className="text-right w-24 sm:w-28 shrink-0 pr-3">GMP</div>
+              <div className="text-center w-28 sm:w-32 shrink-0 px-2">GMP</div>
               <div className="text-right w-20 sm:w-24 shrink-0">Subscription</div>
             </div>
 

@@ -66,7 +66,7 @@ export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = fa
       </div>
 
       {/* 2. GMP Column */}
-      <div className="text-right w-24 sm:w-28 shrink-0 pr-3">
+      <div className="text-center w-28 sm:w-32 shrink-0 px-2">
         <span className={`text-sm font-extrabold block truncate ${gmpColorClass}`}>
           {isPositiveGmp ? '+' : ''}{gmpPct}%
         </span>
