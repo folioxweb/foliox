@@ -51,4 +51,14 @@ describe('IpoListItem', () => {
     render(<IpoListItem ipo={fallbackIpo} />);
     expect(screen.getByText('14.2x')).toBeInTheDocument();
   });
+
+  it('renders issue size for desktop view when provided', () => {
+    const ipoWithSize = {
+      ...mockIpo,
+      ipoSize: '₹3,042.51 Cr',
+    };
+
+    render(<IpoListItem ipo={ipoWithSize} />);
+    expect(screen.getByText('₹3,042.51 Cr')).toBeInTheDocument();
+  });
 });

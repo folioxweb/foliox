@@ -49,8 +49,8 @@ export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = fa
         borderBottom: isLast ? 'none' : '1px solid var(--divider)',
       }}
     >
-      {/* 1. Company Name */}
-      <div className="flex-1 min-w-0 pr-3">
+      {/* 1. Company Name (Left) */}
+      <div className="flex-1 min-w-0 pr-3 md:pr-4">
         <h4
           className="text-sm font-bold tracking-tight truncate"
           style={{ color: 'var(--text)' }}
@@ -65,8 +65,18 @@ export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = fa
         </span>
       </div>
 
-      {/* 2. GMP Column */}
-      <div className="text-center w-28 sm:w-32 shrink-0 px-2">
+      {/* 2. Issue Size (Desktop only) */}
+      <div className="hidden md:block md:w-36 lg:w-44 text-center shrink-0 px-2">
+        <span className="text-xs sm:text-sm font-bold text-[var(--text)] block truncate">
+          {ipo.ipoSize && ipo.ipoSize !== 'N/A' ? ipo.ipoSize : 'N/A'}
+        </span>
+        <span className="text-[10px] text-[var(--text-muted)] font-medium block truncate">
+          Issue Size
+        </span>
+      </div>
+
+      {/* 3. GMP Column (Mobile: right-aligned; Desktop: centered) */}
+      <div className="w-24 sm:w-28 md:w-36 lg:w-44 shrink-0 text-right md:text-center pr-3 md:pr-0 md:px-2">
         <span className={`text-sm font-extrabold block truncate ${gmpColorClass}`}>
           {isPositiveGmp ? '+' : ''}{gmpPct}%
         </span>
@@ -75,8 +85,8 @@ export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = fa
         </span>
       </div>
 
-      {/* 3. Subscription Column */}
-      <div className="text-right w-20 sm:w-24 shrink-0 flex items-center justify-end gap-1">
+      {/* 4. Subscription Column (Right) */}
+      <div className="w-20 sm:w-24 md:w-28 lg:w-36 shrink-0 text-right flex items-center justify-end gap-1">
         <div className="text-right">
           <span
             className={`text-xs sm:text-sm font-bold block truncate ${

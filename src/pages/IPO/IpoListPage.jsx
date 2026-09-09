@@ -492,15 +492,23 @@ export default function IpoListPage() {
           >
             {/* List Header */}
             <div
-              className="flex items-center justify-between py-2 px-3 sm:px-4 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
+              className="flex items-center justify-between py-2.5 px-3 sm:px-4 text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)]"
               style={{
                 background: 'var(--input-bg)',
                 borderBottom: '1px solid var(--divider)',
               }}
             >
-              <div className="flex-1 min-w-0 pr-3">Company Name</div>
-              <div className="text-center w-28 sm:w-32 shrink-0 px-2">GMP</div>
-              <div className="text-right w-20 sm:w-24 shrink-0">Subscription</div>
+              {/* 1. Company Name */}
+              <div className="flex-1 min-w-0 pr-3 md:pr-4">Company Name</div>
+
+              {/* 2. Issue Size (Desktop only) */}
+              <div className="hidden md:block md:w-36 lg:w-44 text-center shrink-0 px-2">Issue Size</div>
+
+              {/* 3. GMP Column (Mobile: right-aligned; Desktop: centered) */}
+              <div className="w-24 sm:w-28 md:w-36 lg:w-44 shrink-0 text-right md:text-center pr-3 md:pr-0 md:px-2">GMP</div>
+
+              {/* 4. Subscription Column */}
+              <div className="w-20 sm:w-24 md:w-28 lg:w-36 shrink-0 text-right">Subscription</div>
             </div>
 
             {/* List Rows */}
