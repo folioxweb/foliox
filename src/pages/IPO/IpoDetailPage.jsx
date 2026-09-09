@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -15,7 +15,6 @@ import {
   Minus,
   Clock,
   Calculator,
-  Layers,
 } from 'lucide-react';
 import { api } from '../../services/apiClient';
 import { StatusBadge } from '../../components/ipo/IpoCard';
@@ -80,9 +79,13 @@ export default function IpoDetailPage() {
     );
   }
 
-  const isPositiveGmp = ipo.gmpAmount > 0;
-  const isNegativeGmp = ipo.gmpAmount < 0;
-  const gmpColorClass = isPositiveGmp ? 'text-emerald-600 dark:text-emerald-400' : isNegativeGmp ? 'text-rose-600 dark:text-rose-400' : 'text-[var(--text-2)]';
+  const isPositiveGmp = (ipo.gmpAmount || 0) > 0;
+  const isNegativeGmp = (ipo.gmpAmount || 0) < 0;
+  const gmpColorClass = isPositiveGmp
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : isNegativeGmp
+    ? 'text-rose-600 dark:text-rose-400'
+    : 'text-[var(--text-2)]';
 
   const lotSize = Number(ipo.lotSize || 1);
   const priceNum = Number(ipo.priceNum || 0);
@@ -94,10 +97,8 @@ export default function IpoDetailPage() {
   const totalListingValue = expectedListingPrice * lotSize * lots;
 
   // Calculate dynamic bidding categories for Retail, sHNI (> ₹2 Lakhs), and bHNI (> ₹10 Lakhs)
-  const biddingCategories = useMemo(() => {
-    if (lotCost <= 0 || lotSize <= 0) return null;
-
-    // Retail Category: Maximum application amount is ₹2,00,000
+  let biddingCategories = null;
+  if (lotCost > 0 && lotSize > 0) {
     const retailMinLots = 1;
     const retailMinShares = lotSize;
     const retailMinAmount = lotCost;
@@ -105,7 +106,6 @@ export default function IpoDetailPage() {
     const retailMaxShares = retailMaxLots * lotSize;
     const retailMaxAmount = retailMaxLots * lotCost;
 
-    // sHNI (Small HNI / sNII): Application strictly > ₹2,00,000 (just above 2 lakh) up to ₹10,00,000
     const shniMinLots = Math.floor(200000 / lotCost) + 1;
     const shniMinShares = shniMinLots * lotSize;
     const shniMinAmount = shniMinLots * lotCost;
@@ -113,12 +113,11 @@ export default function IpoDetailPage() {
     const shniMaxShares = shniMaxLots * lotSize;
     const shniMaxAmount = shniMaxLots * lotCost;
 
-    // bHNI (Big HNI / bNII): Application strictly > ₹10,00,000 (just above 10 lakh)
     const bhniMinLots = Math.floor(1000000 / lotCost) + 1;
     const bhniMinShares = bhniMinLots * lotSize;
     const bhniMinAmount = bhniMinLots * lotCost;
 
-    return {
+    biddingCategories = {
       lotCost,
       lotSize,
       priceNum,
@@ -144,18 +143,30 @@ export default function IpoDetailPage() {
         minAmount: bhniMinAmount,
       },
     };
-  }, [lotCost, lotSize, priceNum]);
+  }
 
-  const currentCategoryLabel = useMemo(() => {
-    if (!biddingCategories) return null;
+  let currentCategoryLabel = null;
+  if (biddingCategories) {
     if (lots >= biddingCategories.bhni.minLots) {
-      return { text: 'bHNI Application (> ₹10L)', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-500/10 border-purple-500/20' };
+      currentCategoryLabel = {
+        text: 'bHNI Application (> ₹10L)',
+        color: 'text-purple-600 dark:text-purple-400',
+        bg: 'bg-purple-500/10 border-purple-500/20',
+      };
+    } else if (lots >= biddingCategories.shni.minLots) {
+      currentCategoryLabel = {
+        text: 'sHNI Application (₹2L – ₹10L)',
+        color: 'text-indigo-600 dark:text-indigo-400',
+        bg: 'bg-indigo-500/10 border-indigo-500/20',
+      };
+    } else {
+      currentCategoryLabel = {
+        text: 'Retail Application (≤ ₹2L)',
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bg: 'bg-emerald-500/10 border-emerald-500/20',
+      };
     }
-    if (lots >= biddingCategories.shni.minLots) {
-      return { text: 'sHNI Application (₹2L – ₹10L)', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-500/10 border-indigo-500/20' };
-    }
-    return { text: 'Retail Application (≤ ₹2L)', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' };
-  }, [biddingCategories, lots]);
+  }
 
   // Extract subscription details with direct and raw_json fallback
   let rawSub = ipo.subscriptionDetails || ipo.subscription_details || ipo.raw_json?.subscription_details || null;
@@ -337,7 +348,7 @@ export default function IpoDetailPage() {
 
           {hasSubData ? (
             <div className="space-y-3 sm:space-y-3.5">
-              {/* Overall Total Subscription Highlight Banner (Progress line removed, % removed) */}
+              {/* Overall Total Subscription Highlight Banner */}
               <div
                 className="p-3 sm:p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 relative overflow-hidden"
                 style={{
@@ -373,7 +384,7 @@ export default function IpoDetailPage() {
                 </div>
               </div>
 
-              {/* Detailed Subscription Table View (3 Columns: Category, Scope, Subscription) */}
+              {/* Detailed Subscription Table View */}
               <div className="overflow-x-auto rounded-xl border border-[var(--divider)]">
                 <table className="w-full text-xs text-left">
                   <thead className="bg-[var(--input-bg)] text-[var(--text-2)] border-b border-[var(--divider)]">
@@ -762,13 +773,13 @@ export default function IpoDetailPage() {
               <div className="text-right">
                 <span className="text-[11px] text-[var(--text-2)] block">Est. Premium</span>
                 <span className={`text-sm sm:text-base font-bold ${gmpColorClass}`}>
-                  {isPositiveGmp ? '+' : ''}₹{ipo.gmpAmount} ({ipo.gmpPercent > 0 ? '+' : ''}{ipo.gmpPercent.toFixed(2)}%)
+                  {isPositiveGmp ? '+' : ''}₹{ipo.gmpAmount || 0} ({(ipo.gmpPercent || 0) > 0 ? '+' : ''}{(ipo.gmpPercent || 0).toFixed(2)}%)
                 </span>
               </div>
             </div>
 
             <div className="mt-3 pt-2.5 border-t border-blue-500/20 flex items-center justify-between text-xs">
-              <span className="text-[11px] text-[var(--text-2)]">Formula: Issue Price (₹{ipo.priceStr}) + Current GMP (₹{ipo.gmpAmount})</span>
+              <span className="text-[11px] text-[var(--text-2)]">Formula: Issue Price (₹{ipo.priceStr}) + Current GMP (₹{ipo.gmpAmount || 0})</span>
               {lots > 1 && (
                 <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400">
                   Est. Portfolio Value: ₹{totalListingValue.toLocaleString('en-IN')}
