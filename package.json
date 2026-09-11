@@ -2,7 +2,7 @@
   "name": "foliox",
   "homepage": "https://folioxweb.github.io/foliox",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

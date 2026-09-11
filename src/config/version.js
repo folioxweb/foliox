@@ -3,10 +3,10 @@
  * Single source of truth for FolioX versioning, build metadata, and release notes.
  */
 
-export const APP_VERSION = '2.1.0';
-export const RELEASE_CODENAME = 'IPO Intelligence & Alerts';
+export const APP_VERSION = '2.2.0';
+export const RELEASE_CODENAME = 'Tradebook & Tax Intelligence';
 export const RELEASE_DATE = 'September 2026';
-export const BUILD_TIMESTAMP = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '5 Sept 2026';
+export const BUILD_TIMESTAMP = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '12 Sept 2026';
 
 export const IS_UAT =
   import.meta.env.MODE === 'uat' ||
@@ -27,49 +27,49 @@ export const CURRENT_RELEASE = {
   date: RELEASE_DATE,
   features: [
     {
-      id: 'ipo-alerts',
+      id: 'tradebook-ledger',
       badge: 'NEW',
       badgeColor: 'emerald',
-      icon: 'Mail',
-      title: 'Smart IPO Email Alerts',
+      icon: 'Receipt',
+      title: 'Institutional-Grade Tradebook',
       description:
-        'Automated morning bulk digests delivered at 08:15 AM on Bidding Opening & Closing days with >20% GMP, plus real-time alerts when GMP crosses the 20% profit threshold.'
+        'A dedicated master ledger on your Portfolio page tracking all executed BUY and SELL trades, execution prices, cost basis, realized gains, turnover, and 1-click CSV export.'
     },
     {
-      id: 'gmp-history',
+      id: 'tax-estimator',
       badge: 'NEW',
+      badgeColor: 'emerald',
+      icon: 'Calculator',
+      title: 'Indian Capital Gains Tax Estimator',
+      description:
+        'A dedicated tax planning screen in Settings built for Budget 2024-25: STCG (@ 20%) & LTCG (@ 12.5%) calculations with annual ₹1,25,000 tax-free exemption tracking.'
+    },
+    {
+      id: 'tax-harvesting-advisor',
+      badge: 'NEW',
+      badgeColor: 'amber',
+      icon: 'ShieldCheck',
+      title: 'Tax Harvesting & LTCG Transition Advisor',
+      description:
+        'Proactive alerts for open lots turning from STCG to LTCG within 60 days (saving 7.5% in tax), plus unharvested tax-free gains and loss-harvesting suggestions.'
+    },
+    {
+      id: 'mf-lookthrough',
+      badge: 'IMPROVED',
+      badgeColor: 'sky',
+      icon: 'PieChart',
+      title: 'Mutual Fund Constituents & Sector Breakdown',
+      description:
+        'Deep dive into mutual fund underlying stock constituents and sector weights with live indirect rupee exposure calculations.'
+    },
+    {
+      id: 'holding-trade-history',
+      badge: 'ENHANCED',
       badgeColor: 'emerald',
       icon: 'TrendingUp',
-      title: 'Historical GMP Trajectory Charts',
+      title: 'Holding-Level Order History',
       description:
-        'Interactive time-series area charts tracking Grey Market Premiums with smooth point-by-point inspection and a 20% alert reference line.'
-    },
-    {
-      id: 'subscription-details',
-      badge: 'IMPROVED',
-      badgeColor: 'sky',
-      icon: 'Layers',
-      title: 'Granular Subscription Breakdown',
-      description:
-        'Live category-wise subscription tables tracking QIB, NII (sHNI & bHNI), Retail (RII), and Anchor allocations updated across sync cycles.'
-    },
-    {
-      id: 'alert-toggle',
-      badge: 'IMPROVED',
-      badgeColor: 'sky',
-      icon: 'Bell',
-      title: 'Opt-in Alert Control',
-      description:
-        '1-tap notification switch in Settings and IPO header. Defaulted to OFF so you receive alerts only when you explicitly want them.'
-    },
-    {
-      id: 'resilient-design',
-      badge: 'ENHANCED',
-      badgeColor: 'amber',
-      icon: 'Sparkles',
-      title: 'Light & Dark Mode Resilience',
-      description:
-        'Self-contained, distraction-free email notifications optimized for flawless rendering across all mobile email apps and desktop screens.'
+        'View complete historical order timelines directly inside each stock or mutual fund detail screen.'
     }
   ]
 };

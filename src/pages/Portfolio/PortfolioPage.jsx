@@ -24,7 +24,6 @@ import {
   Zap,
   Tags,
   Newspaper,
-  Receipt,
 } from 'lucide-react';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -301,19 +300,6 @@ export default function PortfolioPage() {
                       aria-label="Market news"
                     >
                       <Newspaper size={18} />
-                    </button>
-
-                    <button
-                      onClick={() => handleTabChange('Tradebook')}
-                      className={`rounded-full p-1.5 transition-colors ${
-                        activeTab === 'Tradebook'
-                          ? 'bg-emerald-500/20 text-emerald-500 dark:text-emerald-400'
-                          : 'hover:opacity-80 text-[var(--text-muted)]'
-                      }`}
-                      aria-label="Tradebook & Orders"
-                      title="Tradebook & Orders"
-                    >
-                      <Receipt size={18} />
                     </button>
 
                     <button
