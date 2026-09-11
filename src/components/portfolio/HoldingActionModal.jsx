@@ -77,9 +77,10 @@ setSipDay("");
   const avg = Number(price) || 0;
 
   async function handleContinue() {
+    let payload = null;
     try {
       setLoading(true);
-      const payload = {
+      payload = {
         assetType: holding.assetType,
         ...(holding.assetId ? { assetId: holding.assetId } : {}),
         quantity: qty,
@@ -117,14 +118,14 @@ setSipDay("");
       setSipDay("");
       onClose();
     } catch (err) {
-  console.log("ERROR OBJECT:", err);
-  console.log("PAYLOAD:", payload);
+      console.log("ERROR OBJECT:", err);
+      console.log("PAYLOAD:", payload);
 
-  alert(
-    err.message ||
-    JSON.stringify(err, null, 2)
-  );
-} finally {
+      alert(
+        err.message ||
+        JSON.stringify(err, null, 2)
+      );
+    } finally {
       setLoading(false);
     }
   }

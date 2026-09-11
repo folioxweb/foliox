@@ -115,6 +115,8 @@ function normalizeHoldingItem(h, idx, sipMap = new Map()) {
     srNo: idx + 1,
     holdingId: h.asset_id,
     assetId: h.asset_id,
+    txId: h.tx_id || null,
+    tx_id: h.tx_id || null,
     assetType,
     asset_type: h.asset_type || (isStock ? 'STOCK' : 'UNKNOWN'),
     symbol: h.symbol,
@@ -1226,6 +1228,7 @@ export const supabaseApi = {
         tx_type: 'BUY',
         quantity: Number(payload.quantity),
         price: Number(payload.price),
+        cost_price: Number(payload.price),
         tx_date: new Date().toISOString()
       }).select().single();
       if (txErr) throw txErr;
@@ -1257,17 +1260,36 @@ export const supabaseApi = {
         await supabase.from('assets').update(updates).eq('asset_id', targetAssetId);
       }
 
-      await supabase.from('transactions').delete().eq('asset_id', targetAssetId);
+      let txQuery = supabase.from('transactions').select('tx_id').eq('asset_id', targetAssetId);
+      if (userId) txQuery = txQuery.eq('user_id', userId);
+      const { data: existingTxs } = await txQuery.order('tx_date', { ascending: true });
 
-      const { data: tx, error: txErr } = await supabase.from('transactions').insert({
-        asset_id: targetAssetId,
-        tx_type: 'BUY',
-        quantity: targetQty,
-        price: targetPrice,
-        tx_date: new Date().toISOString()
-      }).select().single();
-      if (txErr) throw txErr;
-      return { success: true, transaction: tx };
+      if (existingTxs && existingTxs.length > 0) {
+        const { data: tx, error: txErr } = await supabase.from('transactions').update({
+          quantity: targetQty,
+          price: targetPrice,
+          cost_price: targetPrice,
+          tx_type: 'BUY'
+        }).eq('tx_id', existingTxs[0].tx_id).select().single();
+        if (txErr) throw txErr;
+
+        if (existingTxs.length > 1) {
+          const extraIds = existingTxs.slice(1).map(t => t.tx_id);
+          await supabase.from('transactions').delete().in('tx_id', extraIds);
+        }
+        return { success: true, transaction: tx };
+      } else {
+        const { data: tx, error: txErr } = await supabase.from('transactions').insert({
+          asset_id: targetAssetId,
+          tx_type: 'BUY',
+          quantity: targetQty,
+          price: targetPrice,
+          cost_price: targetPrice,
+          tx_date: new Date().toISOString()
+        }).select().single();
+        if (txErr) throw txErr;
+        return { success: true, transaction: tx };
+      }
     }
 
     // 3. SELL HOLDING
@@ -1283,21 +1305,26 @@ export const supabaseApi = {
 
       const curQty = Number(holding?.total_quantity || 0);
       const sellPrice = Number(payload.price) > 0 ? Number(payload.price) : Number(holding?.current_price || holding?.avg_price || 0);
+      const avgPrice = Number(holding?.avg_price || 0);
+      const realizedGain = (sellPrice - avgPrice) * sellQty;
 
-      if (sellQty >= curQty) {
-        await supabase.from('transactions').delete().eq('asset_id', targetAssetId);
-        return { success: true, fullySold: true };
-      } else {
-        const { data: tx, error: txErr } = await supabase.from('transactions').insert({
-          asset_id: targetAssetId,
-          tx_type: 'SELL',
-          quantity: -Math.abs(sellQty),
-          price: sellPrice,
-          tx_date: new Date().toISOString()
-        }).select().single();
-        if (txErr) throw txErr;
-        return { success: true, fullySold: false, transaction: tx };
+      const { data: tx, error: txErr } = await supabase.from('transactions').insert({
+        asset_id: targetAssetId,
+        tx_type: 'SELL',
+        quantity: -Math.abs(sellQty),
+        price: sellPrice,
+        cost_price: avgPrice,
+        realized_gain: realizedGain,
+        tx_date: new Date().toISOString()
+      }).select().single();
+      if (txErr) throw txErr;
+
+      const fullySold = (sellQty >= curQty);
+      if (fullySold) {
+        await supabase.from('mf_sip_configs').delete().eq('asset_id', targetAssetId);
       }
+
+      return { success: true, fullySold, remainingQuantity: Math.max(0, curQty - sellQty), transaction: tx };
     }
 
     // 4. FD ACTIONS
@@ -1307,17 +1334,33 @@ export const supabaseApi = {
 
     if (action === 'deleteFD') {
       const targetTxId = payload.tx_id || payload.txId;
-      const { error } = await supabase.from('transactions').delete().eq('tx_id', targetTxId);
+      const targetAssetId = payload.asset_id || payload.assetId;
+      if (!targetTxId && !targetAssetId) throw new Error('Transaction ID or Asset ID is required to delete an FD');
+
+      let delQuery = supabase.from('transactions').delete();
+      if (targetTxId) delQuery = delQuery.eq('tx_id', targetTxId);
+      else delQuery = delQuery.eq('asset_id', targetAssetId);
+
+      const { error } = await delQuery;
       if (error) throw error;
-      return { success: true, deleted: targetTxId };
+
+      if (targetAssetId) {
+        try {
+          await supabase.from('assets').delete().eq('asset_id', targetAssetId).eq('asset_type', 'FD');
+        } catch (_e) {}
+      }
+
+      return { success: true, deleted: targetTxId || targetAssetId };
     }
 
     if (action === 'updateFD') {
       const targetTxId = payload.tx_id || payload.txId;
+      const targetAssetId = payload.asset_id || payload.assetId;
       const updates = {};
       const principalVal = Number(payload.fd_principal || payload.principal || payload.price || payload.quantity || 0);
       if (principalVal > 0) {
         updates.price = principalVal;
+        updates.cost_price = principalVal;
         updates.fd_principal = principalVal;
       }
       if (payload.fd_rate || payload.interestRate) updates.fd_rate = Number(payload.fd_rate || payload.interestRate);
@@ -1325,11 +1368,22 @@ export const supabaseApi = {
       if (payload.startDate) updates.tx_date = new Date(payload.startDate).toISOString();
 
       let query = supabase.from('transactions').update(updates);
-      if (targetTxId) query = query.eq('tx_id', targetTxId);
-      else query = query.eq('asset_id', payload.assetId || payload.asset_id);
+      if (targetTxId) {
+        query = query.eq('tx_id', targetTxId);
+      } else if (targetAssetId) {
+        query = query.eq('asset_id', targetAssetId);
+      } else {
+        throw new Error('Transaction ID or Asset ID is required to update an FD');
+      }
 
       const { data: tx, error: txErr } = await query.select();
       if (txErr) throw txErr;
+
+      const newBankName = payload.name || payload.bankName;
+      if (newBankName && targetAssetId) {
+        await supabase.from('assets').update({ name: String(newBankName).trim() }).eq('asset_id', targetAssetId);
+      }
+
       return { success: true, transaction: tx };
     }
 

@@ -135,8 +135,11 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
       setLoading(true);
       if (action === ACTIONS.UPDATE) {
         await updateFD({
-          srNo: holding.srNo,
+          assetId: holding?.assetId || holding?.holdingId,
+          txId: holding?.txId || holding?.tx_id,
+          srNo: holding?.srNo,
           bankName,
+          name: bankName,
           principal: principalValue,
           interestRate: rate,
           startDate,
@@ -144,7 +147,9 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
         });
       } else {
         await deleteFD({
-          srNo: holding.srNo,
+          assetId: holding?.assetId || holding?.holdingId,
+          txId: holding?.txId || holding?.tx_id,
+          srNo: holding?.srNo,
         });
       }
       onClose();
