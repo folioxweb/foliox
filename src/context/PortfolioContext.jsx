@@ -172,6 +172,7 @@ export function PortfolioProvider({ children }) {
   
   const liveRefreshInFlight = useRef(false);
   const refreshInProgress = useRef(false);
+  const newsPrefetchedRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchEndpoint = useCallback(async (endpoint, apiFn) => {
@@ -278,6 +279,7 @@ export function PortfolioProvider({ children }) {
       if (isSupabase) {
         promises.push(
           api.getNews().then(newsData => {
+            newsPrefetchedRef.current = true;
             if (Array.isArray(newsData)) {
               dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
 
@@ -353,11 +355,14 @@ export function PortfolioProvider({ children }) {
 
   const prefetchSecondaryData = useCallback((portfolioData) => {
     if (!isLoggedIn) return;
+    if (newsPrefetchedRef.current) return;
     // Delay prefetch slightly to let the critical path render smoothly
     setTimeout(async () => {
+      if (newsPrefetchedRef.current) return;
       try {
         // 1. Fetch news once (includes active holdings + macro market news)
         const newsData = await api.getNews();
+        newsPrefetchedRef.current = true;
         if (Array.isArray(newsData)) {
           dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
 
@@ -388,6 +393,7 @@ export function PortfolioProvider({ children }) {
 
   useEffect(() => {
     if (!isLoggedIn) {
+      newsPrefetchedRef.current = false;
       dispatch({ type: 'RESET_STATE' });
       return;
     }

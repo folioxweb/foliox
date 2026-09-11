@@ -8,21 +8,31 @@ import { supabase } from './supabaseClient';
  * Checks whether the currently authenticated user has admin privileges
  * @returns {Promise<{ is_admin: boolean, role: 'SUPER_ADMIN' | 'ADMIN' | null, email: string | null }>}
  */
+let inFlightAdminStatus = null;
+
 export async function getAdminStatus() {
-  try {
-    if (typeof supabase?.rpc !== 'function') {
+  if (inFlightAdminStatus) return inFlightAdminStatus;
+
+  inFlightAdminStatus = (async () => {
+    try {
+      if (typeof supabase?.rpc !== 'function') {
+        return { is_admin: false, role: null, email: null };
+      }
+      const { data, error } = await supabase.rpc('get_admin_status');
+      if (error) {
+        console.warn('[adminService] get_admin_status RPC error:', error.message);
+        return { is_admin: false, role: null, email: null };
+      }
+      return data || { is_admin: false, role: null, email: null };
+    } catch (err) {
+      console.warn('[adminService] Error fetching admin status:', err);
       return { is_admin: false, role: null, email: null };
+    } finally {
+      inFlightAdminStatus = null;
     }
-    const { data, error } = await supabase.rpc('get_admin_status');
-    if (error) {
-      console.warn('[adminService] get_admin_status RPC error:', error.message);
-      return { is_admin: false, role: null, email: null };
-    }
-    return data || { is_admin: false, role: null, email: null };
-  } catch (err) {
-    console.warn('[adminService] Error fetching admin status:', err);
-    return { is_admin: false, role: null, email: null };
-  }
+  })();
+
+  return inFlightAdminStatus;
 }
 
 /**
