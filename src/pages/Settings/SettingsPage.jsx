@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass, Bell, BellOff, Check, X, Activity, Users, Terminal } from 'lucide-react';
+import { Info, Database, Trash2, Shield, LogOut, Palette, Briefcase, UserCheck, KeyRound, Sparkles, Compass, Bell, BellOff, Check, X, Activity, Users, Terminal, Calculator, ChevronRight } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { useAuth } from '../../context/AuthContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -252,6 +252,60 @@ export default function SettingsPage() {
           </section>
         )}
 
+        {/* ── Indian Capital Gains Tax Estimates Option Card ────────────── */}
+        <section
+          aria-label="Tax Estimates"
+          style={{
+            ...sectionStyle,
+            borderColor: 'rgba(99, 102, 241, 0.35)',
+            background: isDark
+              ? 'linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, var(--card-bg) 100%)'
+              : 'linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, var(--card-bg) 100%)',
+          }}
+          className="mb-4 relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5">
+              <Calculator size={14} />
+              Tax &amp; Capital Gains
+            </h2>
+            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase bg-indigo-500/15 text-indigo-500 dark:text-indigo-400 border border-indigo-500/30 tracking-wider">
+              BUDGET 2024
+            </span>
+          </div>
+
+          <div className="flex items-start gap-3 pt-1">
+            <div
+              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+              style={{
+                background: 'rgba(99, 102, 241, 0.15)',
+                border: '1px solid rgba(99, 102, 241, 0.25)',
+              }}
+            >
+              <Calculator size={20} className="text-indigo-500 dark:text-indigo-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-[var(--text)]">
+                Capital Gains &amp; Tax Estimator
+              </h3>
+              <p className="text-xs text-[var(--text-2)] mt-0.5 leading-relaxed">
+                Compute FY 2026-27 STCG (@ 20%) &amp; LTCG (@ 12.5%), track the ₹1,25,000 annual exemption quota, and review tax harvesting opportunities.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/settings/tax')}
+            className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-bold text-white transition hover:opacity-90 active:scale-98 cursor-pointer shadow-sm"
+            style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
+          >
+            <Calculator size={14} />
+            <span>Open Tax &amp; Capital Gains Screen</span>
+            <ChevronRight size={14} />
+          </button>
+        </section>
+
         {/* ── Appearance ──────────────────────────────────────────────────── */}
         <section aria-label="Appearance" style={sectionStyle} className="mb-4">
           <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>Appearance</h2>
@@ -283,19 +337,31 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => setShowGuideModal(true)}
-            className="mt-1 flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition hover:opacity-90"
-            style={{
-              background: 'var(--input-bg)',
-              border: '1px solid var(--card-border)',
-              color: 'var(--text)',
-            }}
-          >
-            <Compass size={14} className="text-emerald-400" />
-            Open Feature Tour
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => setShowGuideModal(true)}
+              className="flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold transition hover:opacity-90 cursor-pointer"
+              style={{
+                background: 'var(--input-bg)',
+                border: '1px solid var(--card-border)',
+                color: 'var(--text)',
+              }}
+            >
+              <Compass size={14} className="text-emerald-400" />
+              Feature Tour
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowWhatsNewModal(true)}
+              className="flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-bold text-white transition hover:opacity-90 cursor-pointer shadow-sm"
+              style={{ background: 'var(--emerald)' }}
+            >
+              <Sparkles size={14} />
+              What's New (v{APP_VERSION})
+            </button>
+          </div>
         </section>
 
         {/* ── Voice Assistant (commented out for now) ──────────────────────────────────────────── */}
