@@ -1387,6 +1387,23 @@ export const supabaseApi = {
       return { success: true, transaction: tx };
     }
 
+    // DELETE HOLDING
+    if (action === 'deleteHolding') {
+      const targetAssetId = payload.assetId || payload.asset_id;
+      if (!targetAssetId) throw new Error('Asset ID is required to delete holding');
+
+      let delTxQuery = supabase.from('transactions').delete().eq('asset_id', targetAssetId);
+      if (userId) delTxQuery = delTxQuery.eq('user_id', userId);
+      const { error: txErr } = await delTxQuery;
+      if (txErr) throw txErr;
+
+      let delSipQuery = supabase.from('mf_sip_configs').delete().eq('asset_id', targetAssetId);
+      if (userId) delSipQuery = delSipQuery.eq('user_id', userId);
+      await delSipQuery;
+
+      return { success: true, message: 'Position deleted successfully', deletedAssetId: targetAssetId };
+    }
+
     // 5. WATCHLIST ACTIONS
     if (action === 'addWatchlistItem') {
       const sym = payload.symbol ? payload.symbol.trim().toUpperCase() : '';
@@ -1629,5 +1646,9 @@ export const supabaseApi = {
 
   deleteFD: async (payload) => {
     return supabaseApi.executeTrade({ action: 'deleteFD', ...payload });
+  },
+
+  deleteHolding: async (payload) => {
+    return supabaseApi.executeTrade({ action: 'deleteHolding', ...payload });
   },
 };

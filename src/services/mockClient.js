@@ -841,6 +841,16 @@ const realMockApi = {
     return { success: true };
   },
 
+  deleteHolding: async (payload) => {
+    await new Promise(resolve => setTimeout(resolve, MOCK_DELAY_MS));
+    const target = payload.assetType === "mutualFunds" ? mutualFunds : (payload.assetType === "etfs" ? etfs : stocks);
+    const idx = target.findIndex(x => (payload.assetId && x.assetId === payload.assetId) || (payload.symbol && x.symbol === payload.symbol) || (payload.name && x.name === payload.name));
+    if (idx !== -1) {
+      target.splice(idx, 1);
+    }
+    return { success: true };
+  },
+
   sendVoiceQuery: async (query) => {
     await new Promise(resolve => setTimeout(resolve, 50));
     const q = (query || "").toLowerCase();
