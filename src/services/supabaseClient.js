@@ -601,41 +601,98 @@ export const supabaseApi = {
   },
 
   getFundHoldings: async (fundAssetId, isin = null) => {
-    if (!fundAssetId) return { stocks: [], sectors: [] };
+    if (!fundAssetId && !isin) return { stocks: [], sectors: [] };
 
     try {
-      const { data, error } = await supabase
+      // 1. Direct match by fund_asset_id
+      let { data, error } = await supabase
         .from('fund_holdings')
         .select('*')
         .eq('fund_asset_id', fundAssetId);
 
       if (error) throw error;
 
+      // 2. If empty and we have an ISIN (or can resolve ISIN from asset), check sibling assets
+      if (!data || data.length === 0) {
+        let cleanIsin = isin;
+        if (!cleanIsin && fundAssetId) {
+          const { data: aRow } = await supabase
+            .from('assets')
+            .select('isin')
+            .eq('asset_id', fundAssetId)
+            .maybeSingle();
+          if (aRow?.isin) cleanIsin = aRow.isin;
+        }
+
+        if (cleanIsin) {
+          const { data: matchedAssets } = await supabase
+            .from('assets')
+            .select('asset_id')
+            .eq('isin', cleanIsin);
+
+          const candidateIds = (matchedAssets || [])
+            .map((a) => a.asset_id)
+            .filter((id) => id !== fundAssetId);
+
+          if (candidateIds.length > 0) {
+            const { data: isinHoldings } = await supabase
+              .from('fund_holdings')
+              .select('*')
+              .in('fund_asset_id', candidateIds);
+
+            if (isinHoldings && isinHoldings.length > 0) {
+              data = isinHoldings;
+            }
+          }
+        }
+      }
+
+      // If holdings found from database (direct or via ISIN)
       if (data && data.length > 0) {
-        const stocks = data
-          .filter((d) => d.holding_type === 'STOCK')
-          .map((d) => ({ name: d.holding_name, weight: Number(d.weight_percentage) }))
+        // Group by name in case multiple siblings were combined
+        const stockMap = new Map();
+        const sectorMap = new Map();
+
+        data.forEach((d) => {
+          const weight = Number(d.weight_percentage);
+          if (d.holding_type === 'STOCK') {
+            if (!stockMap.has(d.holding_name) || stockMap.get(d.holding_name) < weight) {
+              stockMap.set(d.holding_name, weight);
+            }
+          } else if (d.holding_type === 'SECTOR') {
+            if (!sectorMap.has(d.holding_name) || sectorMap.get(d.holding_name) < weight) {
+              sectorMap.set(d.holding_name, weight);
+            }
+          }
+        });
+
+        const stocks = Array.from(stockMap.entries())
+          .map(([name, weight]) => ({ name, weight }))
           .sort((a, b) => b.weight - a.weight);
 
-        const sectors = data
-          .filter((d) => d.holding_type === 'SECTOR')
-          .map((d) => ({ name: d.holding_name, weight: Number(d.weight_percentage) }))
+        const sectors = Array.from(sectorMap.entries())
+          .map(([name, weight]) => ({ name, weight }))
           .sort((a, b) => b.weight - a.weight);
 
         return { stocks, sectors };
       }
 
-      // If empty and we have an ISIN or fundAssetId, attempt auto on-demand sync via edge function
+      // 3. Fallback: attempt on-demand sync via edge function
       if (isin || fundAssetId) {
-        const { data: syncRes, error: syncErr } = await supabase.functions.invoke('sync-fund-holdings', {
-          body: { asset_id: fundAssetId, isin: isin || undefined },
-        });
+        try {
+          const { data: syncRes, error: syncErr } = await supabase.functions.invoke('sync-fund-holdings', {
+            body: { asset_id: fundAssetId, isin: isin || undefined },
+          });
 
-        if (!syncErr && syncRes?.stocks && syncRes?.sectors) {
-          return {
-            stocks: syncRes.stocks || [],
-            sectors: syncRes.sectors || [],
-          };
+          if (!syncErr && syncRes?.stocks && syncRes?.sectors) {
+            return {
+              stocks: syncRes.stocks || [],
+              sectors: syncRes.sectors || [],
+              message: syncRes.message,
+            };
+          }
+        } catch (_syncErr) {
+          // Gracefully continue
         }
       }
 

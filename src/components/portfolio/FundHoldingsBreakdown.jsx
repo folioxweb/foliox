@@ -119,16 +119,22 @@ export default function FundHoldingsBreakdown({ holding }) {
     setErrorMsg(null);
     try {
       const res = await api.syncFundHoldings({ assetId, isin });
-      if (res?.stocks && res?.sectors) {
-        setHoldingsData({ stocks: res.stocks, sectors: res.sectors });
+      if (res?.stocks?.length > 0 || res?.sectors?.length > 0) {
+        setHoldingsData({ stocks: res.stocks || [], sectors: res.sectors || [] });
       } else {
         // Re-fetch after sync
         const fresh = await api.getFundHoldings(assetId, isin);
-        setHoldingsData(fresh || { stocks: [], sectors: [] });
+        if (fresh?.stocks?.length > 0 || fresh?.sectors?.length > 0) {
+          setHoldingsData(fresh);
+        } else if (res?.message) {
+          setErrorMsg(res.message);
+        } else {
+          setErrorMsg('Constituent holdings are currently not disclosed by the fund house feed for this ISIN.');
+        }
       }
     } catch (err) {
       console.warn('Sync fund holdings error:', err);
-      setErrorMsg('Failed to sync fund holdings. Please verify fund ISIN.');
+      setErrorMsg('Constituent holdings are currently not disclosed by the fund house feed for this ISIN.');
     } finally {
       setSyncing(false);
     }
@@ -262,12 +268,12 @@ export default function FundHoldingsBreakdown({ holding }) {
         <div className="text-center py-8 px-4 rounded-xl border border-dashed border-[var(--card-border)] bg-[var(--sheet-btn-bg)]">
           <Sparkles size={28} className="mx-auto text-emerald-400/60 mb-2" />
           <h3 className="text-xs sm:text-sm font-bold text-[var(--text)] mb-1">
-            No Holdings Synchronized Yet
+            No Holdings Disclosed Yet
           </h3>
           <p className="text-[11px] text-[var(--text-muted)] max-w-sm mx-auto mb-4">
             {isin 
-              ? `ISIN ${isin} is ready. Tap sync to automatically import all underlying constituent stocks & sector allocations.`
-              : 'Add an ISIN to this fund or tap sync to attempt an automatic lookup from official AMFI/FinAPI feeds.'}
+              ? `ISIN: ${isin}. Tap below to request latest portfolio disclosure.`
+              : 'Add an ISIN to this fund to sync underlying constituent stocks & sector allocations.'}
           </p>
           <button
             type="button"
