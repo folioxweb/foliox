@@ -31,6 +31,11 @@ function NewsSkeletonCard() {
   );
 }
 
+// ── Format date as YYYY-MM-DD in Indian Standard Time (IST) ────────────────
+function getISTDateString(d = new Date()) {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+}
+
 /**
  * NewsPage — full-screen overlay showing all latest news across all stocks,
  * sorted newest-first. Accessed via the newspaper icon in the Portfolio top bar.
@@ -73,21 +78,26 @@ export default function NewsPage({ isOpen, onClose }) {
     if (dateFilter === 'ALL') return news;
 
     const now = new Date();
-    const today = now.toISOString().slice(0, 10);
-    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString().slice(0, 10);
-    const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7).toISOString().slice(0, 10);
+    const today = getISTDateString(now);
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = getISTDateString(yesterdayDate);
+
+    const weekAgoDate = new Date(now);
+    weekAgoDate.setDate(weekAgoDate.getDate() - 7);
+    const weekAgo = getISTDateString(weekAgoDate);
 
     return news.filter((a) => {
       const raw = a.publishedAt || a.published_at || a.publishedDate || a.date;
       if (!raw) return false;
       const d = new Date(raw);
       if (isNaN(d.getTime())) return false;
-      const iso = d.toISOString().slice(0, 10);
+      const istDate = getISTDateString(d);
 
-      if (dateFilter === 'TODAY') return iso === today;
-      if (dateFilter === 'YESTERDAY') return iso === yesterday;
-      if (dateFilter === 'WEEK') return iso >= weekAgo;
-      return iso === dateFilter;
+      if (dateFilter === 'TODAY') return istDate === today;
+      if (dateFilter === 'YESTERDAY') return istDate === yesterday;
+      if (dateFilter === 'WEEK') return istDate >= weekAgo;
+      return istDate === dateFilter;
     });
   }, [news, dateFilter]);
 
@@ -95,8 +105,10 @@ export default function NewsPage({ isOpen, onClose }) {
   function groupByDate(articles) {
     const groups = {};
     const now = new Date();
-    const today = now.toISOString().slice(0, 10);
-    const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toISOString().slice(0, 10);
+    const today = getISTDateString(now);
+    const yesterdayDate = new Date(now);
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = getISTDateString(yesterdayDate);
 
     (articles || []).forEach((a) => {
       const raw = a.publishedAt || a.published_at || a.publishedDate || a.date;
@@ -104,13 +116,14 @@ export default function NewsPage({ isOpen, onClose }) {
       if (raw) {
         const d = new Date(raw);
         if (!isNaN(d.getTime())) {
-          const iso = d.toISOString().slice(0, 10);
-          if (iso === today) {
+          const istDate = getISTDateString(d);
+          if (istDate === today) {
             label = 'Today';
-          } else if (iso === yesterday) {
+          } else if (istDate === yesterday) {
             label = 'Yesterday';
           } else {
             label = d.toLocaleDateString('en-IN', {
+              timeZone: 'Asia/Kolkata',
               weekday: 'short',
               day: 'numeric',
               month: 'short',
@@ -352,10 +365,10 @@ export default function NewsPage({ isOpen, onClose }) {
                     <Newspaper size={26} className="text-emerald-400" />
                   </div>
                   <h3 className="text-base font-bold" style={{ color: 'var(--text)' }}>
-                    No News for Your Portfolio
+                    No News Available
                   </h3>
                   <p className="text-xs leading-relaxed max-w-xs" style={{ color: 'var(--text-muted)' }}>
-                    Add stocks to get news updates. Real-time news and corporate announcements will appear here for your holdings.
+                    Real-time market updates, macroeconomic feeds, and announcements for your holdings will appear here.
                   </p>
                 </div>
               )}

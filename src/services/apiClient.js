@@ -233,6 +233,7 @@ const realApi = {
   // ?action=news&symbol=SYMBOL    → news for one stock
   getNews: (limit) => apiFetch("news", limit ? { limit } : {}, 20000),
   getStockNews: (symbol, limit) => apiFetch("news", { symbol, ...(limit ? { limit } : {}) }, 20000),
+  markNewsAsRead: (guid) => supabaseApi.markNewsAsRead(guid),
 
   // Company Documents API
   // ?action=companyDocuments&symbol=HDFCBANK

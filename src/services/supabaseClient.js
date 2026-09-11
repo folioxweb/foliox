@@ -286,6 +286,13 @@ function normalizeIpo(item) {
   };
 }
 
+// Transient in-flight request trackers for holdings & news queries to eliminate duplicate network calls on initial load
+let inFlightStocks = null;
+let inFlightEtfs = null;
+let inFlightMutualFunds = null;
+let inFlightFDs = null;
+const inFlightNews = new Map();
+
 export const supabaseApi = {
   // -----------------------------------------
   // Summary & Allocation APIs
@@ -516,47 +523,103 @@ export const supabaseApi = {
   // Holdings APIs (Equivalent to GAS action=stocks, etfs, mutualFunds, fds)
   // -----------------------------------------
   getStocks: async () => {
-    const { data, error } = await supabase
-      .from('vw_holdings')
-      .select('*')
-      .eq('asset_type', 'STOCK')
-      .order('current_value', { ascending: false });
+    if (inFlightStocks) {
+      const res = await inFlightStocks;
+      return res.map((h) => ({ ...h }));
+    }
 
-    if (error) throw error;
-    return (data || []).map((h, idx) => normalizeHoldingItem(h, idx));
+    inFlightStocks = (async () => {
+      const { data, error } = await supabase
+        .from('vw_holdings')
+        .select('*')
+        .eq('asset_type', 'STOCK')
+        .order('current_value', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map((h, idx) => normalizeHoldingItem(h, idx));
+    })();
+
+    try {
+      const res = await inFlightStocks;
+      return res.map((h) => ({ ...h }));
+    } finally {
+      inFlightStocks = null;
+    }
   },
 
   getEtfs: async () => {
-    const { data, error } = await supabase
-      .from('vw_holdings')
-      .select('*')
-      .eq('asset_type', 'ETF')
-      .order('current_value', { ascending: false });
+    if (inFlightEtfs) {
+      const res = await inFlightEtfs;
+      return res.map((h) => ({ ...h }));
+    }
 
-    if (error) throw error;
-    return (data || []).map((h, idx) => normalizeHoldingItem(h, idx));
+    inFlightEtfs = (async () => {
+      const { data, error } = await supabase
+        .from('vw_holdings')
+        .select('*')
+        .eq('asset_type', 'ETF')
+        .order('current_value', { ascending: false });
+
+      if (error) throw error;
+      return (data || []).map((h, idx) => normalizeHoldingItem(h, idx));
+    })();
+
+    try {
+      const res = await inFlightEtfs;
+      return res.map((h) => ({ ...h }));
+    } finally {
+      inFlightEtfs = null;
+    }
   },
 
   getMutualFunds: async () => {
-    const [holdingsRes, sipRes] = await Promise.all([
-      supabase.from('vw_holdings').select('*').eq('asset_type', 'MF').order('current_value', { ascending: false }),
-      supabase.from('mf_sip_configs').select('*')
-    ]);
+    if (inFlightMutualFunds) {
+      const res = await inFlightMutualFunds;
+      return res.map((h) => ({ ...h }));
+    }
 
-    if (holdingsRes.error) throw holdingsRes.error;
+    inFlightMutualFunds = (async () => {
+      const [holdingsRes, sipRes] = await Promise.all([
+        supabase.from('vw_holdings').select('*').eq('asset_type', 'MF').order('current_value', { ascending: false }),
+        supabase.from('mf_sip_configs').select('*')
+      ]);
 
-    const sipMap = new Map((sipRes?.data || []).map(s => [s.asset_id, s]));
-    return (holdingsRes.data || []).map((h, idx) => normalizeHoldingItem(h, idx, sipMap));
+      if (holdingsRes.error) throw holdingsRes.error;
+
+      const sipMap = new Map((sipRes?.data || []).map(s => [s.asset_id, s]));
+      return (holdingsRes.data || []).map((h, idx) => normalizeHoldingItem(h, idx, sipMap));
+    })();
+
+    try {
+      const res = await inFlightMutualFunds;
+      return res.map((h) => ({ ...h }));
+    } finally {
+      inFlightMutualFunds = null;
+    }
   },
 
   getFDs: async () => {
-    const { data, error } = await supabase
-      .from('vw_holdings')
-      .select('*')
-      .eq('asset_type', 'FD');
+    if (inFlightFDs) {
+      const res = await inFlightFDs;
+      return res.map((h) => ({ ...h }));
+    }
 
-    if (error) throw error;
-    return (data || []).map((h, idx) => normalizeHoldingItem(h, idx));
+    inFlightFDs = (async () => {
+      const { data, error } = await supabase
+        .from('vw_holdings')
+        .select('*')
+        .eq('asset_type', 'FD');
+
+      if (error) throw error;
+      return (data || []).map((h, idx) => normalizeHoldingItem(h, idx));
+    })();
+
+    try {
+      const res = await inFlightFDs;
+      return res.map((h) => ({ ...h }));
+    } finally {
+      inFlightFDs = null;
+    }
   },
 
   // -----------------------------------------
@@ -593,46 +656,88 @@ export const supabaseApi = {
   // News APIs
   // -----------------------------------------
   getNews: async (limit) => {
-    let query = supabase
-      .from('vw_user_news')
-      .select('*')
-      .order('published_at', { ascending: false });
-
-    if (limit) query = query.limit(limit);
-
-    const { data, error } = await query;
-    if (error) {
-      console.warn('vw_user_news error:', error.message);
-      return [];
+    const key = limit || 'all';
+    if (inFlightNews.has(key)) {
+      const res = await inFlightNews.get(key);
+      return res.map((n) => ({ ...n }));
     }
 
-    return (data || []).map(n => ({
-      guid: n.guid,
-      title: n.title,
-      source: n.source,
-      category: n.category,
-      publishedAt: n.published_at,
-      link: n.url,
-      url: n.url,
-      isRead: n.is_read,
-      company: n.company_name || n.symbol || '',
-      symbol: n.symbol || ''
-    }));
+    const fetchPromise = (async () => {
+      let query = supabase
+        .from('vw_user_news')
+        .select('*')
+        .order('published_at', { ascending: false });
+
+      if (limit) query = query.limit(limit);
+
+      const { data, error } = await query;
+      if (error) {
+        console.warn('vw_user_news error:', error.message);
+        return [];
+      }
+
+      return (data || []).map(n => ({
+        guid: n.guid,
+        title: n.title,
+        source: n.source,
+        category: n.category,
+        publishedAt: n.published_at,
+        link: n.url,
+        url: n.url,
+        isRead: Boolean(n.is_read),
+        isBookmarked: Boolean(n.is_bookmarked),
+        company: n.company_name || n.symbol || '',
+        symbol: n.symbol || '',
+        symbols: n.symbols || [],
+        publisherDomain: n.publisher_domain,
+        publisherName: n.publisher_name
+      }));
+    })();
+
+    inFlightNews.set(key, fetchPromise);
+
+    try {
+      const res = await fetchPromise;
+      return res.map((n) => ({ ...n }));
+    } finally {
+      inFlightNews.delete(key);
+    }
   },
 
   getStockNews: async (symbol, limit) => {
+    // 1. Query news matching the symbol directly or via symbols array
     let query = supabase
       .from('news')
-      .select('guid, title, source, category, published_at, url, is_read, assets!inner(symbol, name)')
-      .ilike('assets.symbol', `%${symbol}%`)
+      .select('guid, title, source, category, published_at, url, symbols, publisher_domain, publisher_name, assets(symbol, name)')
+      .or(`symbols.cs.{${symbol}},assets.symbol.eq.${symbol}`)
       .order('published_at', { ascending: false });
 
     if (limit) query = query.limit(limit);
 
-    const { data, error } = await query;
+    let { data, error } = await query;
     if (error) {
-      console.warn('Stock news error:', error.message);
-      return [];
+      // Fallback if OR syntax encounters any issue
+      let fallbackQuery = supabase
+        .from('news')
+        .select('guid, title, source, category, published_at, url, symbols, publisher_domain, publisher_name')
+        .contains('symbols', [symbol])
+        .order('published_at', { ascending: false });
+      if (limit) fallbackQuery = fallbackQuery.limit(limit);
+      const fallbackRes = await fallbackQuery;
+      data = fallbackRes.data || [];
+    }
+
+    // 2. Query user read status if authenticated
+    const guids = (data || []).map(n => n.guid);
+    const readGuids = new Set();
+    if (guids.length > 0) {
+      const { data: interactions } = await supabase
+        .from('user_news_interactions')
+        .select('guid, is_read')
+        .in('guid', guids);
+      (interactions || []).forEach(i => {
+        if (i.is_read) readGuids.add(i.guid);
+      });
     }
 
     return (data || []).map(n => ({
@@ -643,10 +748,39 @@ export const supabaseApi = {
       publishedAt: n.published_at,
       link: n.url,
       url: n.url,
-      isRead: n.is_read,
+      isRead: readGuids.has(n.guid),
       company: n.assets?.name || n.assets?.symbol || symbol,
-      symbol: n.assets?.symbol || symbol
+      symbol: n.assets?.symbol || symbol,
+      symbols: n.symbols || [symbol],
+      publisherDomain: n.publisher_domain,
+      publisherName: n.publisher_name
     }));
+  },
+
+  markNewsAsRead: async (guid) => {
+    if (!guid) return false;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { error } = await supabase
+        .from('user_news_interactions')
+        .upsert({
+          user_id: user.id,
+          guid,
+          is_read: true,
+          read_at: new Date().toISOString()
+        }, { onConflict: 'user_id,guid' });
+
+      if (error) {
+        console.warn('Error marking news as read:', error.message);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.warn('markNewsAsRead exception:', e);
+      return false;
+    }
   },
 
   // -----------------------------------------

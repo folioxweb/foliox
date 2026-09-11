@@ -39,6 +39,28 @@ describe('adminService', () => {
       expect(res.is_admin).toBe(false);
       expect(res.role).toBeNull();
     });
+
+    it('deduplicates concurrent in-flight calls to getAdminStatus', async () => {
+      let resolveRpc;
+      const delayedPromise = new Promise((resolve) => {
+        resolveRpc = resolve;
+      });
+      supabase.rpc.mockReturnValueOnce(delayedPromise);
+
+      // Fire two concurrent calls
+      const call1 = adminService.getAdminStatus();
+      const call2 = adminService.getAdminStatus();
+
+      resolveRpc({
+        data: { is_admin: true, role: 'ADMIN', email: 'admin@foliox.com' },
+        error: null,
+      });
+
+      const [res1, res2] = await Promise.all([call1, call2]);
+      expect(supabase.rpc).toHaveBeenCalledTimes(1);
+      expect(res1).toEqual(res2);
+      expect(res1.is_admin).toBe(true);
+    });
   });
 
   describe('listAppAdmins', () => {

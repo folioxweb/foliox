@@ -19,19 +19,20 @@ import { api } from '../services/apiClient';
 import { usePortfolio } from '../context/PortfolioContext';
 
 /**
- * Sorts a news array: most-recent publishedDate first,
- * then most-recent publishedTime within the same date.
+ * Sorts a news array: most-recent publishedAt first (exact timestamp descending).
  */
-function sortByDateThenTime(articles) {
+function sortByDate(articles) {
   return [...articles].sort((a, b) => {
-    const dateCmp = (b.publishedDate || '').localeCompare(a.publishedDate || '');
-    if (dateCmp !== 0) return dateCmp;
-    return (b.publishedTime || '').localeCompare(a.publishedTime || '');
+    const tA = new Date(a.publishedAt || a.published_at || a.publishedDate || a.date || 0).getTime();
+    const tB = new Date(b.publishedAt || b.published_at || b.publishedDate || b.date || 0).getTime();
+    return tB - tA;
   });
 }
 
 export function useNewsData(mode, symbol, enabled = true) {
-  const { prefetchedNews, prefetchedStockNews } = usePortfolio();
+  const portfolioContext = usePortfolio();
+  const prefetchedNews = portfolioContext?.prefetchedNews || portfolioContext?.state?.news;
+  const prefetchedStockNews = portfolioContext?.prefetchedStockNews || portfolioContext?.state?.stockNews;
 
   // Strip any exchange prefix like "NSE:" or "BSE:" → "HDFCBANK"
   const cleanSymbol = symbol ? symbol.replace(/^[^:]+:/, '') : null;
@@ -39,16 +40,27 @@ export function useNewsData(mode, symbol, enabled = true) {
   // ── Seed from prefetch if available ──────────────────────────────────────
   function getPrefetchedNews() {
     if (mode === 'stock' && cleanSymbol) {
+      // 1. Check direct stock prefetched cache
       const stockPrefetched = prefetchedStockNews?.[cleanSymbol]?.data;
       if (Array.isArray(stockPrefetched) && stockPrefetched.length > 0) {
-        return sortByDateThenTime(stockPrefetched);
+        return sortByDate(stockPrefetched);
+      }
+
+      // 2. Filter from all-news cache in memory if available
+      const allPrefetched = prefetchedNews?.data;
+      if (Array.isArray(allPrefetched) && allPrefetched.length > 0) {
+        const filtered = allPrefetched.filter(a => 
+          a.symbol === cleanSymbol || 
+          (Array.isArray(a.symbols) && a.symbols.includes(cleanSymbol))
+        );
+        if (filtered.length > 0) return sortByDate(filtered);
       }
       return null;
     }
 
     const allPrefetched = prefetchedNews?.data;
     if (Array.isArray(allPrefetched) && allPrefetched.length > 0) {
-      return sortByDateThenTime(allPrefetched);
+      return sortByDate(allPrefetched);
     }
     return null;
   }
@@ -80,7 +92,7 @@ export function useNewsData(mode, symbol, enabled = true) {
       } else {
         data = await api.getNews();
       }
-      setLocalNews(Array.isArray(data) ? sortByDateThenTime(data) : []);
+      setLocalNews(Array.isArray(data) ? sortByDate(data) : []);
     } catch (err) {
       setError(err?.message || 'Failed to load news');
       setLocalNews([]);

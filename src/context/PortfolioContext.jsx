@@ -98,6 +98,34 @@ function portfolioReducer(state, action) {
         },
       };
 
+    case 'STOCK_NEWS_BATCH_SUCCESS': {
+      const newStockNews = { ...state.stockNews };
+      Object.entries(action.data || {}).forEach(([symbol, items]) => {
+        newStockNews[symbol] = { data: items, loading: false, error: null };
+      });
+      return { ...state, stockNews: newStockNews };
+    }
+
+    case 'MARK_NEWS_READ': {
+      const markReadInArray = (arr) =>
+        (arr || []).map((a) => (a.guid === action.guid ? { ...a, isRead: true } : a));
+
+      const updatedNewsData = markReadInArray(state.news.data);
+      const updatedStockMap = {};
+      Object.entries(state.stockNews || {}).forEach(([sym, val]) => {
+        updatedStockMap[sym] = {
+          ...val,
+          data: markReadInArray(val.data),
+        };
+      });
+
+      return {
+        ...state,
+        news: { ...state.news, data: updatedNewsData },
+        stockNews: updatedStockMap,
+      };
+    }
+
     default:
       return state;
   }
@@ -144,6 +172,7 @@ export function PortfolioProvider({ children }) {
   
   const liveRefreshInFlight = useRef(false);
   const refreshInProgress = useRef(false);
+  const newsPrefetchedRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchEndpoint = useCallback(async (endpoint, apiFn) => {
@@ -250,8 +279,27 @@ export function PortfolioProvider({ children }) {
       if (isSupabase) {
         promises.push(
           api.getNews().then(newsData => {
+            newsPrefetchedRef.current = true;
             if (Array.isArray(newsData)) {
               dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
+
+              const stockNewsMap = {};
+              newsData.forEach((article) => {
+                if (article.symbol) {
+                  if (!stockNewsMap[article.symbol]) stockNewsMap[article.symbol] = [];
+                  stockNewsMap[article.symbol].push(article);
+                }
+                if (Array.isArray(article.symbols)) {
+                  article.symbols.forEach((sym) => {
+                    if (!stockNewsMap[sym]) stockNewsMap[sym] = [];
+                    if (!stockNewsMap[sym].some((a) => a.guid === article.guid)) {
+                      stockNewsMap[sym].push(article);
+                    }
+                  });
+                }
+              });
+
+              dispatch({ type: 'STOCK_NEWS_BATCH_SUCCESS', data: stockNewsMap });
             }
           }).catch(e => console.warn('[Prefetch] News failed silently:', e?.message))
         );
@@ -307,45 +355,45 @@ export function PortfolioProvider({ children }) {
 
   const prefetchSecondaryData = useCallback((portfolioData) => {
     if (!isLoggedIn) return;
+    if (newsPrefetchedRef.current) return;
     // Delay prefetch slightly to let the critical path render smoothly
     setTimeout(async () => {
-      const isSupabase = localStorage.getItem('backend_target') === 'SUPABASE' || (!localStorage.getItem('backend_target') && import.meta.env.VITE_BACKEND_TARGET === 'SUPABASE');
+      if (newsPrefetchedRef.current) return;
+      try {
+        // 1. Fetch news once (includes active holdings + macro market news)
+        const newsData = await api.getNews();
+        newsPrefetchedRef.current = true;
+        if (Array.isArray(newsData)) {
+          dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
 
-      if (!isSupabase) {
-        // 1. Prefetch all news (cached for NewsPage)
-        try {
-          const newsData = await api.getNews();
-          if (Array.isArray(newsData)) {
-            dispatch({ type: 'NEWS_PREFETCH_SUCCESS', data: newsData });
-          }
-        } catch (e) {
-          console.warn('[Prefetch] News failed silently:', e?.message);
-        }
-      }
-
-      // 2. Prefetch news for every stock + ETF symbol in parallel
-      const stockSymbols = (portfolioData?.stocks?.data || []).map((s) => s.symbol).filter(Boolean);
-      const etfSymbols  = (portfolioData?.etfs?.data  || []).map((e) => e.symbol).filter(Boolean);
-      const allSymbols  = [...new Set([...stockSymbols, ...etfSymbols])]
-        .map((s) => s.replace(/^[^:]+:/, '')); // strip NSE:/BSE: prefix
-
-      await Promise.allSettled(
-        allSymbols.map(async (symbol) => {
-          try {
-            const stockNews = await api.getStockNews(symbol);
-            if (Array.isArray(stockNews)) {
-              dispatch({ type: 'STOCK_NEWS_PREFETCH_SUCCESS', symbol, data: stockNews });
+          // 2. Batch-group news by symbol in-memory with zero extra network calls
+          const stockNewsMap = {};
+          newsData.forEach((article) => {
+            if (article.symbol) {
+              if (!stockNewsMap[article.symbol]) stockNewsMap[article.symbol] = [];
+              stockNewsMap[article.symbol].push(article);
             }
-          } catch (e) {
-            console.warn(`[Prefetch] News for ${symbol} failed:`, e?.message);
-          }
-        })
-      );
+            if (Array.isArray(article.symbols)) {
+              article.symbols.forEach((sym) => {
+                if (!stockNewsMap[sym]) stockNewsMap[sym] = [];
+                if (!stockNewsMap[sym].some((a) => a.guid === article.guid)) {
+                  stockNewsMap[sym].push(article);
+                }
+              });
+            }
+          });
+
+          dispatch({ type: 'STOCK_NEWS_BATCH_SUCCESS', data: stockNewsMap });
+        }
+      } catch (e) {
+        console.warn('[Prefetch] News failed silently:', e?.message);
+      }
     }, PREFETCH_DELAY_MS);
   }, [isLoggedIn]);
 
   useEffect(() => {
     if (!isLoggedIn) {
+      newsPrefetchedRef.current = false;
       dispatch({ type: 'RESET_STATE' });
       return;
     }
@@ -425,6 +473,12 @@ export function PortfolioProvider({ children }) {
     addPaperHolding,
     updatePaperHolding,
     sellPaperHolding,
+    prefetchedNews: state.news,
+    prefetchedStockNews: state.stockNews,
+    markNewsAsRead: (guid) => {
+      dispatch({ type: 'MARK_NEWS_READ', guid });
+      api.markNewsAsRead(guid).catch((err) => console.warn('markNewsAsRead failed:', err));
+    },
     updatePaperCapital,
     resetPaperPortfolio,
   };
