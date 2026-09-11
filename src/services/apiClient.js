@@ -264,6 +264,7 @@ const realApi = {
   addHolding: (payload) => apiPost({ action: "addHolding", ...payload }),
   updateFD: (payload) => apiPost({ action: "updateFD", ...payload }),
   deleteFD: (payload) => apiPost({ action: "deleteFD", ...payload }),
+  deleteHolding: (payload) => apiPost({ action: "deleteHolding", ...payload }),
 
   // Watchlist & Paper Trading
   searchNseStocks: (query) => supabaseApi.searchNseStocks(query),
@@ -282,6 +283,10 @@ const realApi = {
   getIpos: () => supabaseApi.getIpos(),
   getIpoById: (id) => supabaseApi.getIpoById(id),
   getIpoGmpHistory: (id) => supabaseApi.getIpoGmpHistory(id),
+
+  // Fund Holdings & Sector Breakdown
+  getFundHoldings: (fundAssetId, isin) => supabaseApi.getFundHoldings(fundAssetId, isin),
+  syncFundHoldings: (payload) => supabaseApi.syncFundHoldings(payload),
 };
 
 function getActiveApi() {

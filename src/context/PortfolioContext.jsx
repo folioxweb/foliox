@@ -343,6 +343,7 @@ export function PortfolioProvider({ children }) {
   const addHolding = useCallback((payload) => executeHoldingAction(api.addHolding, payload), [executeHoldingAction]);
   const updateFD = useCallback((payload) => executeHoldingAction(api.updateFD, payload), [executeHoldingAction]);
   const deleteFD = useCallback((payload) => executeHoldingAction(api.deleteFD, payload), [executeHoldingAction]);
+  const deleteHolding = useCallback((payload) => executeHoldingAction(api.deleteHolding, payload), [executeHoldingAction]);
 
   // Paper & Watchlist actions
   const addWatchlistItem = useCallback((payload) => executeHoldingAction(api.addWatchlistItem, payload), [executeHoldingAction]);
@@ -468,6 +469,7 @@ export function PortfolioProvider({ children }) {
     addHolding,
     updateFD,
     deleteFD,
+    deleteHolding,
     addWatchlistItem,
     removeWatchlistItem,
     addPaperHolding,

@@ -841,6 +841,16 @@ const realMockApi = {
     return { success: true };
   },
 
+  deleteHolding: async (payload) => {
+    await new Promise(resolve => setTimeout(resolve, MOCK_DELAY_MS));
+    const target = payload.assetType === "mutualFunds" ? mutualFunds : (payload.assetType === "etfs" ? etfs : stocks);
+    const idx = target.findIndex(x => (payload.assetId && x.assetId === payload.assetId) || (payload.symbol && x.symbol === payload.symbol) || (payload.name && x.name === payload.name));
+    if (idx !== -1) {
+      target.splice(idx, 1);
+    }
+    return { success: true };
+  },
+
   sendVoiceQuery: async (query) => {
     await new Promise(resolve => setTimeout(resolve, 50));
     const q = (query || "").toLowerCase();
@@ -865,6 +875,62 @@ const realMockApi = {
       intent: "PORTFOLIO_PNL",
       speechText: "Your total portfolio is currently showing a net gain of ₹2,45,000 across all assets.",
       data: null
+    };
+  },
+
+  getFundHoldings: async (_fundAssetId, _isin) => {
+    await new Promise(resolve => setTimeout(resolve, 150));
+    return {
+      stocks: [
+        { name: "HDFC Bank Ltd.", weight: 8.42 },
+        { name: "ICICI Bank Ltd.", weight: 7.15 },
+        { name: "Infosys Ltd.", weight: 5.88 },
+        { name: "Reliance Industries Ltd.", weight: 5.34 },
+        { name: "Tata Consultancy Services Ltd.", weight: 4.79 },
+        { name: "ITC Ltd.", weight: 4.12 },
+        { name: "Larsen & Toubro Ltd.", weight: 3.95 },
+        { name: "Bajaj Finance Ltd.", weight: 3.28 },
+        { name: "Bharti Airtel Ltd.", weight: 2.91 },
+        { name: "Axis Bank Ltd.", weight: 2.64 },
+        { name: "Sun Pharmaceutical Industries Ltd.", weight: 2.25 },
+        { name: "Maruti Suzuki India Ltd.", weight: 1.94 },
+        { name: "Kotak Mahindra Bank Ltd.", weight: 1.82 },
+        { name: "Mahindra & Mahindra Ltd.", weight: 1.67 },
+        { name: "State Bank of India", weight: 1.55 }
+      ],
+      sectors: [
+        { name: "Financial Services", weight: 31.45 },
+        { name: "Technology", weight: 17.20 },
+        { name: "Energy", weight: 10.35 },
+        { name: "Consumer Defensive", weight: 8.62 },
+        { name: "Healthcare", weight: 7.84 },
+        { name: "Industrials", weight: 6.90 },
+        { name: "Automobile and Auto Components", weight: 5.23 },
+        { name: "Telecommunication", weight: 4.10 },
+        { name: "Basic Materials", weight: 3.12 },
+        { name: "Utilities", weight: 2.45 }
+      ]
+    };
+  },
+
+  syncFundHoldings: async (payload) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return {
+      success: true,
+      asset_id: payload?.assetId,
+      isin: payload?.isin,
+      stocks: [
+        { name: "HDFC Bank Ltd.", weight: 8.42 },
+        { name: "ICICI Bank Ltd.", weight: 7.15 },
+        { name: "Infosys Ltd.", weight: 5.88 },
+        { name: "Reliance Industries Ltd.", weight: 5.34 },
+        { name: "Tata Consultancy Services Ltd.", weight: 4.79 }
+      ],
+      sectors: [
+        { name: "Financial Services", weight: 31.45 },
+        { name: "Technology", weight: 17.20 },
+        { name: "Energy", weight: 10.35 }
+      ]
     };
   }
 };

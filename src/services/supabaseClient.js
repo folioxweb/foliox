@@ -115,6 +115,8 @@ function normalizeHoldingItem(h, idx, sipMap = new Map()) {
     srNo: idx + 1,
     holdingId: h.asset_id,
     assetId: h.asset_id,
+    txId: h.tx_id || null,
+    tx_id: h.tx_id || null,
     assetType,
     asset_type: h.asset_type || (isStock ? 'STOCK' : 'UNKNOWN'),
     symbol: h.symbol,
@@ -596,6 +598,118 @@ export const supabaseApi = {
     } finally {
       inFlightMutualFunds = null;
     }
+  },
+
+  getFundHoldings: async (fundAssetId, isin = null) => {
+    if (!fundAssetId && !isin) return { stocks: [], sectors: [] };
+
+    try {
+      // 1. Direct match by fund_asset_id
+      let { data, error } = await supabase
+        .from('fund_holdings')
+        .select('*')
+        .eq('fund_asset_id', fundAssetId);
+
+      if (error) throw error;
+
+      // 2. If empty and we have an ISIN (or can resolve ISIN from asset), check sibling assets
+      if (!data || data.length === 0) {
+        let cleanIsin = isin;
+        if (!cleanIsin && fundAssetId) {
+          const { data: aRow } = await supabase
+            .from('assets')
+            .select('isin')
+            .eq('asset_id', fundAssetId)
+            .maybeSingle();
+          if (aRow?.isin) cleanIsin = aRow.isin;
+        }
+
+        if (cleanIsin) {
+          const { data: matchedAssets } = await supabase
+            .from('assets')
+            .select('asset_id')
+            .eq('isin', cleanIsin);
+
+          const candidateIds = (matchedAssets || [])
+            .map((a) => a.asset_id)
+            .filter((id) => id !== fundAssetId);
+
+          if (candidateIds.length > 0) {
+            const { data: isinHoldings } = await supabase
+              .from('fund_holdings')
+              .select('*')
+              .in('fund_asset_id', candidateIds);
+
+            if (isinHoldings && isinHoldings.length > 0) {
+              data = isinHoldings;
+            }
+          }
+        }
+      }
+
+      // If holdings found from database (direct or via ISIN)
+      if (data && data.length > 0) {
+        // Group by name in case multiple siblings were combined
+        const stockMap = new Map();
+        const sectorMap = new Map();
+
+        data.forEach((d) => {
+          const weight = Number(d.weight_percentage);
+          if (d.holding_type === 'STOCK') {
+            if (!stockMap.has(d.holding_name) || stockMap.get(d.holding_name) < weight) {
+              stockMap.set(d.holding_name, weight);
+            }
+          } else if (d.holding_type === 'SECTOR') {
+            if (!sectorMap.has(d.holding_name) || sectorMap.get(d.holding_name) < weight) {
+              sectorMap.set(d.holding_name, weight);
+            }
+          }
+        });
+
+        const stocks = Array.from(stockMap.entries())
+          .map(([name, weight]) => ({ name, weight }))
+          .sort((a, b) => b.weight - a.weight);
+
+        const sectors = Array.from(sectorMap.entries())
+          .map(([name, weight]) => ({ name, weight }))
+          .sort((a, b) => b.weight - a.weight);
+
+        return { stocks, sectors };
+      }
+
+      // 3. Fallback: attempt on-demand sync via edge function
+      if (isin || fundAssetId) {
+        try {
+          const { data: syncRes, error: syncErr } = await supabase.functions.invoke('sync-fund-holdings', {
+            body: { asset_id: fundAssetId, isin: isin || undefined },
+          });
+
+          if (!syncErr && syncRes?.stocks && syncRes?.sectors) {
+            return {
+              stocks: syncRes.stocks || [],
+              sectors: syncRes.sectors || [],
+              message: syncRes.message,
+            };
+          }
+        } catch (_syncErr) {
+          // Gracefully continue
+        }
+      }
+
+      return { stocks: [], sectors: [] };
+    } catch (err) {
+      console.warn('Failed to fetch fund holdings:', err);
+      return { stocks: [], sectors: [] };
+    }
+  },
+
+  syncFundHoldings: async ({ assetId, isin }) => {
+    if (!assetId && !isin) throw new Error('assetId or isin required for sync');
+    const { data, error } = await supabase.functions.invoke('sync-fund-holdings', {
+      body: { asset_id: assetId, isin },
+    });
+    if (error) throw error;
+    return data;
   },
 
   getFDs: async () => {
@@ -1226,6 +1340,7 @@ export const supabaseApi = {
         tx_type: 'BUY',
         quantity: Number(payload.quantity),
         price: Number(payload.price),
+        cost_price: Number(payload.price),
         tx_date: new Date().toISOString()
       }).select().single();
       if (txErr) throw txErr;
@@ -1257,17 +1372,36 @@ export const supabaseApi = {
         await supabase.from('assets').update(updates).eq('asset_id', targetAssetId);
       }
 
-      await supabase.from('transactions').delete().eq('asset_id', targetAssetId);
+      let txQuery = supabase.from('transactions').select('tx_id').eq('asset_id', targetAssetId);
+      if (userId) txQuery = txQuery.eq('user_id', userId);
+      const { data: existingTxs } = await txQuery.order('tx_date', { ascending: true });
 
-      const { data: tx, error: txErr } = await supabase.from('transactions').insert({
-        asset_id: targetAssetId,
-        tx_type: 'BUY',
-        quantity: targetQty,
-        price: targetPrice,
-        tx_date: new Date().toISOString()
-      }).select().single();
-      if (txErr) throw txErr;
-      return { success: true, transaction: tx };
+      if (existingTxs && existingTxs.length > 0) {
+        const { data: tx, error: txErr } = await supabase.from('transactions').update({
+          quantity: targetQty,
+          price: targetPrice,
+          cost_price: targetPrice,
+          tx_type: 'BUY'
+        }).eq('tx_id', existingTxs[0].tx_id).select().single();
+        if (txErr) throw txErr;
+
+        if (existingTxs.length > 1) {
+          const extraIds = existingTxs.slice(1).map(t => t.tx_id);
+          await supabase.from('transactions').delete().in('tx_id', extraIds);
+        }
+        return { success: true, transaction: tx };
+      } else {
+        const { data: tx, error: txErr } = await supabase.from('transactions').insert({
+          asset_id: targetAssetId,
+          tx_type: 'BUY',
+          quantity: targetQty,
+          price: targetPrice,
+          cost_price: targetPrice,
+          tx_date: new Date().toISOString()
+        }).select().single();
+        if (txErr) throw txErr;
+        return { success: true, transaction: tx };
+      }
     }
 
     // 3. SELL HOLDING
@@ -1283,21 +1417,26 @@ export const supabaseApi = {
 
       const curQty = Number(holding?.total_quantity || 0);
       const sellPrice = Number(payload.price) > 0 ? Number(payload.price) : Number(holding?.current_price || holding?.avg_price || 0);
+      const avgPrice = Number(holding?.avg_price || 0);
+      const realizedGain = (sellPrice - avgPrice) * sellQty;
 
-      if (sellQty >= curQty) {
-        await supabase.from('transactions').delete().eq('asset_id', targetAssetId);
-        return { success: true, fullySold: true };
-      } else {
-        const { data: tx, error: txErr } = await supabase.from('transactions').insert({
-          asset_id: targetAssetId,
-          tx_type: 'SELL',
-          quantity: -Math.abs(sellQty),
-          price: sellPrice,
-          tx_date: new Date().toISOString()
-        }).select().single();
-        if (txErr) throw txErr;
-        return { success: true, fullySold: false, transaction: tx };
+      const { data: tx, error: txErr } = await supabase.from('transactions').insert({
+        asset_id: targetAssetId,
+        tx_type: 'SELL',
+        quantity: -Math.abs(sellQty),
+        price: sellPrice,
+        cost_price: avgPrice,
+        realized_gain: realizedGain,
+        tx_date: new Date().toISOString()
+      }).select().single();
+      if (txErr) throw txErr;
+
+      const fullySold = (sellQty >= curQty);
+      if (fullySold) {
+        await supabase.from('mf_sip_configs').delete().eq('asset_id', targetAssetId);
       }
+
+      return { success: true, fullySold, remainingQuantity: Math.max(0, curQty - sellQty), transaction: tx };
     }
 
     // 4. FD ACTIONS
@@ -1307,17 +1446,33 @@ export const supabaseApi = {
 
     if (action === 'deleteFD') {
       const targetTxId = payload.tx_id || payload.txId;
-      const { error } = await supabase.from('transactions').delete().eq('tx_id', targetTxId);
+      const targetAssetId = payload.asset_id || payload.assetId;
+      if (!targetTxId && !targetAssetId) throw new Error('Transaction ID or Asset ID is required to delete an FD');
+
+      let delQuery = supabase.from('transactions').delete();
+      if (targetTxId) delQuery = delQuery.eq('tx_id', targetTxId);
+      else delQuery = delQuery.eq('asset_id', targetAssetId);
+
+      const { error } = await delQuery;
       if (error) throw error;
-      return { success: true, deleted: targetTxId };
+
+      if (targetAssetId) {
+        try {
+          await supabase.from('assets').delete().eq('asset_id', targetAssetId).eq('asset_type', 'FD');
+        } catch (_e) {}
+      }
+
+      return { success: true, deleted: targetTxId || targetAssetId };
     }
 
     if (action === 'updateFD') {
       const targetTxId = payload.tx_id || payload.txId;
+      const targetAssetId = payload.asset_id || payload.assetId;
       const updates = {};
       const principalVal = Number(payload.fd_principal || payload.principal || payload.price || payload.quantity || 0);
       if (principalVal > 0) {
         updates.price = principalVal;
+        updates.cost_price = principalVal;
         updates.fd_principal = principalVal;
       }
       if (payload.fd_rate || payload.interestRate) updates.fd_rate = Number(payload.fd_rate || payload.interestRate);
@@ -1325,12 +1480,40 @@ export const supabaseApi = {
       if (payload.startDate) updates.tx_date = new Date(payload.startDate).toISOString();
 
       let query = supabase.from('transactions').update(updates);
-      if (targetTxId) query = query.eq('tx_id', targetTxId);
-      else query = query.eq('asset_id', payload.assetId || payload.asset_id);
+      if (targetTxId) {
+        query = query.eq('tx_id', targetTxId);
+      } else if (targetAssetId) {
+        query = query.eq('asset_id', targetAssetId);
+      } else {
+        throw new Error('Transaction ID or Asset ID is required to update an FD');
+      }
 
       const { data: tx, error: txErr } = await query.select();
       if (txErr) throw txErr;
+
+      const newBankName = payload.name || payload.bankName;
+      if (newBankName && targetAssetId) {
+        await supabase.from('assets').update({ name: String(newBankName).trim() }).eq('asset_id', targetAssetId);
+      }
+
       return { success: true, transaction: tx };
+    }
+
+    // DELETE HOLDING
+    if (action === 'deleteHolding') {
+      const targetAssetId = payload.assetId || payload.asset_id;
+      if (!targetAssetId) throw new Error('Asset ID is required to delete holding');
+
+      let delTxQuery = supabase.from('transactions').delete().eq('asset_id', targetAssetId);
+      if (userId) delTxQuery = delTxQuery.eq('user_id', userId);
+      const { error: txErr } = await delTxQuery;
+      if (txErr) throw txErr;
+
+      let delSipQuery = supabase.from('mf_sip_configs').delete().eq('asset_id', targetAssetId);
+      if (userId) delSipQuery = delSipQuery.eq('user_id', userId);
+      await delSipQuery;
+
+      return { success: true, message: 'Position deleted successfully', deletedAssetId: targetAssetId };
     }
 
     // 5. WATCHLIST ACTIONS
@@ -1575,5 +1758,9 @@ export const supabaseApi = {
 
   deleteFD: async (payload) => {
     return supabaseApi.executeTrade({ action: 'deleteFD', ...payload });
+  },
+
+  deleteHolding: async (payload) => {
+    return supabaseApi.executeTrade({ action: 'deleteHolding', ...payload });
   },
 };
