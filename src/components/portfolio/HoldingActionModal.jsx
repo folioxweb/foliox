@@ -80,11 +80,12 @@ setSipDay("");
     let payload = null;
     try {
       setLoading(true);
+      const sellPriceVal = avg > 0 ? avg : (holding.currentPrice || holding.buyPrice || 0);
       payload = {
         assetType: holding.assetType,
         ...(holding.assetId ? { assetId: holding.assetId } : {}),
         quantity: qty,
-        price: avg
+        price: action === ACTIONS.SELL ? sellPriceVal : avg
       };
       if (holding.assetType === "mutualFunds") {
         payload.name = holding.name;
@@ -143,22 +144,18 @@ setSipDay("");
       return { totalQty, newAverage };
     }
     if (action === ACTIONS.SELL) {
-      return { remaining: Math.max(holding.quantity - qty, 0) };
+      const remaining = Math.max(holding.quantity - qty, 0);
+      const effSellPrice = avg > 0 ? avg : (holding.currentPrice || holding.buyPrice || 0);
+      const buyAvg = holding.buyPrice ?? holding.avgPrice ?? holding.price ?? 0;
+      const realizedGain = qty > 0 && effSellPrice > 0 ? qty * (effSellPrice - buyAvg) : 0;
+      const totalProceeds = qty > 0 ? qty * effSellPrice : 0;
+      return { remaining, effSellPrice, realizedGain, totalProceeds };
     }
-    if (
-
-      action === ACTIONS.UPDATE
-
-    ) {
-
+    if (action === ACTIONS.UPDATE) {
       return {
-
         quantity: qty,
-
         average: avg
-
       };
-
     }
     return null;
   }, [action, qty, avg, holding]);
@@ -220,20 +217,20 @@ setSipDay("");
             style={inputStyle}
             className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
           />
-          {action !== ACTIONS.SELL && (
-            <input
-              type="number"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder={
-                holding?.assetType === "mutualFunds"
-                  ? (action === ACTIONS.UPDATE ? "Avg NAV" : "Buy NAV")
-                  : (action === ACTIONS.UPDATE ? "Average Price" : "Buy Price")
-              }
-              style={inputStyle}
-              className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
-            />
-          )}
+          <input
+            type="number"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            placeholder={
+              action === ACTIONS.SELL
+                ? (holding?.assetType === "mutualFunds" ? "Selling NAV" : "Selling Price (₹)")
+                : (holding?.assetType === "mutualFunds"
+                    ? (action === ACTIONS.UPDATE ? "Avg NAV" : "Buy NAV")
+                    : (action === ACTIONS.UPDATE ? "Average Price" : "Buy Price"))
+            }
+            style={inputStyle}
+            className="w-full focus:ring-1 focus:ring-[var(--emerald)]"
+          />
           {action === ACTIONS.UPDATE && holding?.assetType === "mutualFunds" && (
             <div className="flex flex-col gap-3 p-3 rounded-2xl" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
               <div className="flex items-center justify-between px-1">
@@ -285,7 +282,19 @@ setSipDay("");
               </>
             )}
             {action === ACTIONS.SELL && (
-              <p className="text-sm">Remaining Quantity: <b style={{ color: 'var(--text)' }}>{preview.remaining}</b></p>
+              <>
+                <p className="text-sm">Remaining Quantity: <b style={{ color: 'var(--text)' }}>{preview.remaining}</b></p>
+                {preview.totalProceeds > 0 && (
+                  <p className="text-sm">Estimated Proceeds: <b style={{ color: 'var(--text)' }}>₹{preview.totalProceeds.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</b></p>
+                )}
+                {preview.realizedGain !== 0 && (
+                  <p className="text-sm">
+                    Estimated Realized P&L: <b style={{ color: preview.realizedGain >= 0 ? 'var(--profit)' : 'var(--loss)' }}>
+                      {preview.realizedGain >= 0 ? '+' : ''}₹{preview.realizedGain.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </b>
+                  </p>
+                )}
+              </>
             )}
             {action === ACTIONS.UPDATE && (
               <>
