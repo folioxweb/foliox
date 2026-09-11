@@ -492,6 +492,12 @@ const realMockApi = {
     return limit ? filtered.slice(0, limit) : filtered;
   },
 
+  markNewsAsRead: async (guid) => {
+    const article = MOCK_NEWS.find(n => n.guid === guid);
+    if (article) article.isRead = true;
+    return true;
+  },
+
   // Company Documents API
   getCompanyDocuments: async (symbol) => {
     await new Promise(resolve => setTimeout(resolve, 600));

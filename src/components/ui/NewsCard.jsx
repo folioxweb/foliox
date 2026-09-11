@@ -1,4 +1,6 @@
-import { ExternalLink, Clock, Newspaper } from 'lucide-react';
+import { ExternalLink, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { usePortfolio } from '../../context/PortfolioContext';
 
 /**
  * Converts a publishedAt ISO string or (date + time) to a relative label.
@@ -64,27 +66,42 @@ export default function NewsCard({ article, showCompany = false }) {
     link,
     isRead,
     category,
+    symbol
   } = article;
+
+  const { markNewsAsRead } = usePortfolio() || {};
+  const [readState, setReadState] = useState(Boolean(isRead));
+
+  useEffect(() => {
+    setReadState(Boolean(isRead));
+  }, [isRead]);
 
   const articleUrl = link || article.url;
 
   function handleClick(e) {
     e.stopPropagation();
+    if (!readState && guid) {
+      setReadState(true);
+      if (typeof markNewsAsRead === 'function') {
+        markNewsAsRead(guid);
+      }
+    }
     if (articleUrl) {
       window.open(articleUrl, '_blank', 'noopener,noreferrer');
     }
   }
 
   const relativeTime = formatRelativeTime(publishedAt);
+  const isMacro = !symbol || symbol === 'MARKET' || company === 'Market Overview';
 
   return (
     <button
       type="button"
       id={`news-card-${guid}`}
       onClick={handleClick}
-      className="w-full text-left"
+      className="w-full text-left cursor-pointer transition-opacity"
       aria-label={`Read article: ${title}`}
-      style={{ opacity: isRead ? 0.72 : 1 }}
+      style={{ opacity: readState ? 0.65 : 1 }}
     >
       <div
         className="flex items-start gap-3 py-3.5"
@@ -92,7 +109,7 @@ export default function NewsCard({ article, showCompany = false }) {
       >
         {/* Unread indicator dot */}
         <div className="flex-shrink-0 mt-1.5 flex items-center justify-center w-4">
-          {!isRead && (
+          {!readState && (
             <span
               className="block w-2 h-2 rounded-full"
               style={{ background: 'var(--emerald)', flexShrink: 0 }}
@@ -103,13 +120,13 @@ export default function NewsCard({ article, showCompany = false }) {
 
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-          {/* Company name (shown in all-news feed) */}
-          {showCompany && company && (
+          {/* Company / Market Overview name (shown in all-news feed) */}
+          {showCompany && (
             <span
               className="text-[11px] font-bold uppercase tracking-wider"
-              style={{ color: 'var(--emerald)' }}
+              style={{ color: isMacro ? '#38BDF8' : 'var(--emerald)' }}
             >
-              {company} · {article.symbol}
+              {isMacro ? 'Market Overview' : `${company || symbol} · ${symbol}`}
             </span>
           )}
 

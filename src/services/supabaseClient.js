@@ -614,25 +614,50 @@ export const supabaseApi = {
       publishedAt: n.published_at,
       link: n.url,
       url: n.url,
-      isRead: n.is_read,
+      isRead: Boolean(n.is_read),
+      isBookmarked: Boolean(n.is_bookmarked),
       company: n.company_name || n.symbol || '',
-      symbol: n.symbol || ''
+      symbol: n.symbol || '',
+      symbols: n.symbols || [],
+      publisherDomain: n.publisher_domain,
+      publisherName: n.publisher_name
     }));
   },
 
   getStockNews: async (symbol, limit) => {
+    // 1. Query news matching the symbol directly or via symbols array
     let query = supabase
       .from('news')
-      .select('guid, title, source, category, published_at, url, is_read, assets!inner(symbol, name)')
-      .ilike('assets.symbol', `%${symbol}%`)
+      .select('guid, title, source, category, published_at, url, symbols, publisher_domain, publisher_name, assets(symbol, name)')
+      .or(`symbols.cs.{${symbol}},assets.symbol.eq.${symbol}`)
       .order('published_at', { ascending: false });
 
     if (limit) query = query.limit(limit);
 
-    const { data, error } = await query;
+    let { data, error } = await query;
     if (error) {
-      console.warn('Stock news error:', error.message);
-      return [];
+      // Fallback if OR syntax encounters any issue
+      let fallbackQuery = supabase
+        .from('news')
+        .select('guid, title, source, category, published_at, url, symbols, publisher_domain, publisher_name')
+        .contains('symbols', [symbol])
+        .order('published_at', { ascending: false });
+      if (limit) fallbackQuery = fallbackQuery.limit(limit);
+      const fallbackRes = await fallbackQuery;
+      data = fallbackRes.data || [];
+    }
+
+    // 2. Query user read status if authenticated
+    const guids = (data || []).map(n => n.guid);
+    const readGuids = new Set();
+    if (guids.length > 0) {
+      const { data: interactions } = await supabase
+        .from('user_news_interactions')
+        .select('guid, is_read')
+        .in('guid', guids);
+      (interactions || []).forEach(i => {
+        if (i.is_read) readGuids.add(i.guid);
+      });
     }
 
     return (data || []).map(n => ({
@@ -643,10 +668,39 @@ export const supabaseApi = {
       publishedAt: n.published_at,
       link: n.url,
       url: n.url,
-      isRead: n.is_read,
+      isRead: readGuids.has(n.guid),
       company: n.assets?.name || n.assets?.symbol || symbol,
-      symbol: n.assets?.symbol || symbol
+      symbol: n.assets?.symbol || symbol,
+      symbols: n.symbols || [symbol],
+      publisherDomain: n.publisher_domain,
+      publisherName: n.publisher_name
     }));
+  },
+
+  markNewsAsRead: async (guid) => {
+    if (!guid) return false;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { error } = await supabase
+        .from('user_news_interactions')
+        .upsert({
+          user_id: user.id,
+          guid,
+          is_read: true,
+          read_at: new Date().toISOString()
+        }, { onConflict: 'user_id,guid' });
+
+      if (error) {
+        console.warn('Error marking news as read:', error.message);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.warn('markNewsAsRead exception:', e);
+      return false;
+    }
   },
 
   // -----------------------------------------
