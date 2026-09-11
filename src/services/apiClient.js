@@ -283,6 +283,10 @@ const realApi = {
   getIpos: () => supabaseApi.getIpos(),
   getIpoById: (id) => supabaseApi.getIpoById(id),
   getIpoGmpHistory: (id) => supabaseApi.getIpoGmpHistory(id),
+
+  // Fund Holdings & Sector Breakdown
+  getFundHoldings: (fundAssetId, isin) => supabaseApi.getFundHoldings(fundAssetId, isin),
+  syncFundHoldings: (payload) => supabaseApi.syncFundHoldings(payload),
 };
 
 function getActiveApi() {

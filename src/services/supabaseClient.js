@@ -600,6 +600,61 @@ export const supabaseApi = {
     }
   },
 
+  getFundHoldings: async (fundAssetId, isin = null) => {
+    if (!fundAssetId) return { stocks: [], sectors: [] };
+
+    try {
+      const { data, error } = await supabase
+        .from('fund_holdings')
+        .select('*')
+        .eq('fund_asset_id', fundAssetId);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const stocks = data
+          .filter((d) => d.holding_type === 'STOCK')
+          .map((d) => ({ name: d.holding_name, weight: Number(d.weight_percentage) }))
+          .sort((a, b) => b.weight - a.weight);
+
+        const sectors = data
+          .filter((d) => d.holding_type === 'SECTOR')
+          .map((d) => ({ name: d.holding_name, weight: Number(d.weight_percentage) }))
+          .sort((a, b) => b.weight - a.weight);
+
+        return { stocks, sectors };
+      }
+
+      // If empty and we have an ISIN or fundAssetId, attempt auto on-demand sync via edge function
+      if (isin || fundAssetId) {
+        const { data: syncRes, error: syncErr } = await supabase.functions.invoke('sync-fund-holdings', {
+          body: { asset_id: fundAssetId, isin: isin || undefined },
+        });
+
+        if (!syncErr && syncRes?.stocks && syncRes?.sectors) {
+          return {
+            stocks: syncRes.stocks || [],
+            sectors: syncRes.sectors || [],
+          };
+        }
+      }
+
+      return { stocks: [], sectors: [] };
+    } catch (err) {
+      console.warn('Failed to fetch fund holdings:', err);
+      return { stocks: [], sectors: [] };
+    }
+  },
+
+  syncFundHoldings: async ({ assetId, isin }) => {
+    if (!assetId && !isin) throw new Error('assetId or isin required for sync');
+    const { data, error } = await supabase.functions.invoke('sync-fund-holdings', {
+      body: { asset_id: assetId, isin },
+    });
+    if (error) throw error;
+    return data;
+  },
+
   getFDs: async () => {
     if (inFlightFDs) {
       const res = await inFlightFDs;

@@ -9,6 +9,7 @@ import HoldingActionModal from '../../components/portfolio/HoldingActionModal';
 import FDActionModal from '../../components/portfolio/FDActionModal';
 import CompanyReportsScreen from '../News/CompanyReportsScreen';
 import CandlestickChart from '../../components/charts/CandlestickChart';
+import FundHoldingsBreakdown from '../../components/portfolio/FundHoldingsBreakdown';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePortfolio } from '../../context/PortfolioContext';
 
@@ -181,8 +182,8 @@ export default function DetailScreen({ holding: propHolding }) {
     dayChangePercent: rawDayChangePercent,
   } = holding;
 
-  const isFD = holding.assetType === "fds";
-  const isMF = holding.assetType === "mutualFunds" || holding.assetType === "mutual_funds" || holding.category === "Mutual Fund";
+  const isFD = holding.assetType === "fds" || holding.asset_type === "FD";
+  const isMF = holding.assetType === "mutualFunds" || holding.assetType === "mutual_funds" || holding.category === "Mutual Fund" || holding.asset_type === "MF";
   const isStockOrETF = !isFD && !isMF;
   const isStock = !isFD && !isMF && holding.assetType !== "etfs" && holding.asset_type !== "ETF" && holding.category !== "ETF";
 
@@ -278,7 +279,7 @@ export default function DetailScreen({ holding: propHolding }) {
         )}
       </div>
 
-      {/* ── Groww Interactive Stock Chart ────────────────────────── */}
+      {/* ── Groww Interactive Stock Chart (Stocks and ETFs only; no chart for MFs) ── */}
       {isStockOrETF && (
         <div className="mb-4">
           <CandlestickChart
@@ -288,6 +289,11 @@ export default function DetailScreen({ holding: propHolding }) {
             height={260}
           />
         </div>
+      )}
+
+      {/* ── Mutual Fund Deep Dive: Underlying Assets & Sector Breakdown ── */}
+      {isMF && (
+        <FundHoldingsBreakdown holding={holding} />
       )}
 
       {/* ── Fundamentals & Position Details ────────────────────────── */}
