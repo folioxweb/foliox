@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePortfolio } from "../../context/PortfolioContext";
 import Modal from "../ui/Modal";
 
@@ -98,6 +99,7 @@ function DateInput({ label, value, onChange, disabled, style: inputStyle }) {
 }
 
 export default function FDActionModal({ holding, isOpen, onClose }) {
+  const navigate = useNavigate();
   const { updateFD, deleteFD } = usePortfolio();
   const [action, setAction] = useState(ACTIONS.UPDATE);
   const [bankName, setBankName] = useState("");
@@ -151,6 +153,9 @@ export default function FDActionModal({ holding, isOpen, onClose }) {
           txId: holding?.txId || holding?.tx_id,
           srNo: holding?.srNo,
         });
+        onClose();
+        navigate('/portfolio', { replace: true });
+        return;
       }
       onClose();
     } catch (err) {

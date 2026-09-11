@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePortfolio } from "../../context/PortfolioContext";
 import Modal from "../ui/Modal";
 
@@ -9,6 +10,7 @@ const ACTIONS = {
 };
 
 export default function HoldingActionModal({ holding, isOpen, onClose }) {
+  const navigate = useNavigate();
   const { buyMore, updateHolding, sellHolding } = usePortfolio();
   const [action, setAction] = useState(ACTIONS.BUY);
   const [quantity, setQuantity] = useState("");
@@ -105,12 +107,23 @@ setSipDay("");
           console.log("Sending payload:", payload);
           await updateHolding(payload);
           break;
-        case ACTIONS.SELL:
+        case ACTIONS.SELL: {
           if (qty > holding.quantity) {
             throw new Error("Sell quantity exceeds current holding.");
           }
+          const isFullySold = qty >= holding.quantity;
           await sellHolding(payload);
-          break;
+          setQuantity("");
+          setPrice("");
+          setSipEnabled(false);
+          setSipAmount("");
+          setSipDay("");
+          onClose();
+          if (isFullySold) {
+            navigate('/portfolio', { replace: true });
+          }
+          return;
+        }
       }
       setQuantity("");
       setPrice("");
