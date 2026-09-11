@@ -24,6 +24,7 @@ import {
   Zap,
   Tags,
   Newspaper,
+  Receipt,
 } from 'lucide-react';
 import RefreshButton from '../../components/ui/RefreshButton';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
@@ -34,12 +35,14 @@ import { useNavigate } from "react-router-dom";
 import NewsPage from '../News/NewsPage';
 import StockNewsScreen from '../News/StockNewsScreen';
 import CompanyReportsScreen from '../News/CompanyReportsScreen';
+import TradebookView from './TradebookView';
 
 const TAB_CONFIG = [
   { label: 'Stocks', stateKey: 'stocks' },
   { label: 'ETFs', stateKey: 'etfs' },
   { label: 'MF', stateKey: 'mutualFunds' },
   { label: 'FD', stateKey: 'fds' },
+  { label: 'Tradebook', stateKey: 'tradebook' },
 ]; 
 
 const TAB_LABELS = TAB_CONFIG.map((t) => t.label);
@@ -301,6 +304,19 @@ export default function PortfolioPage() {
                     </button>
 
                     <button
+                      onClick={() => handleTabChange('Tradebook')}
+                      className={`rounded-full p-1.5 transition-colors ${
+                        activeTab === 'Tradebook'
+                          ? 'bg-emerald-500/20 text-emerald-500 dark:text-emerald-400'
+                          : 'hover:opacity-80 text-[var(--text-muted)]'
+                      }`}
+                      aria-label="Tradebook & Orders"
+                      title="Tradebook & Orders"
+                    >
+                      <Receipt size={18} />
+                    </button>
+
+                    <button
                       onClick={() => setAddHoldingOpen(true)}
                       className="rounded-full px-3 py-1 text-xs font-bold text-white transition hover:opacity-90 whitespace-nowrap shadow-sm"
                       style={{ background: 'var(--emerald)' }}
@@ -359,8 +375,8 @@ export default function PortfolioPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      setSearchQuery('');
                       setIsSearchOpen(false);
+                      setSearchQuery('');
                     }}
                     className="text-sm font-semibold transition hover:opacity-80"
                     style={{ color: 'var(--emerald)' }}
@@ -393,52 +409,58 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* ── Holdings list ────────────────────────────────────────────────── */}
-      <section className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 pt-2" aria-label={`${activeTab} holdings`}>
-        {/* View mode toggle row — matches Zerodha Sort / <> toggle */}
-        <div className="flex items-center justify-between mb-1 pb-2" style={{ borderBottom: '1px solid var(--divider)' }}>
-          {/* Sort button — tapping opens the sort/filter bottom sheet */}
-          <button
-            onClick={() => setShowSortFilter(true)}
-            aria-label="Open sort and filter"
-            className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-60"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <span>Sort</span>
-            <SlidersHorizontal size={12} strokeWidth={2} />
-          </button>
+      {/* ── Holdings list or Tradebook ──────────────────────────────────── */}
+      <section className="flex-1 max-w-7xl mx-auto w-full px-3 sm:px-6 lg:px-8 pt-2" aria-label={`${activeTab} view`}>
+        {activeTab === 'Tradebook' ? (
+          <TradebookView onSelectHolding={handleHoldingPress} />
+        ) : (
+          <>
+            {/* View mode toggle row — matches Zerodha Sort / <> toggle */}
+            <div className="flex items-center justify-between mb-1 pb-2" style={{ borderBottom: '1px solid var(--divider)' }}>
+              {/* Sort button — tapping opens the sort/filter bottom sheet */}
+              <button
+                onClick={() => setShowSortFilter(true)}
+                aria-label="Open sort and filter"
+                className="flex items-center gap-1.5 text-xs font-medium transition-opacity active:opacity-60"
+                style={{ color: 'var(--text-muted)' }}
+              >
+                <span>Sort</span>
+                <SlidersHorizontal size={12} strokeWidth={2} />
+              </button>
 
-          {/* <> view mode toggle */}
-          <button
-            onClick={cycleViewMode}
-            aria-label={`Switch view mode, current: ${viewModeLabel}`}
-            className="flex items-center gap-1 text-xs font-medium transition-opacity active:opacity-60"
-            style={{ color: 'var(--text-2)', textDecoration: 'underline dotted', textUnderlineOffset: '3px' }}
-          >
-            <ChevronLeft size={12} strokeWidth={2.5} style={{ color: 'var(--text-muted)' }} />
-            <ChevronRight size={12} strokeWidth={2.5} style={{ color: 'var(--text-muted)' }} />
-            <span style={{ color: 'var(--text-2)' }}>{viewModeLabel}</span>
-          </button>
-        </div>
+              {/* <> view mode toggle */}
+              <button
+                onClick={cycleViewMode}
+                aria-label={`Switch view mode, current: ${viewModeLabel}`}
+                className="flex items-center gap-1 text-xs font-medium transition-opacity active:opacity-60"
+                style={{ color: 'var(--text-2)', textDecoration: 'underline dotted', textUnderlineOffset: '3px' }}
+              >
+                <ChevronLeft size={12} strokeWidth={2.5} style={{ color: 'var(--text-muted)' }} />
+                <ChevronRight size={12} strokeWidth={2.5} style={{ color: 'var(--text-muted)' }} />
+                <span style={{ color: 'var(--text-2)' }}>{viewModeLabel}</span>
+              </button>
+            </div>
 
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, x: 12 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -12 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-        >
-          <HoldingsList
-            holdings={holdings}
-            loading={loading}
-            error={error}
-            onRetry={handleRetry}
-            onPress={handleHoldingPress}
-            onNewsPress={activeTab === 'Stocks' ? handleStockNewsPress : undefined}
-            onReportsPress={activeTab === 'Stocks' ? handleStockReportsPress : undefined}
-            viewMode={viewMode}
-          />
-        </motion.div>
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -12 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+            >
+              <HoldingsList
+                holdings={holdings}
+                loading={loading}
+                error={error}
+                onRetry={handleRetry}
+                onPress={handleHoldingPress}
+                onNewsPress={activeTab === 'Stocks' ? handleStockNewsPress : undefined}
+                onReportsPress={activeTab === 'Stocks' ? handleStockReportsPress : undefined}
+                viewMode={viewMode}
+              />
+            </motion.div>
+          </>
+        )}
       </section>
 
       {/* ── Sort / Filter Bottom Sheet ────────────────────────────────── */}

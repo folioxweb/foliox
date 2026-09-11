@@ -12,6 +12,7 @@ import SetNewPasswordModal from '../../components/auth/SetNewPasswordModal';
 import AppGuideModal from '../../components/guide/AppGuideModal';
 import WhatsNewModal from '../../components/whatsNew/WhatsNewModal';
 import ManageAdminsModal from '../../components/admin/ManageAdminsModal';
+import TaxEstimatesSection from '../../components/settings/TaxEstimatesSection';
 import {
   APP_VERSION,
   RELEASE_CODENAME,
@@ -251,6 +252,9 @@ export default function SettingsPage() {
             </div>
           </section>
         )}
+
+        {/* ── Indian Capital Gains Tax Estimates (LTCG & STCG) ──────────── */}
+        <TaxEstimatesSection />
 
         {/* ── Appearance ──────────────────────────────────────────────────── */}
         <section aria-label="Appearance" style={sectionStyle} className="mb-4">

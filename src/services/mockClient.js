@@ -932,6 +932,197 @@ const realMockApi = {
         { name: "Energy", weight: 10.35 }
       ]
     };
+  },
+
+  getTradebook: async (filters = {}) => {
+    await new Promise(resolve => setTimeout(resolve, 150));
+    const now = new Date();
+    const mockTxs = [
+      {
+        tx_id: 'tx-001',
+        asset_id: 'mock-stock-tcs',
+        symbol: 'TCS',
+        name: 'Tata Consultancy Services Ltd.',
+        asset_type: 'STOCK',
+        sector: 'Technology',
+        tx_type: 'BUY',
+        quantity: 15,
+        price: 3850.00,
+        cost_price: 3850.00,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 400 * 86400000).toISOString(),
+        turnover: 15 * 3850
+      },
+      {
+        tx_id: 'tx-002',
+        asset_id: 'mock-stock-infy',
+        symbol: 'INFY',
+        name: 'Infosys Ltd.',
+        asset_type: 'STOCK',
+        sector: 'Technology',
+        tx_type: 'BUY',
+        quantity: 30,
+        price: 1520.00,
+        cost_price: 1520.00,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 120 * 86400000).toISOString(),
+        turnover: 30 * 1520
+      },
+      {
+        tx_id: 'tx-003',
+        asset_id: 'mock-stock-infy',
+        symbol: 'INFY',
+        name: 'Infosys Ltd.',
+        asset_type: 'STOCK',
+        sector: 'Technology',
+        tx_type: 'SELL',
+        quantity: 10,
+        price: 1840.00,
+        cost_price: 1520.00,
+        realized_gain: 3200.00,
+        tx_date: new Date(now.getTime() - 15 * 86400000).toISOString(),
+        turnover: 10 * 1840
+      },
+      {
+        tx_id: 'tx-004',
+        asset_id: 'mock-mf-ppfas',
+        symbol: 'PPFAS_FLEXI',
+        name: 'Parag Parikh Flexi Cap Fund',
+        asset_type: 'MF',
+        sector: 'Diversified',
+        tx_type: 'BUY',
+        quantity: 250,
+        price: 74.20,
+        cost_price: 74.20,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 450 * 86400000).toISOString(),
+        turnover: 250 * 74.20
+      },
+      {
+        tx_id: 'tx-005',
+        asset_id: 'mock-etf-nifty',
+        symbol: 'NIFTYBEES',
+        name: 'Nippon India ETF Nifty 50 BeES',
+        asset_type: 'ETF',
+        sector: 'Large Cap',
+        tx_type: 'BUY',
+        quantity: 100,
+        price: 260.50,
+        cost_price: 260.50,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 80 * 86400000).toISOString(),
+        turnover: 100 * 260.50
+      },
+      {
+        tx_id: 'tx-006',
+        asset_id: 'mock-fd-hdfc',
+        symbol: 'HDFC_FD_01',
+        name: 'HDFC Bank Fixed Deposit',
+        asset_type: 'FD',
+        sector: null,
+        tx_type: 'BUY',
+        quantity: 1,
+        price: 100000,
+        cost_price: 100000,
+        fd_principal: 100000,
+        fd_rate: 7.25,
+        fd_maturity_date: '2027-03-31',
+        tx_date: new Date(now.getTime() - 180 * 86400000).toISOString(),
+        turnover: 100000
+      }
+    ];
+
+    let result = mockTxs;
+    if (filters.assetId) result = result.filter(t => t.asset_id === filters.assetId);
+    if (filters.assetType && filters.assetType !== 'ALL') {
+      result = result.filter(t => t.asset_type === filters.assetType.toUpperCase());
+    }
+    if (filters.txType && filters.txType !== 'ALL') {
+      result = result.filter(t => t.tx_type === filters.txType.toUpperCase());
+    }
+    return result;
+  },
+
+  getAllTransactionsForTax: async () => {
+    await new Promise(resolve => setTimeout(resolve, 150));
+    const now = new Date();
+    return [
+      {
+        tx_id: 'tx-001',
+        asset_id: 'mock-stock-tcs',
+        symbol: 'TCS',
+        name: 'Tata Consultancy Services Ltd.',
+        asset_type: 'STOCK',
+        sector: 'Technology',
+        current_price: 4320.00,
+        tx_type: 'BUY',
+        quantity: 15,
+        price: 3850.00,
+        cost_price: 3850.00,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 400 * 86400000).toISOString()
+      },
+      {
+        tx_id: 'tx-002',
+        asset_id: 'mock-stock-infy',
+        symbol: 'INFY',
+        name: 'Infosys Ltd.',
+        asset_type: 'STOCK',
+        sector: 'Technology',
+        current_price: 1910.00,
+        tx_type: 'BUY',
+        quantity: 30,
+        price: 1520.00,
+        cost_price: 1520.00,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 120 * 86400000).toISOString()
+      },
+      {
+        tx_id: 'tx-003',
+        asset_id: 'mock-stock-infy',
+        symbol: 'INFY',
+        name: 'Infosys Ltd.',
+        asset_type: 'STOCK',
+        sector: 'Technology',
+        current_price: 1910.00,
+        tx_type: 'SELL',
+        quantity: 10,
+        price: 1840.00,
+        cost_price: 1520.00,
+        realized_gain: 3200.00,
+        tx_date: new Date(now.getTime() - 15 * 86400000).toISOString()
+      },
+      {
+        tx_id: 'tx-004',
+        asset_id: 'mock-mf-ppfas',
+        symbol: 'PPFAS_FLEXI',
+        name: 'Parag Parikh Flexi Cap Fund',
+        asset_type: 'MF',
+        sector: 'Diversified',
+        current_price: 86.40,
+        tx_type: 'BUY',
+        quantity: 250,
+        price: 74.20,
+        cost_price: 74.20,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 450 * 86400000).toISOString()
+      },
+      {
+        tx_id: 'tx-005',
+        asset_id: 'mock-etf-nifty',
+        symbol: 'NIFTYBEES',
+        name: 'Nippon India ETF Nifty 50 BeES',
+        asset_type: 'ETF',
+        sector: 'Large Cap',
+        current_price: 284.10,
+        tx_type: 'BUY',
+        quantity: 100,
+        price: 260.50,
+        cost_price: 260.50,
+        realized_gain: null,
+        tx_date: new Date(now.getTime() - 80 * 86400000).toISOString()
+      }
+    ];
   }
 };
 

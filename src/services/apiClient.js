@@ -287,6 +287,10 @@ const realApi = {
   // Fund Holdings & Sector Breakdown
   getFundHoldings: (fundAssetId, isin) => supabaseApi.getFundHoldings(fundAssetId, isin),
   syncFundHoldings: (payload) => supabaseApi.syncFundHoldings(payload),
+
+  // Tradebook & Tax Estimation
+  getTradebook: (filters) => supabaseApi.getTradebook(filters),
+  getAllTransactionsForTax: () => supabaseApi.getAllTransactionsForTax(),
 };
 
 function getActiveApi() {

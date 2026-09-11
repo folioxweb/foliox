@@ -1763,4 +1763,122 @@ export const supabaseApi = {
   deleteHolding: async (payload) => {
     return supabaseApi.executeTrade({ action: 'deleteHolding', ...payload });
   },
+
+  // -----------------------------------------
+  // Tradebook & Tax Estimation
+  // -----------------------------------------
+  getTradebook: async ({ assetType, txType, assetId, startDate, endDate, limit = 200, offset = 0 } = {}) => {
+    try {
+      let query = supabase.from('vw_tradebook').select('*');
+
+      if (assetId) {
+        query = query.eq('asset_id', assetId);
+      }
+      if (assetType && assetType !== 'ALL') {
+        query = query.ilike('asset_type', assetType);
+      }
+      if (txType && txType !== 'ALL') {
+        query = query.ilike('tx_type', txType);
+      }
+      if (startDate) {
+        query = query.gte('tx_date', startDate);
+      }
+      if (endDate) {
+        query = query.lte('tx_date', endDate);
+      }
+
+      query = query.order('tx_date', { ascending: false }).range(offset, offset + limit - 1);
+      const { data, error } = await query;
+
+      if (!error && data) {
+        return data;
+      }
+    } catch (_err) {
+      // Fallback below
+    }
+
+    // Direct fallback if view is refreshing or not yet created
+    try {
+      let fallbackQuery = supabase
+        .from('transactions')
+        .select('tx_id, user_id, asset_id, tx_type, quantity, price, cost_price, realized_gain, tx_date, fd_principal, fd_rate, fd_maturity_date, assets(symbol, name, asset_type, sector, category, isin, current_price)')
+        .order('tx_date', { ascending: false });
+
+      if (assetId) fallbackQuery = fallbackQuery.eq('asset_id', assetId);
+      if (txType && txType !== 'ALL') fallbackQuery = fallbackQuery.eq('tx_type', txType.toUpperCase());
+
+      const { data, error } = await fallbackQuery;
+      if (error) throw error;
+
+      const mapped = (data || []).map(t => {
+        const a = t.assets || {};
+        const isFd = a.asset_type === 'FD';
+        const qty = Math.abs(Number(t.quantity || 0));
+        const price = Number(t.price || 0);
+        return {
+          tx_id: t.tx_id,
+          user_id: t.user_id,
+          asset_id: t.asset_id,
+          symbol: a.symbol || '',
+          name: a.name || a.symbol || '',
+          asset_type: a.asset_type || 'STOCK',
+          sector: a.sector || '',
+          category: a.category || '',
+          isin: a.isin || '',
+          current_price: a.current_price,
+          tx_type: t.tx_type,
+          quantity: qty,
+          signed_quantity: t.quantity,
+          price: price,
+          cost_price: t.cost_price || price,
+          realized_gain: t.realized_gain,
+          tx_date: t.tx_date,
+          fd_principal: t.fd_principal,
+          fd_rate: t.fd_rate,
+          fd_maturity_date: t.fd_maturity_date,
+          turnover: isFd ? (t.fd_principal || price) : (qty * price)
+        };
+      });
+
+      if (assetType && assetType !== 'ALL') {
+        return mapped.filter(item => item.asset_type?.toUpperCase() === assetType.toUpperCase());
+      }
+      return mapped;
+    } catch (e) {
+      console.error("Error fetching tradebook fallback:", e);
+      return [];
+    }
+  },
+
+  getAllTransactionsForTax: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('tx_id, user_id, asset_id, tx_type, quantity, price, cost_price, realized_gain, tx_date, assets(symbol, name, asset_type, sector, current_price)')
+        .order('tx_date', { ascending: true });
+
+      if (error) throw error;
+
+      return (data || []).map(t => ({
+        tx_id: t.tx_id,
+        user_id: t.user_id,
+        asset_id: t.asset_id,
+        symbol: t.assets?.symbol || '',
+        name: t.assets?.name || t.assets?.symbol || '',
+        asset_type: t.assets?.asset_type || 'STOCK',
+        sector: t.assets?.sector || '',
+        current_price: t.assets?.current_price,
+        tx_type: t.tx_type,
+        quantity: Math.abs(Number(t.quantity || 0)),
+        signed_quantity: t.quantity,
+        price: Number(t.price || 0),
+        cost_price: Number(t.cost_price || t.price || 0),
+        realized_gain: t.realized_gain != null ? Number(t.realized_gain) : null,
+        tx_date: t.tx_date
+      }));
+    } catch (err) {
+      console.error("Error in getAllTransactionsForTax:", err);
+      return [];
+    }
+  },
 };

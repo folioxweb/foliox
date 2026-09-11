@@ -10,6 +10,7 @@ import FDActionModal from '../../components/portfolio/FDActionModal';
 import CompanyReportsScreen from '../News/CompanyReportsScreen';
 import CandlestickChart from '../../components/charts/CandlestickChart';
 import FundHoldingsBreakdown from '../../components/portfolio/FundHoldingsBreakdown';
+import HoldingTradeHistory from '../../components/portfolio/HoldingTradeHistory';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePortfolio } from '../../context/PortfolioContext';
 
@@ -420,6 +421,11 @@ export default function DetailScreen({ holding: propHolding }) {
           )}
         </dl>
       </section>
+
+      {/* ── Order & Trade History ─────────────────────────────────── */}
+      {!isFD && (
+        <HoldingTradeHistory assetId={holding.assetId} symbol={holding.symbol} />
+      )}
 
       {/* ── Manage Position Action Button ────────────────────────── */}
       <div className="pt-2">
