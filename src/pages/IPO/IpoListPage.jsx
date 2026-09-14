@@ -79,10 +79,33 @@ export default function IpoListPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
-    return location.state?.fromTab || sessionStorage.getItem('ipo_active_tab') || 'open';
+    try {
+      const stored = localStorage.getItem('ipo_active_tab') || sessionStorage.getItem('ipo_active_tab');
+      if (location.state?.fromTab) return location.state.fromTab;
+      if (stored && TABS.some((t) => t.id === stored)) return stored;
+      return 'open';
+    } catch {
+      return 'open';
+    }
   });
-  const [sortBy, setSortBy] = useState('gmp'); // 'gmp' | 'issue_size' | 'gmp_and_size' | 'profit' | 'date'
-  const [sortDirection, setSortDirection] = useState('desc'); // 'desc' | 'asc'
+  const [sortBy, setSortBy] = useState(() => {
+    try {
+      const stored = localStorage.getItem('ipo_sort_by');
+      if (stored && SORT_OPTIONS.some((s) => s.id === stored)) return stored;
+      return 'gmp';
+    } catch {
+      return 'gmp';
+    }
+  }); // 'gmp' | 'issue_size' | 'gmp_and_size' | 'profit' | 'date'
+  const [sortDirection, setSortDirection] = useState(() => {
+    try {
+      const stored = localStorage.getItem('ipo_sort_direction');
+      if (stored === 'asc' || stored === 'desc') return stored;
+      return 'desc';
+    } catch {
+      return 'desc';
+    }
+  }); // 'desc' | 'asc'
   const [showSortFilter, setShowSortFilter] = useState(false);
   const [viewMode, setViewMode] = useState(() => {
     try {
@@ -96,6 +119,28 @@ export default function IpoListPage() {
     setViewMode(mode);
     try {
       localStorage.setItem('ipo_view_mode', mode);
+    } catch {}
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    try {
+      localStorage.setItem('ipo_active_tab', tabId);
+      sessionStorage.setItem('ipo_active_tab', tabId);
+    } catch {}
+  };
+
+  const handleSortByChange = (newSortBy) => {
+    setSortBy(newSortBy);
+    try {
+      localStorage.setItem('ipo_sort_by', newSortBy);
+    } catch {}
+  };
+
+  const handleSortDirectionChange = (newDir) => {
+    setSortDirection(newDir);
+    try {
+      localStorage.setItem('ipo_sort_direction', newDir);
     } catch {}
   };
 
@@ -117,11 +162,6 @@ export default function IpoListPage() {
     } finally {
       setUpdatingAlerts(false);
     }
-  };
-
-  const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
-    sessionStorage.setItem('ipo_active_tab', tabId);
   };
 
   async function fetchIpos(isRefresh = false) {
@@ -150,7 +190,10 @@ export default function IpoListPage() {
   useEffect(() => {
     if (location.state?.fromTab) {
       setActiveTab(location.state.fromTab);
-      sessionStorage.setItem('ipo_active_tab', location.state.fromTab);
+      try {
+        localStorage.setItem('ipo_active_tab', location.state.fromTab);
+        sessionStorage.setItem('ipo_active_tab', location.state.fromTab);
+      } catch {}
     }
   }, [location.state?.fromTab]);
 
@@ -593,7 +636,7 @@ export default function IpoListPage() {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => setSortBy(opt.id)}
+                        onClick={() => handleSortByChange(opt.id)}
                         className={`flex items-center justify-between p-2.5 sm:p-3 rounded-xl sm:rounded-2xl text-xs font-semibold transition-all text-left ${
                           opt.id === 'gmp_and_size' ? 'col-span-2' : ''
                         } ${
@@ -622,7 +665,7 @@ export default function IpoListPage() {
                 <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
-                    onClick={() => setSortDirection('desc')}
+                    onClick={() => handleSortDirectionChange('desc')}
                     className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-xs font-bold text-center transition-all ${
                       sortDirection === 'desc'
                         ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400'
@@ -634,7 +677,7 @@ export default function IpoListPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSortDirection('asc')}
+                    onClick={() => handleSortDirectionChange('asc')}
                     className={`py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl sm:rounded-2xl text-xs font-bold text-center transition-all ${
                       sortDirection === 'asc'
                         ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400'
