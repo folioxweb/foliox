@@ -61,4 +61,53 @@ describe('IpoListItem', () => {
     render(<IpoListItem ipo={ipoWithSize} />);
     expect(screen.getByText('₹3,042.51 Cr')).toBeInTheDocument();
   });
+
+  it('renders open and close dates formatted with calendar icon', () => {
+    const ipoWithDates = {
+      ...mockIpo,
+      openDate: '10-Sep',
+      closeDate: '15-Sep',
+    };
+
+    render(<IpoListItem ipo={ipoWithDates} />);
+    expect(screen.getByText('10-Sep – 15-Sep')).toBeInTheDocument();
+  });
+
+  it('handles snake_case open_date and close_date', () => {
+    const ipoWithSnakeDates = {
+      ...mockIpo,
+      open_date: '10-Sep',
+      close_date: '15-Sep',
+    };
+
+    render(<IpoListItem ipo={ipoWithSnakeDates} />);
+    expect(screen.getByText('10-Sep – 15-Sep')).toBeInTheDocument();
+  });
+
+  it('handles identical open and close dates gracefully', () => {
+    const singleDayIpo = {
+      ...mockIpo,
+      openDate: '10-Sep',
+      closeDate: '10-Sep',
+    };
+
+    render(<IpoListItem ipo={singleDayIpo} />);
+    expect(screen.getByText('10-Sep')).toBeInTheDocument();
+  });
+
+  it('falls back to "Dates TBA" when no dates are provided', () => {
+    render(<IpoListItem ipo={mockIpo} />);
+    expect(screen.getByText('Dates TBA')).toBeInTheDocument();
+  });
+
+  it('formats ISO dates correctly', () => {
+    const isoIpo = {
+      ...mockIpo,
+      openDate: '2026-09-10',
+      closeDate: '2026-09-15',
+    };
+
+    render(<IpoListItem ipo={isoIpo} />);
+    expect(screen.getByText('10-Sep – 15-Sep')).toBeInTheDocument();
+  });
 });
