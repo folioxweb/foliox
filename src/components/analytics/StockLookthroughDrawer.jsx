@@ -120,7 +120,7 @@ export const StockLookthroughDrawer = memo(function StockLookthroughDrawer({
                 {isPrivacyMode ? '••••••••••••' : stock.name}
               </h3>
               <p className="text-xs text-[var(--text-muted)] font-medium mt-0.5">
-                Zerodha Console Look-Through X-Ray
+                Portfolio Look-Through X-Ray
               </p>
             </div>
 

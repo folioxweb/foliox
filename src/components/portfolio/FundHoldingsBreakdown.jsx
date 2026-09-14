@@ -198,7 +198,7 @@ export default function FundHoldingsBreakdown({ holding }) {
     return stocks.filter((s) => s.name?.toLowerCase().includes(q));
   }, [stocks, searchQuery]);
 
-  // Visible stocks (default top 10 like Zerodha Coin)
+  // Visible stocks (default top 10)
   const visibleStocks = isExpanded ? filteredStocks : filteredStocks.slice(0, 10);
 
   return (
@@ -232,7 +232,7 @@ export default function FundHoldingsBreakdown({ holding }) {
         </button>
       </div>
 
-      {/* ── Segmented Control Switcher (Zerodha Coin Style) ── */}
+      {/* ── Segmented Control Switcher ── */}
       <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--sheet-btn-bg)] border border-[var(--card-border)] mb-3">
         <button
           type="button"
@@ -310,7 +310,7 @@ export default function FundHoldingsBreakdown({ holding }) {
           </button>
         </div>
       ) : activeTab === 'assets' ? (
-        /* ── TAB 1: Underlying Assets (Concise Zerodha Coin Style) ── */
+        /* ── TAB 1: Underlying Assets ── */
         <div>
           {/* Concentration Strip: Ultra-compact 1-liner */}
           <div className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-[var(--sheet-btn-bg)] border border-[var(--card-border)] mb-2.5 text-[11px] font-semibold">
@@ -371,7 +371,7 @@ export default function FundHoldingsBreakdown({ holding }) {
             <span className="text-right">Holding</span>
           </div>
 
-          {/* Concise Stock Rows (Zerodha Coin Clean Table Layout) */}
+          {/* Concise Stock Rows (Clean Table Layout) */}
           <div className="divide-y divide-[var(--divider)]">
             {visibleStocks.map((item, idx) => {
               const weight = Number(item.weight || 0);
@@ -430,7 +430,7 @@ export default function FundHoldingsBreakdown({ holding }) {
           )}
         </div>
       ) : (
-        /* ── TAB 2: Sector Allocation (Concise Zerodha Coin Style) ── */
+        /* ── TAB 2: Sector Allocation ── */
         <div>
           {/* Micro Segmented Visual Stack Bar */}
           {sanitizedSectors.length > 0 && (

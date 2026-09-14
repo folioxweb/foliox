@@ -363,7 +363,7 @@ export default function AnalyticsPage() {
               />
             </section>
 
-            {/* 4. Zerodha Console Holdings Explorer */}
+            {/* 4. Institutional Holdings Explorer */}
             <section aria-label="Holdings Explorer" className="space-y-3.5">
               <div className="flex items-center justify-between gap-2 px-1">
                 <div className="flex items-center gap-2">

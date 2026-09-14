@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 
 /**
- * TabBar — Zerodha-style horizontal scrollable tab bar.
+ * TabBar — Horizontal scrollable tab bar.
  * Fully themed via CSS variables (dark & light mode aware).
  */
 const TabBar = ({ tabs = [], activeTab, onChange }) => {

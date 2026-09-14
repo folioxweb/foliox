@@ -33,7 +33,7 @@ export const CURRENT_RELEASE = {
       icon: 'Layers',
       title: 'Institutional Holdings Explorer',
       description:
-        'Zerodha Console-style holdings table tracking direct Demat stocks vs. mutual fund & ETF exposures side-by-side, real rupee exposure, and visual portfolio weight bars.'
+        'Comprehensive multi-column holdings console tracking direct Demat stocks vs. mutual fund & ETF exposures side-by-side, real rupee exposure, and visual portfolio weight bars.'
     },
     {
       id: 'lookthrough-xray',

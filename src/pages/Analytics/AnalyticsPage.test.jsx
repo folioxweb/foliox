@@ -129,7 +129,7 @@ describe('AnalyticsPage Modernized Terminal', () => {
     // Lookthrough drawer should open
     await waitFor(() => {
       expect(screen.getByLabelText('Close drawer')).toBeInTheDocument();
-      expect(screen.getByText('Zerodha Console Look-Through X-Ray')).toBeInTheDocument();
+      expect(screen.getByText('Portfolio Look-Through X-Ray')).toBeInTheDocument();
     });
   });
 

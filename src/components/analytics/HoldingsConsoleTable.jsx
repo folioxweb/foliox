@@ -52,7 +52,7 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
         border: '1px solid var(--card-border)',
       }}
     >
-      {/* ── Desktop View (≥ 1024px): Zerodha Console Multi-Column Table ── */}
+      {/* ── Desktop View (≥ 1024px): Multi-Column Console Table ── */}
       <div className="hidden lg:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
