@@ -97,18 +97,21 @@ export const StockLookthroughDrawer = memo(function StockLookthroughDrawer({
           aria-modal="true"
           aria-label={`${stock.name} Look-Through Analysis`}
         >
-          {/* Header Bar */}
+          {/* Header Bar with iOS safe area inset */}
           <div
-            className="p-4 sm:p-5 flex items-start justify-between gap-3 border-b"
-            style={{ borderColor: 'var(--divider)' }}
+            className="px-4 sm:px-5 pb-3.5 sm:pb-4 flex items-start justify-between gap-3 border-b shrink-0"
+            style={{
+              borderColor: 'var(--divider)',
+              paddingTop: 'max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))',
+            }}
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 whitespace-nowrap">
                   {stock.sector || 'Other'}
                 </span>
                 {stock.marketCap && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 whitespace-nowrap">
                     {stock.marketCap}
                   </span>
                 )}
@@ -132,8 +135,13 @@ export const StockLookthroughDrawer = memo(function StockLookthroughDrawer({
             </button>
           </div>
 
-          {/* Scrollable Content Body */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 sm:space-y-5">
+          {/* Scrollable Content Body with iOS safe area bottom padding */}
+          <div
+            className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 sm:space-y-5"
+            style={{
+              paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom, 0px) + 2rem))',
+            }}
+          >
             {/* Exposure Summary Card */}
             <div
               className="p-4 rounded-2xl"

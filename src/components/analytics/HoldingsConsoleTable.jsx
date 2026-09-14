@@ -66,7 +66,7 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
               <th className="py-3 px-4 w-12 text-center">#</th>
               <th className="py-3 px-4">Company Name</th>
               <th className="py-3 px-4">Sector</th>
-              <th className="py-3 px-4">Cap</th>
+              <th className="py-3 px-4 whitespace-nowrap">Cap</th>
               <th className="py-3 px-4 text-right">Direct Demat</th>
               <th className="py-3 px-4 text-right">Via Funds</th>
               <th className="py-3 px-4 text-right">Total Exposure</th>
@@ -136,9 +136,9 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
                   </td>
 
                   {/* Market Cap */}
-                  <td className="py-3 px-4 text-xs font-medium">
+                  <td className="py-3 px-4 text-xs font-medium whitespace-nowrap">
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      className={`inline-block whitespace-nowrap text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
                         item.marketCap === 'Large Cap'
                           ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
                           : item.marketCap === 'Mid Cap'
@@ -228,7 +228,7 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
                       {item.sector || 'Other'}
                     </span>
                     {item.marketCap && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                         {item.marketCap}
                       </span>
                     )}
