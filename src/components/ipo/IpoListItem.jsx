@@ -1,15 +1,43 @@
 import { memo } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Calendar, ChevronRight } from 'lucide-react';
+
+function formatIpoDate(val) {
+  if (!val || typeof val !== 'string') return '';
+  const trimmed = val.trim();
+  if (!trimmed || trimmed === '-' || trimmed === '--') return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+    const d = new Date(trimmed);
+    if (!isNaN(d.getTime())) {
+      const day = d.getDate();
+      const month = d.toLocaleString('en-US', { month: 'short' });
+      return `${day}-${month}`;
+    }
+  }
+  return trimmed;
+}
+
+export function getIpoDateRange(ipo) {
+  if (!ipo) return 'Dates TBA';
+  const open = formatIpoDate(ipo.openDate || ipo.open_date);
+  const close = formatIpoDate(ipo.closeDate || ipo.close_date);
+
+  if (open && close) {
+    return open === close ? open : `${open} – ${close}`;
+  }
+  return open || close || ipo.dateText || ipo.dates || 'Dates TBA';
+}
 
 /**
  * IpoListItem — streamlined list row for IPO listing.
  * Displays strictly:
- * 1. Company Name
+ * 1. Company Name & Bidding Dates (Open – Close)
  * 2. GMP (% and ₹ amount)
  * 3. Subscription multiple
  */
 export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = false }) {
   if (!ipo) return null;
+
+  const dateRange = getIpoDateRange(ipo);
 
   const isPositiveGmp = (ipo.gmpAmount || 0) > 0;
   const isNegativeGmp = (ipo.gmpAmount || 0) < 0;
@@ -49,7 +77,7 @@ export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = fa
         borderBottom: isLast ? 'none' : '1px solid var(--divider)',
       }}
     >
-      {/* 1. Company Name (Left) */}
+      {/* 1. Company Name & Dates (Left) */}
       <div className="flex-1 min-w-0 pr-3 md:pr-4">
         <h4
           className="text-sm font-bold tracking-tight truncate"
@@ -58,11 +86,12 @@ export const IpoListItem = memo(function IpoListItem({ ipo, onClick, isLast = fa
         >
           {ipo.name}
         </h4>
-        <span
-          className="text-[10px] font-semibold text-[var(--text-muted)] block truncate"
-        >
-          {ipo.category || 'Mainboard'}
-        </span>
+        <div className="flex items-center gap-1.5 mt-0.5 min-w-0">
+          <Calendar size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+          <span className="text-xs font-medium text-[var(--text-2)] truncate">
+            {dateRange}
+          </span>
+        </div>
       </div>
 
       {/* 2. Issue Size (Desktop only) */}
