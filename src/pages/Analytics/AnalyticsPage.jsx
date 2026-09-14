@@ -103,6 +103,7 @@ function FullSectorList({ data }) {
 function FullStocksList({ data }) {
   const { isPrivacyMode } = usePrivacy();
   const [query, setQuery] = useState('');
+  const [displayCount, setDisplayCount] = useState(50);
 
   if (!data) return <Skeleton width="100%" height={300} rounded="xl" />;
 
@@ -115,6 +116,8 @@ function FullStocksList({ data }) {
         item.sector?.toLowerCase().includes(query.toLowerCase())
       )
     : sorted;
+
+  const visibleItems = query.trim() ? filtered : filtered.slice(0, displayCount);
 
   return (
     <div className="space-y-2.5">
@@ -154,25 +157,25 @@ function FullStocksList({ data }) {
           boxShadow: 'var(--card-shadow)',
         }}
       >
-        {filtered.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
             No stocks found matching "{query}"
           </div>
         ) : (
-          filtered.map((item, i) => {
+          visibleItems.map((item, i) => {
             const rankColor = RANK_COLORS[i] ?? '#6366F1';
             const barPct = (item.exposure / maxExposure) * 100;
             return (
               <div
                 key={item.name}
                 className="relative px-3 sm:px-4 py-3 flex items-center gap-3"
-                style={{ borderBottom: i < filtered.length - 1 ? '1px solid var(--divider)' : 'none' }}
+                style={{ borderBottom: (i < visibleItems.length - 1 || (!query.trim() && filtered.length > displayCount)) ? '1px solid var(--divider)' : 'none' }}
               >
                 <motion.div
                   className="absolute left-0 top-0 bottom-0 pointer-events-none"
                   initial={{ width: 0 }}
                   animate={{ width: `${barPct}%` }}
-                  transition={{ duration: 0.7, delay: i * 0.02, ease: 'easeOut' }}
+                  transition={{ duration: 0.7, delay: Math.min(i * 0.02, 0.4), ease: 'easeOut' }}
                   style={{ background: `${rankColor}0D` }}
                 />
                 <span
@@ -220,6 +223,19 @@ function FullStocksList({ data }) {
               </div>
             );
           })
+        )}
+
+        {!query.trim() && filtered.length > displayCount && (
+          <button
+            onClick={() => setDisplayCount(prev => prev + 50)}
+            className="w-full py-3 text-center text-xs font-semibold hover:opacity-80 transition-opacity"
+            style={{
+              color: '#6366F1',
+              background: 'var(--card-bg)',
+            }}
+          >
+            Show Next 50 Holdings ({filtered.length - displayCount} remaining)
+          </button>
         )}
       </motion.div>
     </div>
