@@ -61,4 +61,51 @@ describe('SectorDonutChart', () => {
     fireEvent.click(filterBadge);
     expect(handleSelect).toHaveBeenCalledWith(null);
   });
+
+  it('toggles View All Sectors when more than 7 sectors exist', () => {
+    const manySectors = Array.from({ length: 10 }, (_, i) => ({
+      sector: `Sector ${i + 1}`,
+      exposure: 100000 * (10 - i),
+      allocation: 10 - i,
+    }));
+
+    render(
+      <PrivacyProvider>
+        <SectorDonutChart data={manySectors} />
+      </PrivacyProvider>
+    );
+
+    // Initial state: Top 7 visible, 8th is not
+    expect(screen.getByText('Sector 1')).toBeInTheDocument();
+    expect(screen.getByText('Sector 7')).toBeInTheDocument();
+    expect(screen.queryByText('Sector 8')).not.toBeInTheDocument();
+
+    // Toggle button should be present
+    const toggleBtn = screen.getByRole('button', { name: /View all 10 sectors/i });
+    expect(toggleBtn).toBeInTheDocument();
+
+    // Click toggle to expand
+    fireEvent.click(toggleBtn);
+    expect(screen.getByText('Sector 8')).toBeInTheDocument();
+    expect(screen.getByText('Sector 10')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Collapse to top 7 sectors/i })).toBeInTheDocument();
+  });
+
+  it('auto-expands when a sector beyond top 7 is selected', () => {
+    const manySectors = Array.from({ length: 10 }, (_, i) => ({
+      sector: `Sector ${i + 1}`,
+      exposure: 100000 * (10 - i),
+      allocation: 10 - i,
+    }));
+
+    render(
+      <PrivacyProvider>
+        <SectorDonutChart data={manySectors} selectedSector="Sector 9" />
+      </PrivacyProvider>
+    );
+
+    // Should auto-expand so Sector 9 is in document (in filter badge, donut center, and list row)
+    expect(screen.getAllByText('Sector 9').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('button', { name: /Collapse to top 7 sectors/i })).toBeInTheDocument();
+  });
 });

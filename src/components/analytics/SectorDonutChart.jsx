@@ -1,4 +1,4 @@
-import { memo, useState, useMemo } from 'react';
+import { memo, useState, useMemo, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, Filter, ChevronDown, ChevronUp } from 'lucide-react';
@@ -34,7 +34,7 @@ export const SectorDonutChart = memo(function SectorDonutChart({
 }) {
   const { isPrivacyMode } = usePrivacy();
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Normalize & sort sectors by allocation descending
   const sortedSectors = useMemo(() => {
@@ -68,6 +68,16 @@ export const SectorDonutChart = memo(function SectorDonutChart({
     }
     return null;
   }, [hoveredIndex, selectedSector, sortedSectors]);
+
+  // If a sector slice is selected from donut chart that is beyond top 7, auto-expand
+  useEffect(() => {
+    if (selectedSector) {
+      const idx = sortedSectors.findIndex((s) => s.name === selectedSector);
+      if (idx >= 7) {
+        setIsExpanded(true);
+      }
+    }
+  }, [selectedSector, sortedSectors]);
 
   if (sortedSectors.length === 0) {
     return null;
@@ -221,8 +231,12 @@ export const SectorDonutChart = memo(function SectorDonutChart({
 
         {/* Right Column: Interactive Sector Breakdown List */}
         <div className="lg:col-span-7">
-          <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1 no-scrollbar">
-            {(isMobileExpanded ? sortedSectors : sortedSectors.slice(0, 7)).map((item, idx) => {
+          <div
+            className={`space-y-1.5 ${
+              isExpanded ? 'max-h-[340px] overflow-y-auto custom-scrollbar pr-1.5' : ''
+            }`}
+          >
+            {(isExpanded ? sortedSectors : sortedSectors.slice(0, 7)).map((item, idx) => {
               const isSelected = selectedSector === item.name;
               const isHovered = hoveredIndex === idx;
               const barPct = (item.allocation / maxAlloc) * 100;
@@ -288,16 +302,18 @@ export const SectorDonutChart = memo(function SectorDonutChart({
             })}
           </div>
 
-          {/* Mobile "Show All / Show Less" Toggle Button */}
+          {/* "Show All / Show Less" Toggle Button (Desktop & Mobile) */}
           {sortedSectors.length > 7 && (
-            <div className="lg:hidden mt-2 text-center">
+            <div className="mt-2.5 text-center">
               <button
                 type="button"
-                onClick={() => setIsMobileExpanded((prev) => !prev)}
-                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-500 py-1 px-3 rounded-lg hover:bg-indigo-500/10 transition-colors"
+                onClick={() => setIsExpanded((prev) => !prev)}
+                className="inline-flex items-center gap-1 text-xs font-bold text-indigo-500 py-1.5 px-3.5 rounded-lg hover:bg-indigo-500/10 transition-colors"
+                aria-expanded={isExpanded}
+                aria-label={isExpanded ? 'Collapse to top 7 sectors' : `View all ${sortedSectors.length} sectors`}
               >
-                <span>{isMobileExpanded ? 'Show Top 7 Sectors' : `View All ${sortedSectors.length} Sectors`}</span>
-                {isMobileExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                <span>{isExpanded ? 'Show Top 7 Sectors' : `View All ${sortedSectors.length} Sectors`}</span>
+                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
             </div>
           )}
