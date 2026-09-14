@@ -3,10 +3,10 @@
  * Single source of truth for FolioX versioning, build metadata, and release notes.
  */
 
-export const APP_VERSION = '2.2.0';
-export const RELEASE_CODENAME = 'Tradebook & Tax Intelligence';
+export const APP_VERSION = '2.3.0';
+export const RELEASE_CODENAME = 'Institutional Analytics & Console Terminal';
 export const RELEASE_DATE = 'September 2026';
-export const BUILD_TIMESTAMP = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '12 Sept 2026';
+export const BUILD_TIMESTAMP = typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : '14 Sept 2026';
 
 export const IS_UAT =
   import.meta.env.MODE === 'uat' ||
@@ -27,49 +27,49 @@ export const CURRENT_RELEASE = {
   date: RELEASE_DATE,
   features: [
     {
-      id: 'tradebook-ledger',
+      id: 'holdings-explorer',
       badge: 'NEW',
       badgeColor: 'emerald',
-      icon: 'Receipt',
-      title: 'Institutional-Grade Tradebook',
+      icon: 'Layers',
+      title: 'Institutional Holdings Explorer',
       description:
-        'A dedicated master ledger on your Portfolio page tracking all executed BUY and SELL trades, execution prices, cost basis, realized gains, turnover, and 1-click CSV export.'
+        'Comprehensive multi-column holdings console tracking direct Demat stocks vs. mutual fund & ETF exposures side-by-side, real rupee exposure, and visual portfolio weight bars.'
     },
     {
-      id: 'tax-estimator',
+      id: 'lookthrough-xray',
       badge: 'NEW',
       badgeColor: 'emerald',
-      icon: 'Calculator',
-      title: 'Indian Capital Gains Tax Estimator',
+      icon: 'Search',
+      title: 'Cross-Portfolio Look-Through X-Ray',
       description:
-        'A dedicated tax planning screen in Settings built for Budget 2024-25: STCG (@ 20%) & LTCG (@ 12.5%) calculations with annual ₹1,25,000 tax-free exemption tracking.'
+        'Tap any stock to inspect your true aggregated exposure. View direct Demat lots, units, and unrealized P&L alongside every mutual fund and ETF holding the company.'
     },
     {
-      id: 'tax-harvesting-advisor',
+      id: 'market-cap-gauge',
       badge: 'NEW',
-      badgeColor: 'amber',
-      icon: 'ShieldCheck',
-      title: 'Tax Harvesting & LTCG Transition Advisor',
+      badgeColor: 'sky',
+      icon: 'BarChart2',
+      title: 'SEBI Market Cap Distribution Gauge',
       description:
-        'Proactive alerts for open lots turning from STCG to LTCG within 60 days (saving 7.5% in tax), plus unharvested tax-free gains and loss-harvesting suggestions.'
+        'Interactive tri-color progress gauge classifying portfolio exposure across Large Cap, Mid Cap, and Small Cap with 1-tap interactive filtering across all holdings.'
     },
     {
-      id: 'mf-lookthrough',
-      badge: 'IMPROVED',
+      id: 'sector-donut',
+      badge: 'NEW',
       badgeColor: 'sky',
       icon: 'PieChart',
-      title: 'Mutual Fund Constituents & Sector Breakdown',
+      title: 'Interactive Sector Allocation Ring',
       description:
-        'Deep dive into mutual fund underlying stock constituents and sector weights with live indirect rupee exposure calculations.'
+        'High-definition hollow Donut chart with live hover metrics, sector concentration analysis, expandable full sector list, and seamless 1-tap filtering of holdings.'
     },
     {
-      id: 'holding-trade-history',
+      id: 'filters-export',
       badge: 'ENHANCED',
-      badgeColor: 'emerald',
-      icon: 'TrendingUp',
-      title: 'Holding-Level Order History',
+      badgeColor: 'amber',
+      icon: 'SlidersHorizontal',
+      title: 'Multi-Dimension Filters & CSV Export',
       description:
-        'View complete historical order timelines directly inside each stock or mutual fund detail screen.'
+        'Quick chips for Direct, Funds, and Overlaps, dedicated Sector and Cap dropdowns, dynamic multi-field sorting, and 1-click CSV report export.'
     }
   ]
 };

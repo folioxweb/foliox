@@ -226,6 +226,7 @@ const realApi = {
   getEtfs: () => apiFetch("etfs"),
   getMutualFunds: () => apiFetch("mutualFunds"),
   getFDs: () => apiFetch("fds"),
+  getStockLookthrough: (stockName) => apiFetch("stockLookthrough", { stockName }),
 
   // News API
   // ?action=news                  → all latest news

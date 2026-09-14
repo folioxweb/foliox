@@ -1,256 +1,274 @@
-import { motion } from 'framer-motion';
-import { PieChart, BarChart2, Settings, TrendingUp, Newspaper, Search, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  TrendingUp,
+  Newspaper,
+  Settings,
+  BarChart2,
+  PieChart,
+} from 'lucide-react';
+
 import { usePortfolio } from '../../context/PortfolioContext';
-import Skeleton from '../../components/ui/Skeleton';
-import PrivacyToggle from '../../components/ui/PrivacyToggle';
-import RefreshButton from '../../components/ui/RefreshButton';
+import { usePrivacy } from '../../context/PrivacyContext';
 import usePageScrollRestoration from '../../hooks/usePageScrollRestoration';
 import LoadingIndicator from '../../components/ui/LoadingIndicator';
-import { useNavigate } from 'react-router-dom';
-import { usePrivacy } from '../../context/PrivacyContext';
+import RefreshButton from '../../components/ui/RefreshButton';
+import PrivacyToggle from '../../components/ui/PrivacyToggle';
 import NewsPage from '../News/NewsPage';
+import Skeleton from '../../components/ui/Skeleton';
 
-// ─── Palette & Helpers ────────────────────────────────────────────────────────
-
-const SECTOR_PALETTE = [
-  '#6366F1','#06B6D4','#F59E0B','#10B981','#EF4444',
-  '#8B5CF6','#0EA5E9','#F97316','#14B8A6','#EC4899',
-  '#64748B','#A78BFA',
-];
-const RANK_COLORS = ['#F59E0B','#94A3B8','#CD7F32'];
-
-const formatAmt = (val) => {
-  if (!val) return '₹0';
-  if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)}Cr`;
-  if (val >= 100000)   return `₹${(val / 100000).toFixed(1)}L`;
-  if (val >= 1000)     return `₹${(val / 1000).toFixed(1)}K`;
-  return `₹${Math.round(val)}`;
-};
-
-// ─── Section heading ─────────────────────────────────────────────────────────
-
-function SectionHeading({ icon: Icon, title, color = '#64748B' }) {
-  return (
-    <div className="flex items-center gap-2 mb-3 px-1">
-      <Icon size={15} style={{ color }} />
-      <h2 className="text-xs font-semibold uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
-        {title}
-      </h2>
-    </div>
-  );
-}
-
-// ─── Full Sector List ─────────────────────────────────────────────────────────
-
-function FullSectorList({ data }) {
-  const { isPrivacyMode } = usePrivacy();
-  if (!data) return <Skeleton width="100%" height={300} rounded="xl" />;
-
-  const sorted = [...data].sort((a, b) => b.allocation - a.allocation);
-  const maxAlloc = Math.max(...sorted.map((d) => d.allocation), 1);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'var(--card-bg)',
-        border: '1px solid var(--card-border)',
-        boxShadow: 'var(--card-shadow)',
-      }}
-    >
-      {sorted.map((item, i) => {
-        const color = SECTOR_PALETTE[i % SECTOR_PALETTE.length];
-        const barPct = (item.allocation / maxAlloc) * 100;
-        return (
-          <div
-            key={item.sector}
-            className="relative px-3 sm:px-4 py-3"
-            style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none' }}
-          >
-            <motion.div
-              className="absolute left-0 top-0 bottom-0 pointer-events-none"
-              initial={{ width: 0 }}
-              animate={{ width: `${barPct}%` }}
-              transition={{ duration: 0.7, delay: i * 0.04, ease: 'easeOut' }}
-              style={{ background: `${color}12` }}
-            />
-            <div className="relative z-10 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
-                <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.sector}</span>
-              </div>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
-                </span>
-                <span className="text-sm font-bold w-12 text-right" style={{ color }}>
-                  {item.allocation.toFixed(2)}%
-                </span>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </motion.div>
-  );
-}
-
-// ─── Full Stocks List ─────────────────────────────────────────────────────────
-
-function FullStocksList({ data }) {
-  const { isPrivacyMode } = usePrivacy();
-  const [query, setQuery] = useState('');
-  const [displayCount, setDisplayCount] = useState(50);
-
-  if (!data) return <Skeleton width="100%" height={300} rounded="xl" />;
-
-  const sorted = [...data].sort((a, b) => b.allocation - a.allocation);
-  const maxExposure = Math.max(...sorted.map((d) => d.exposure), 1);
-
-  const filtered = query.trim()
-    ? sorted.filter(item => 
-        item.name?.toLowerCase().includes(query.toLowerCase()) ||
-        item.sector?.toLowerCase().includes(query.toLowerCase())
-      )
-    : sorted;
-
-  const visibleItems = query.trim() ? filtered : filtered.slice(0, displayCount);
-
-  return (
-    <div className="space-y-2.5">
-      {/* Search Filter for Holdings */}
-      {sorted.length > 10 && (
-        <div
-          className="flex items-center gap-2 px-3 py-2 rounded-xl"
-          style={{
-            background: 'var(--card-bg)',
-            border: '1px solid var(--card-border)',
-          }}
-        >
-          <Search size={14} style={{ color: 'var(--text-muted)' }} />
-          <input
-            type="text"
-            placeholder={`Search across ${sorted.length} holdings by name or sector...`}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full bg-transparent text-xs outline-none"
-            style={{ color: 'var(--text)' }}
-          />
-          {query && (
-            <button onClick={() => setQuery('')} className="p-0.5 hover:opacity-75">
-              <X size={13} style={{ color: 'var(--text-muted)' }} />
-            </button>
-          )}
-        </div>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="rounded-2xl overflow-hidden"
-        style={{
-          background: 'var(--card-bg)',
-          border: '1px solid var(--card-border)',
-          boxShadow: 'var(--card-shadow)',
-        }}
-      >
-        {visibleItems.length === 0 ? (
-          <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-            No stocks found matching "{query}"
-          </div>
-        ) : (
-          visibleItems.map((item, i) => {
-            const rankColor = RANK_COLORS[i] ?? '#6366F1';
-            const barPct = (item.exposure / maxExposure) * 100;
-            return (
-              <div
-                key={item.name}
-                className="relative px-3 sm:px-4 py-3 flex items-center gap-3"
-                style={{ borderBottom: (i < visibleItems.length - 1 || (!query.trim() && filtered.length > displayCount)) ? '1px solid var(--divider)' : 'none' }}
-              >
-                <motion.div
-                  className="absolute left-0 top-0 bottom-0 pointer-events-none"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${barPct}%` }}
-                  transition={{ duration: 0.7, delay: Math.min(i * 0.02, 0.4), ease: 'easeOut' }}
-                  style={{ background: `${rankColor}0D` }}
-                />
-                <span
-                  className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-                  style={{
-                    background: i < 3 ? `${rankColor}22` : 'var(--card-border)',
-                    color: i < 3 ? rankColor : 'var(--text-muted)',
-                  }}
-                >
-                  {i + 1}
-                </span>
-                <div className="relative z-10 flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
-                    {isPrivacyMode ? '••••••••' : item.name}
-                  </p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                      {isPrivacyMode ? '••••' : (item.sector || 'Other')}
-                    </span>
-                    {item.directValue > 0 && item.indirectValue > 0 && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-400">
-                        Direct + Funds
-                      </span>
-                    )}
-                    {item.directValue > 0 && !item.indirectValue && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-blue-500/10 text-blue-400">
-                        Direct
-                      </span>
-                    )}
-                    {!item.directValue && item.indirectValue > 0 && (
-                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-purple-500/10 text-purple-400">
-                        Via Funds
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
-                  </span>
-                  <span className="text-sm font-bold w-12 text-right" style={{ color: rankColor }}>
-                    {item.allocation.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            );
-          })
-        )}
-
-        {!query.trim() && filtered.length > displayCount && (
-          <button
-            onClick={() => setDisplayCount(prev => prev + 50)}
-            className="w-full py-3 text-center text-xs font-semibold hover:opacity-80 transition-opacity"
-            style={{
-              color: '#6366F1',
-              background: 'var(--card-bg)',
-            }}
-          >
-            Show Next 50 Holdings ({filtered.length - displayCount} remaining)
-          </button>
-        )}
-      </motion.div>
-    </div>
-  );
-}
-
-// ─── AnalyticsPage ────────────────────────────────────────────────────────────
+// Modern Analytics Components
+import AnalyticsKpiRibbon from '../../components/analytics/AnalyticsKpiRibbon';
+import MarketCapDistribution from '../../components/analytics/MarketCapDistribution';
+import SectorDonutChart from '../../components/analytics/SectorDonutChart';
+import HoldingsFilterBar from '../../components/analytics/HoldingsFilterBar';
+import HoldingsConsoleTable from '../../components/analytics/HoldingsConsoleTable';
+import StockLookthroughDrawer from '../../components/analytics/StockLookthroughDrawer';
 
 export default function AnalyticsPage() {
   const { state, refreshAll, refreshing } = usePortfolio();
   const scrollRef = usePageScrollRestoration('analytics');
   const navigate = useNavigate();
+
   const [newsPageOpen, setNewsPageOpen] = useState(false);
-  const { data: sectorData } = state.overallSectorAllocation;
-  const { data: stocksData } = state.stocksAllocation;
+
+  // Raw data from PortfolioContext
+  const { data: sectorData, loading: sectorLoading } = state.overallSectorAllocation;
+  const { data: stocksData, loading: stocksLoading } = state.stocksAllocation;
+  const loading = sectorLoading || stocksLoading;
+
+  // ─── Filter & Sorting State (Persisted in localStorage) ───────────────────────────
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const [sourceFilter, setSourceFilter] = useState(() => {
+    try {
+      return localStorage.getItem('analytics_source_filter') || 'all';
+    } catch {
+      return 'all';
+    }
+  });
+
+  const [selectedSector, setSelectedSector] = useState(() => {
+    try {
+      return localStorage.getItem('analytics_selected_sector') || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [selectedCap, setSelectedCap] = useState(() => {
+    try {
+      return localStorage.getItem('analytics_selected_cap') || '';
+    } catch {
+      return '';
+    }
+  });
+
+  const [sortBy, setSortBy] = useState(() => {
+    try {
+      return localStorage.getItem('analytics_sort_by') || 'exposure';
+    } catch {
+      return 'exposure';
+    }
+  });
+
+  const [sortDirection, setSortDirection] = useState(() => {
+    try {
+      return localStorage.getItem('analytics_sort_dir') || 'desc';
+    } catch {
+      return 'desc';
+    }
+  });
+
+  const [displayCount, setDisplayCount] = useState(50);
+  const [selectedStockForDrawer, setSelectedStockForDrawer] = useState(null);
+
+  // ─── Handlers with Persistence ──────────────────────────────────────────────
+  const handleSourceFilterChange = (filter) => {
+    setSourceFilter(filter);
+    setDisplayCount(50);
+    try {
+      localStorage.setItem('analytics_source_filter', filter);
+    } catch {}
+  };
+
+  const handleSectorChange = (sec) => {
+    setSelectedSector(sec);
+    setDisplayCount(50);
+    try {
+      if (sec) localStorage.setItem('analytics_selected_sector', sec);
+      else localStorage.removeItem('analytics_selected_sector');
+    } catch {}
+  };
+
+  const handleCapChange = (cap) => {
+    setSelectedCap(cap);
+    setDisplayCount(50);
+    try {
+      if (cap) localStorage.setItem('analytics_selected_cap', cap);
+      else localStorage.removeItem('analytics_selected_cap');
+    } catch {}
+  };
+
+  const handleSortByChange = (newSort) => {
+    setSortBy(newSort);
+    setDisplayCount(50);
+    try {
+      localStorage.setItem('analytics_sort_by', newSort);
+    } catch {}
+  };
+
+  const handleSortDirectionChange = (newDir) => {
+    setSortDirection(newDir);
+    setDisplayCount(50);
+    try {
+      localStorage.setItem('analytics_sort_dir', newDir);
+    } catch {}
+  };
+
+  const handleExportCsv = () => {
+    if (!filteredStocks || filteredStocks.length === 0) return;
+    const headers = [
+      'Rank',
+      'Company Name',
+      'Sector',
+      'Market Cap',
+      'Direct Demat Value (INR)',
+      'Via Funds Value (INR)',
+      'Total Exposure (INR)',
+      'Portfolio Weight (%)',
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = filteredStocks.map((s, idx) => [
+      idx + 1,
+      escapeCsv(s.name || 'Unknown'),
+      escapeCsv(s.sector || 'Other'),
+      escapeCsv(s.marketCap || 'Small Cap'),
+      Number(s.directValue || 0).toFixed(2),
+      Number(s.indirectValue || 0).toFixed(2),
+      Number(s.exposure || 0).toFixed(2),
+      Number(s.allocation || 0).toFixed(2),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `portfolio_holdings_analysis_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // ─── Computations ────────────────────────────────────────────────────────────
+  // 1. Source counts for quick filter chips
+  const sourceCounts = useMemo(() => {
+    if (!stocksData || !Array.isArray(stocksData)) {
+      return { all: 0, direct: 0, funds: 0, overlap: 0 };
+    }
+    let direct = 0;
+    let funds = 0;
+    let overlap = 0;
+
+    stocksData.forEach((s) => {
+      const hasDirect = (s.directValue || 0) > 0;
+      const hasFunds = (s.indirectValue || 0) > 0;
+      if (hasDirect && hasFunds) overlap++;
+      if (hasDirect) direct++;
+      if (hasFunds && !hasDirect) funds++;
+    });
+
+    return {
+      all: stocksData.length,
+      direct,
+      funds,
+      overlap,
+    };
+  }, [stocksData]);
+
+  // 2. Unique sectors for dropdown filter
+  const uniqueSectors = useMemo(() => {
+    if (!sectorData || !Array.isArray(sectorData)) return [];
+    return sectorData
+      .map((s) => s.sector)
+      .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b));
+  }, [sectorData]);
+
+  // 3. Filtered & Sorted Stocks List
+  const filteredStocks = useMemo(() => {
+    if (!stocksData || !Array.isArray(stocksData)) return [];
+
+    return stocksData
+      .filter((item) => {
+        // Sector Filter
+        if (selectedSector && (item.sector || 'Other') !== selectedSector) {
+          return false;
+        }
+
+        // Market Cap Filter
+        if (selectedCap && (item.marketCap || 'Small Cap') !== selectedCap) {
+          return false;
+        }
+
+        // Source Filter
+        if (sourceFilter === 'direct') {
+          if ((item.directValue || 0) <= 0) return false;
+        } else if (sourceFilter === 'funds') {
+          if ((item.indirectValue || 0) <= 0 || (item.directValue || 0) > 0) return false;
+        } else if (sourceFilter === 'overlap') {
+          if ((item.directValue || 0) <= 0 || (item.indirectValue || 0) <= 0) return false;
+        }
+
+        // Search Query
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          const name = (item.name || '').toLowerCase();
+          const sec = (item.sector || '').toLowerCase();
+          if (!name.includes(q) && !sec.includes(q)) return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) => {
+        let comp = 0;
+        if (sortBy === 'exposure') {
+          comp = (b.exposure || 0) - (a.exposure || 0);
+        } else if (sortBy === 'allocation') {
+          comp = (b.allocation || 0) - (a.allocation || 0);
+        } else if (sortBy === 'direct') {
+          comp = (b.directValue || 0) - (a.directValue || 0);
+        } else if (sortBy === 'indirect') {
+          comp = (b.indirectValue || 0) - (a.indirectValue || 0);
+        } else if (sortBy === 'name') {
+          comp = (a.name || '').localeCompare(b.name || '');
+        } else if (sortBy === 'sector') {
+          comp = (a.sector || '').localeCompare(b.sector || '');
+        }
+        return sortDirection === 'desc' ? comp : -comp;
+      });
+  }, [stocksData, selectedSector, selectedCap, sourceFilter, searchQuery, sortBy, sortDirection]);
+
+  // 4. Max exposure for relative bars
+  const maxExposure = useMemo(() => {
+    if (!filteredStocks || filteredStocks.length === 0) return 1;
+    return Math.max(...filteredStocks.map((s) => s.exposure || 0), 1);
+  }, [filteredStocks]);
+
+  const visibleItems = useMemo(() => {
+    return filteredStocks.slice(0, displayCount);
+  }, [filteredStocks, displayCount]);
 
   return (
     <main
@@ -263,7 +281,7 @@ export default function AnalyticsPage() {
         paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))',
       }}
     >
-      {/* Sticky Header */}
+      {/* ── Sticky Top Header ── */}
       <div
         className="sticky top-0 z-20 px-3 sm:px-4 lg:px-8 flex items-center justify-between"
         style={{
@@ -275,9 +293,12 @@ export default function AnalyticsPage() {
       >
         <div className="flex items-center gap-2">
           <TrendingUp size={18} className="text-indigo-400" />
-          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>Analytics</h1>
-          <LoadingIndicator loading={refreshing} />
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text)' }}>
+            Analytics
+          </h1>
+          <LoadingIndicator loading={refreshing || loading} />
         </div>
+
         <div className="flex items-center gap-2">
           <button
             id="analytics-news-btn"
@@ -288,7 +309,7 @@ export default function AnalyticsPage() {
           >
             <Newspaper size={20} />
           </button>
-          <RefreshButton onRefresh={refreshAll} />
+          <RefreshButton onRefresh={refreshAll} loading={refreshing} />
           <PrivacyToggle />
           <button
             onClick={() => navigate('/settings')}
@@ -305,27 +326,97 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Content */}
+      {/* ── Main Analytics Body ── */}
       <div className="px-3 sm:px-4 lg:px-8 pt-3.5 sm:pt-5 space-y-4 sm:space-y-6">
-        <section>
-          <SectionHeading icon={PieChart} title="Full Sector Allocation" color="#6366F1" />
-          <FullSectorList data={sectorData} />
-        </section>
-        <section>
-          <SectionHeading
-            icon={BarChart2}
-            title={stocksData?.length ? `All Holdings by Exposure (${stocksData.length} Stocks across Equities, MFs & ETFs)` : "All Holdings by Exposure"}
-            color="#F59E0B"
-          />
-          <FullStocksList data={stocksData} />
-        </section>
+        {loading && !stocksData ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} width="100%" height={80} rounded="2xl" />
+              ))}
+            </div>
+            <Skeleton width="100%" height={260} rounded="2xl" />
+            <Skeleton width="100%" height={400} rounded="2xl" />
+          </div>
+        ) : (
+          <>
+            {/* 1. Executive Summary & Concentration Ribbon */}
+            <section aria-label="Portfolio Concentration KPIs">
+              <AnalyticsKpiRibbon stocksData={stocksData} sectorData={sectorData} />
+            </section>
+
+            {/* 2. SEBI Market Cap Distribution Gauge */}
+            <section aria-label="Market Cap Distribution">
+              <MarketCapDistribution
+                stocksData={stocksData}
+                selectedCap={selectedCap}
+                onSelectCap={handleCapChange}
+              />
+            </section>
+
+            {/* 3. Interactive Sector Donut Engine */}
+            <section aria-label="Sector Allocation">
+              <SectorDonutChart
+                data={sectorData}
+                selectedSector={selectedSector}
+                onSelectSector={handleSectorChange}
+              />
+            </section>
+
+            {/* 4. Institutional Holdings Explorer */}
+            <section aria-label="Holdings Explorer" className="space-y-3.5">
+              <div className="flex items-center justify-between gap-2 px-1">
+                <div className="flex items-center gap-2">
+                  <BarChart2 size={16} className="text-amber-500" />
+                  <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                    Holdings Explorer ({filteredStocks.length}
+                    {filteredStocks.length !== (stocksData?.length || 0) ? ` of ${stocksData?.length}` : ''})
+                  </h2>
+                </div>
+              </div>
+
+              {/* Filter & Sorting Controls */}
+              <HoldingsFilterBar
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                sourceFilter={sourceFilter}
+                onSourceFilterChange={handleSourceFilterChange}
+                selectedSector={selectedSector}
+                onSectorChange={handleSectorChange}
+                sectors={uniqueSectors}
+                selectedCap={selectedCap}
+                onCapChange={handleCapChange}
+                sortBy={sortBy}
+                onSortByChange={handleSortByChange}
+                sortDirection={sortDirection}
+                onSortDirectionChange={handleSortDirectionChange}
+                onExportCsv={handleExportCsv}
+                counts={sourceCounts}
+              />
+
+              {/* Console Data Table / Mobile Cards */}
+              <HoldingsConsoleTable
+                items={visibleItems}
+                totalFilteredCount={filteredStocks.length}
+                displayCount={displayCount}
+                onLoadMore={() => setDisplayCount((prev) => prev + 50)}
+                onSelectStock={(stock) => setSelectedStockForDrawer(stock)}
+                maxExposure={maxExposure}
+              />
+            </section>
+          </>
+        )}
       </div>
 
-      {/* Market News Overlay */}
-      <NewsPage
-        isOpen={newsPageOpen}
-        onClose={() => setNewsPageOpen(false)}
+      {/* Stock Look-Through & Demat Position Drawer */}
+      <StockLookthroughDrawer
+        stock={selectedStockForDrawer}
+        isOpen={Boolean(selectedStockForDrawer)}
+        onClose={() => setSelectedStockForDrawer(null)}
       />
+
+      {/* Market News Overlay Drawer */}
+      <NewsPage isOpen={newsPageOpen} onClose={() => setNewsPageOpen(false)} />
     </main>
   );
 }

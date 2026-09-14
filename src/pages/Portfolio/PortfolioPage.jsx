@@ -401,7 +401,7 @@ export default function PortfolioPage() {
           <TradebookView onSelectHolding={handleHoldingPress} />
         ) : (
           <>
-            {/* View mode toggle row — matches Zerodha Sort / <> toggle */}
+            {/* View mode toggle row — Sort / <> toggle */}
             <div className="flex items-center justify-between mb-1 pb-2" style={{ borderBottom: '1px solid var(--divider)' }}>
               {/* Sort button — tapping opens the sort/filter bottom sheet */}
               <button

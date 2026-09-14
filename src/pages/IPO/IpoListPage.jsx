@@ -394,7 +394,7 @@ export default function IpoListPage() {
         </div>
       </div>
 
-      {/* ── Zerodha-style Horizontal TabBar ── */}
+      {/* ── Horizontal TabBar ── */}
       <div
         className="z-20"
         style={{

@@ -137,6 +137,25 @@ body {
   scrollbar-width: none;
 }
 
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--card-border, rgba(0, 0, 0, 0.15));
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted, rgba(0, 0, 0, 0.35));
+}
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--card-border, rgba(0, 0, 0, 0.15)) transparent;
+}
+
 /* ─── Prevent Mobile Auto-Zoom on Input Focus ───────────────────────────────── */
 @media screen and (max-width: 768px) {
   input, select, textarea {

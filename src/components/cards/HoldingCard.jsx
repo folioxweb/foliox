@@ -191,7 +191,7 @@ export default function HoldingCard({ holding, variant = 'full', onPress, onNews
 
   const isStock = holding.assetType === 'stocks' || holding.asset_type === 'STOCK' || (!holding.assetType && !holding.mfApiCode && !holding.interestRate && !holding.category?.includes('ETF') && holding.category !== 'Mutual Fund');
 
-  /* ─── LIST VARIANT (Zerodha-style row) ──────────────────────────────── */
+  /* ─── LIST VARIANT (Compact row) ──────────────────────────────── */
   if (variant === 'list') {
     const Tag = 'div';
     const listRowStyle = {

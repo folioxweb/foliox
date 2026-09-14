@@ -1,6 +1,23 @@
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Mail, TrendingUp, Layers, Bell, Check, X, ArrowRight, Receipt, Calculator, PieChart, ShieldCheck } from 'lucide-react';
+import {
+  Sparkles,
+  Mail,
+  TrendingUp,
+  Layers,
+  Bell,
+  Check,
+  X,
+  ArrowRight,
+  Receipt,
+  Calculator,
+  PieChart,
+  ShieldCheck,
+  BarChart2,
+  SlidersHorizontal,
+  Search,
+  Download,
+} from 'lucide-react';
 import { CURRENT_RELEASE } from '../../config/version';
 
 const ICON_MAP = {
@@ -13,6 +30,10 @@ const ICON_MAP = {
   Calculator: Calculator,
   PieChart: PieChart,
   ShieldCheck: ShieldCheck,
+  BarChart2: BarChart2,
+  SlidersHorizontal: SlidersHorizontal,
+  Search: Search,
+  Download: Download,
 };
 
 const BADGE_STYLES = {
