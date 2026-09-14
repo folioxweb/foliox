@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { PieChart, BarChart2, Settings, TrendingUp, Newspaper } from 'lucide-react';
+import { PieChart, BarChart2, Settings, TrendingUp, Newspaper, Search, X } from 'lucide-react';
 import { useState } from 'react';
 import { usePortfolio } from '../../context/PortfolioContext';
 import Skeleton from '../../components/ui/Skeleton';
@@ -102,67 +102,143 @@ function FullSectorList({ data }) {
 
 function FullStocksList({ data }) {
   const { isPrivacyMode } = usePrivacy();
+  const [query, setQuery] = useState('');
+  const [displayCount, setDisplayCount] = useState(50);
+
   if (!data) return <Skeleton width="100%" height={300} rounded="xl" />;
 
   const sorted = [...data].sort((a, b) => b.allocation - a.allocation);
   const maxExposure = Math.max(...sorted.map((d) => d.exposure), 1);
 
+  const filtered = query.trim()
+    ? sorted.filter(item => 
+        item.name?.toLowerCase().includes(query.toLowerCase()) ||
+        item.sector?.toLowerCase().includes(query.toLowerCase())
+      )
+    : sorted;
+
+  const visibleItems = query.trim() ? filtered : filtered.slice(0, displayCount);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: 'var(--card-bg)',
-        border: '1px solid var(--card-border)',
-        boxShadow: 'var(--card-shadow)',
-      }}
-    >
-      {sorted.map((item, i) => {
-        const rankColor = RANK_COLORS[i] ?? '#6366F1';
-        const barPct = (item.exposure / maxExposure) * 100;
-        return (
-          <div
-            key={item.name}
-            className="relative px-3 sm:px-4 py-3 flex items-center gap-3"
-            style={{ borderBottom: i < sorted.length - 1 ? '1px solid var(--divider)' : 'none' }}
-          >
-            <motion.div
-              className="absolute left-0 top-0 bottom-0 pointer-events-none"
-              initial={{ width: 0 }}
-              animate={{ width: `${barPct}%` }}
-              transition={{ duration: 0.7, delay: i * 0.03, ease: 'easeOut' }}
-              style={{ background: `${rankColor}0D` }}
-            />
-            <span
-              className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
-              style={{
-                background: i < 3 ? `${rankColor}22` : 'var(--card-border)',
-                color: i < 3 ? rankColor : 'var(--text-muted)',
-              }}
-            >
-              {i + 1}
-            </span>
-            <div className="relative z-10 flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
-                {isPrivacyMode ? '••••••••' : item.name}
-              </p>
-              <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
-                {isPrivacyMode ? '••••' : item.sector}
-              </p>
-            </div>
-            <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
-              </span>
-              <span className="text-sm font-bold w-12 text-right" style={{ color: rankColor }}>
-                {item.allocation.toFixed(2)}%
-              </span>
-            </div>
+    <div className="space-y-2.5">
+      {/* Search Filter for Holdings */}
+      {sorted.length > 10 && (
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-xl"
+          style={{
+            background: 'var(--card-bg)',
+            border: '1px solid var(--card-border)',
+          }}
+        >
+          <Search size={14} style={{ color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            placeholder={`Search across ${sorted.length} holdings by name or sector...`}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full bg-transparent text-xs outline-none"
+            style={{ color: 'var(--text)' }}
+          />
+          {query && (
+            <button onClick={() => setQuery('')} className="p-0.5 hover:opacity-75">
+              <X size={13} style={{ color: 'var(--text-muted)' }} />
+            </button>
+          )}
+        </div>
+      )}
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: 'var(--card-bg)',
+          border: '1px solid var(--card-border)',
+          boxShadow: 'var(--card-shadow)',
+        }}
+      >
+        {visibleItems.length === 0 ? (
+          <div className="py-8 text-center text-xs" style={{ color: 'var(--text-muted)' }}>
+            No stocks found matching "{query}"
           </div>
-        );
-      })}
-    </motion.div>
+        ) : (
+          visibleItems.map((item, i) => {
+            const rankColor = RANK_COLORS[i] ?? '#6366F1';
+            const barPct = (item.exposure / maxExposure) * 100;
+            return (
+              <div
+                key={item.name}
+                className="relative px-3 sm:px-4 py-3 flex items-center gap-3"
+                style={{ borderBottom: (i < visibleItems.length - 1 || (!query.trim() && filtered.length > displayCount)) ? '1px solid var(--divider)' : 'none' }}
+              >
+                <motion.div
+                  className="absolute left-0 top-0 bottom-0 pointer-events-none"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${barPct}%` }}
+                  transition={{ duration: 0.7, delay: Math.min(i * 0.02, 0.4), ease: 'easeOut' }}
+                  style={{ background: `${rankColor}0D` }}
+                />
+                <span
+                  className="relative z-10 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                  style={{
+                    background: i < 3 ? `${rankColor}22` : 'var(--card-border)',
+                    color: i < 3 ? rankColor : 'var(--text-muted)',
+                  }}
+                >
+                  {i + 1}
+                </span>
+                <div className="relative z-10 flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text)' }}>
+                    {isPrivacyMode ? '••••••••' : item.name}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                      {isPrivacyMode ? '••••' : (item.sector || 'Other')}
+                    </span>
+                    {item.directValue > 0 && item.indirectValue > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-emerald-500/10 text-emerald-400">
+                        Direct + Funds
+                      </span>
+                    )}
+                    {item.directValue > 0 && !item.indirectValue && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-blue-500/10 text-blue-400">
+                        Direct
+                      </span>
+                    )}
+                    {!item.directValue && item.indirectValue > 0 && (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded font-medium bg-purple-500/10 text-purple-400">
+                        Via Funds
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {isPrivacyMode ? '₹•••' : formatAmt(item.exposure)}
+                  </span>
+                  <span className="text-sm font-bold w-12 text-right" style={{ color: rankColor }}>
+                    {item.allocation.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {!query.trim() && filtered.length > displayCount && (
+          <button
+            onClick={() => setDisplayCount(prev => prev + 50)}
+            className="w-full py-3 text-center text-xs font-semibold hover:opacity-80 transition-opacity"
+            style={{
+              color: '#6366F1',
+              background: 'var(--card-bg)',
+            }}
+          >
+            Show Next 50 Holdings ({filtered.length - displayCount} remaining)
+          </button>
+        )}
+      </motion.div>
+    </div>
   );
 }
 
@@ -236,7 +312,11 @@ export default function AnalyticsPage() {
           <FullSectorList data={sectorData} />
         </section>
         <section>
-          <SectionHeading icon={BarChart2} title="All Holdings by Exposure" color="#F59E0B" />
+          <SectionHeading
+            icon={BarChart2}
+            title={stocksData?.length ? `All Holdings by Exposure (${stocksData.length} Stocks across Equities, MFs & ETFs)` : "All Holdings by Exposure"}
+            color="#F59E0B"
+          />
           <FullStocksList data={stocksData} />
         </section>
       </div>
