@@ -450,8 +450,11 @@ export const supabaseApi = {
     if (!error && data && data.length > 0) {
       return data.map(s => ({
         name: s.stock_name || s.name || s.symbol,
+        sector: s.sector || 'Other',
         exposure: Number(Number(s.total_exposure || 0).toFixed(2)),
-        allocation: Number(Number(s.allocation_pct || s.weight_pct || 0).toFixed(2))
+        allocation: Number(Number(s.allocation_pct || s.weight_pct || 0).toFixed(2)),
+        directValue: Number(Number(s.direct_value || 0).toFixed(2)),
+        indirectValue: Number(Number(s.indirect_value || 0).toFixed(2))
       }));
     }
 
@@ -459,8 +462,11 @@ export const supabaseApi = {
     const totalCur = stocks.reduce((acc, x) => acc + (x.currentValue || 0), 0);
     return stocks.map(s => ({
       name: s.name,
+      sector: s.sector || 'Other',
       exposure: Number((s.currentValue || 0).toFixed(2)),
-      allocation: totalCur > 0 ? Number(((s.currentValue / totalCur) * 100).toFixed(2)) : 0
+      allocation: totalCur > 0 ? Number(((s.currentValue / totalCur) * 100).toFixed(2)) : 0,
+      directValue: Number((s.currentValue || 0).toFixed(2)),
+      indirectValue: 0
     })).sort((a, b) => b.exposure - a.exposure);
   },
 
