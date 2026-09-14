@@ -155,13 +155,41 @@ export default function FundHoldingsBreakdown({ holding }) {
     return stocks.slice(0, 10).reduce((acc, s) => acc + Number(s.weight || 0), 0);
   }, [stocks]);
 
+  // Sanitized sectors ensuring any legacy 100% Cash Equivalent artifact is corrected to the true non-equity percentage
+  const sanitizedSectors = useMemo(() => {
+    const totalStock = stocks.reduce((acc, s) => acc + Number(s.weight || 0), 0);
+    const nonEquityRemainder = totalStock > 0 && totalStock < 99.0 
+      ? Number((100.0 - totalStock).toFixed(2)) 
+      : null;
+
+    return sectors
+      .map((s) => {
+        const n = (s.name || '').toLowerCase().trim();
+        if ((n.includes('cash') || n.includes('debt')) && Number(s.weight || 0) >= 50 && nonEquityRemainder !== null) {
+          return { ...s, name: 'Debt & Cash', weight: nonEquityRemainder };
+        }
+        return s;
+      })
+      .filter((s) => Number(s.weight || 0) > 0)
+      .sort((a, b) => b.weight - a.weight);
+  }, [sectors, stocks]);
+
   const debtCashWeight = useMemo(() => {
-    const debtSec = sectors.find((s) => {
-      const n = (s.name || '').toLowerCase();
-      return n.includes('debt') || n.includes('cash');
+    const debtSec = sanitizedSectors.find((s) => {
+      const n = (s.name || '').toLowerCase().trim();
+      return n === 'debt & cash' || n === 'debt and cash';
     });
-    return debtSec ? Number(debtSec.weight || 0) : null;
-  }, [sectors]);
+    if (debtSec && Number(debtSec.weight || 0) <= 50) {
+      return Number(debtSec.weight || 0);
+    }
+
+    const totalStock = stocks.reduce((acc, s) => acc + Number(s.weight || 0), 0);
+    if (totalStock > 0 && totalStock < 99.0) {
+      return Number((100.0 - totalStock).toFixed(1));
+    }
+
+    return null;
+  }, [sanitizedSectors, stocks]);
 
   // Filtered stocks based on search query
   const filteredStocks = useMemo(() => {
@@ -235,9 +263,9 @@ export default function FundHoldingsBreakdown({ holding }) {
         >
           <PieChart size={12} className={activeTab === 'sectors' ? 'text-blue-400' : ''} />
           <span>Sector Allocation</span>
-          {sectors.length > 0 && (
+          {sanitizedSectors.length > 0 && (
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-blue-500/15 text-blue-400 font-extrabold">
-              {sectors.length}
+              {sanitizedSectors.length}
             </span>
           )}
         </button>
@@ -405,10 +433,10 @@ export default function FundHoldingsBreakdown({ holding }) {
         /* ── TAB 2: Sector Allocation (Concise Zerodha Coin Style) ── */
         <div>
           {/* Micro Segmented Visual Stack Bar */}
-          {sectors.length > 0 && (
+          {sanitizedSectors.length > 0 && (
             <div className="mb-2.5">
               <div className="h-1.5 w-full rounded-full bg-white/5 overflow-hidden flex shadow-inner">
-                {sectors.map((sec, i) => {
+                {sanitizedSectors.map((sec, i) => {
                   const color = getSectorColor(sec.name, i);
                   return (
                     <div
@@ -434,7 +462,7 @@ export default function FundHoldingsBreakdown({ holding }) {
 
           {/* Concise Sector Rows */}
           <div className="divide-y divide-[var(--divider)]">
-            {sectors.map((sec, idx) => {
+            {sanitizedSectors.map((sec, idx) => {
               const weight = Number(sec.weight || 0);
               const color = getSectorColor(sec.name, idx);
               const rupeeExposure = fundValue > 0 ? (fundValue * weight) / 100 : null;
