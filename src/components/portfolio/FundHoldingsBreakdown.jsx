@@ -49,7 +49,13 @@ const SECTOR_COLOR_MAP = {
   "Realty": "#65A30D",
   "Media, Entertainment & Publication": "#C026D3",
   "Textiles": "#E11D48",
-  "Diversified": "#6B7280"
+  "Diversified": "#6B7280",
+  "Debt & Cash": "#64748B",
+  "Debt": "#475569",
+  "Cash & Equivalents": "#0EA5E9",
+  "Cash Equivalent": "#0EA5E9",
+  "Corporate": "#64748B",
+  "Government": "#334155"
 };
 
 const PALETTE = [
@@ -148,6 +154,14 @@ export default function FundHoldingsBreakdown({ holding }) {
   const top10Weight = useMemo(() => {
     return stocks.slice(0, 10).reduce((acc, s) => acc + Number(s.weight || 0), 0);
   }, [stocks]);
+
+  const debtCashWeight = useMemo(() => {
+    const debtSec = sectors.find((s) => {
+      const n = (s.name || '').toLowerCase();
+      return n.includes('debt') || n.includes('cash');
+    });
+    return debtSec ? Number(debtSec.weight || 0) : null;
+  }, [sectors]);
 
   // Filtered stocks based on search query
   const filteredStocks = useMemo(() => {
@@ -284,8 +298,17 @@ export default function FundHoldingsBreakdown({ holding }) {
             <div className="w-px h-3 bg-[var(--divider)]" />
             <div className="flex items-center gap-1 text-[var(--text-muted)]">
               <span className="font-extrabold text-[var(--text)]">{stocks.length}</span>
-              <span className="text-[10px]">assets</span>
+              <span className="text-[10px]">stocks</span>
             </div>
+            {debtCashWeight !== null && debtCashWeight > 0 && (
+              <>
+                <div className="w-px h-3 bg-[var(--divider)]" />
+                <div className="flex items-center gap-1">
+                  <span className="text-[var(--text-muted)] uppercase text-[10px] tracking-wider font-bold">Debt & Cash:</span>
+                  <span className="font-extrabold text-slate-400">{debtCashWeight.toFixed(1)}%</span>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Compact Search Bar */}
