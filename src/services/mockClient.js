@@ -642,6 +642,42 @@ const realMockApi = {
     return result.sort((a, b) => b.exposure - a.exposure);
   },
 
+  getStockLookthrough: async (stockName) => {
+    return {
+      stock_name: stockName || 'Sample Stock',
+      sector: 'Financial Services',
+      market_cap_category: 'Large Cap',
+      total_exposure: 150000,
+      direct_value: 100000,
+      indirect_value: 50000,
+      direct_holding: {
+        shares: 50,
+        avg_price: 1800,
+        current_price: 2000,
+        invested_value: 90000,
+        current_value: 100000,
+        pnl: 10000,
+        pnl_pct: 11.11,
+      },
+      fund_holdings: [
+        {
+          fund_name: 'Parag Parikh Flexi Cap Fund',
+          fund_type: 'MUTUAL_FUND',
+          weight_percentage: 8.5,
+          user_exposure: 35000,
+          fund_total_value: 411000,
+        },
+        {
+          fund_name: 'UTI Nifty 50 Index Fund',
+          fund_type: 'MUTUAL_FUND',
+          weight_percentage: 9.2,
+          user_exposure: 15000,
+          fund_total_value: 163000,
+        },
+      ],
+    };
+  },
+
   getDashboard: async () => {
     const overallInvestments = await realMockApi.getOverallInvestments();
     const assetAllocation = await realMockApi.getAssetAllocation();

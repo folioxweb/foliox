@@ -6,6 +6,7 @@ import {
   Check,
   Filter,
   ArrowUpDown,
+  Download,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -26,20 +27,24 @@ export const HoldingsFilterBar = memo(function HoldingsFilterBar({
   selectedSector,
   onSectorChange,
   sectors = [],
+  selectedCap,
+  onCapChange,
   sortBy,
   onSortByChange,
   sortDirection,
   onSortDirectionChange,
+  onExportCsv,
   counts = { all: 0, direct: 0, funds: 0, overlap: 0 },
 }) {
   const [showSortModal, setShowSortModal] = useState(false);
 
   const activeSortLabel = SORT_OPTIONS.find((s) => s.id === sortBy)?.label || 'Total Exposure';
-  const hasActiveFilters = Boolean(searchQuery.trim() || selectedSector || sourceFilter !== 'all');
+  const hasActiveFilters = Boolean(searchQuery.trim() || selectedSector || selectedCap || sourceFilter !== 'all');
 
   const handleResetFilters = () => {
     onSearchChange('');
     onSectorChange(null);
+    onCapChange?.(null);
     onSourceFilterChange('all');
   };
 
@@ -75,11 +80,12 @@ export const HoldingsFilterBar = memo(function HoldingsFilterBar({
           )}
         </div>
 
-        {/* Sector Select & Sort Actions */}
-        <div className="flex items-center gap-2 shrink-0">
+        {/* Sector, Cap, Sort & Export Actions */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap sm:flex-nowrap">
           {/* Sector Dropdown Selector */}
           <div className="relative">
             <select
+              aria-label="Filter by Sector"
               value={selectedSector || ''}
               onChange={(e) => onSectorChange(e.target.value || null)}
               className="text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer appearance-none pr-7 transition-all focus:outline-none focus:ring-1 focus:ring-[var(--emerald)]"
@@ -102,6 +108,30 @@ export const HoldingsFilterBar = memo(function HoldingsFilterBar({
             />
           </div>
 
+          {/* Market Cap Dropdown Selector */}
+          <div className="relative">
+            <select
+              aria-label="Filter by Market Cap"
+              value={selectedCap || ''}
+              onChange={(e) => onCapChange?.(e.target.value || null)}
+              className="text-xs font-semibold px-3 py-2 rounded-xl cursor-pointer appearance-none pr-7 transition-all focus:outline-none focus:ring-1 focus:ring-[var(--emerald)]"
+              style={{
+                background: 'var(--card-bg)',
+                border: '1px solid var(--card-border)',
+                color: selectedCap ? '#6366F1' : 'var(--text-2)',
+              }}
+            >
+              <option value="">All Caps</option>
+              <option value="Large Cap">Large Cap</option>
+              <option value="Mid Cap">Mid Cap</option>
+              <option value="Small Cap">Small Cap</option>
+            </select>
+            <Filter
+              size={12}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--text-muted)]"
+            />
+          </div>
+
           {/* Sort Button (Triggers Bottom Sheet Modal on mobile / Popover on desktop) */}
           <button
             type="button"
@@ -116,10 +146,29 @@ export const HoldingsFilterBar = memo(function HoldingsFilterBar({
           >
             <SlidersHorizontal size={13} className="text-emerald-500 shrink-0" />
             <span className="hidden sm:inline text-[var(--text-muted)]">Sort:</span>
-            <span className="truncate max-w-[130px] font-bold text-[var(--text)]">
+            <span className="truncate max-w-[120px] font-bold text-[var(--text)]">
               {activeSortLabel}
             </span>
           </button>
+
+          {/* Export CSV Button */}
+          {onExportCsv && (
+            <button
+              type="button"
+              onClick={onExportCsv}
+              title="Export visible holdings to CSV"
+              aria-label="Export to CSV"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all hover:opacity-90 shrink-0"
+              style={{
+                background: 'var(--card-bg)',
+                border: '1px solid var(--card-border)',
+                color: 'var(--text-2)',
+              }}
+            >
+              <Download size={13} className="text-indigo-400 shrink-0" />
+              <span className="hidden md:inline">Export</span>
+            </button>
+          )}
         </div>
       </div>
 

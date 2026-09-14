@@ -19,9 +19,11 @@ import Skeleton from '../../components/ui/Skeleton';
 
 // Modern Analytics Components
 import AnalyticsKpiRibbon from '../../components/analytics/AnalyticsKpiRibbon';
+import MarketCapDistribution from '../../components/analytics/MarketCapDistribution';
 import SectorDonutChart from '../../components/analytics/SectorDonutChart';
 import HoldingsFilterBar from '../../components/analytics/HoldingsFilterBar';
 import HoldingsConsoleTable from '../../components/analytics/HoldingsConsoleTable';
+import StockLookthroughDrawer from '../../components/analytics/StockLookthroughDrawer';
 
 export default function AnalyticsPage() {
   const { state, refreshAll, refreshing } = usePortfolio();
@@ -54,6 +56,14 @@ export default function AnalyticsPage() {
     }
   });
 
+  const [selectedCap, setSelectedCap] = useState(() => {
+    try {
+      return localStorage.getItem('analytics_selected_cap') || '';
+    } catch {
+      return '';
+    }
+  });
+
   const [sortBy, setSortBy] = useState(() => {
     try {
       return localStorage.getItem('analytics_sort_by') || 'exposure';
@@ -71,6 +81,7 @@ export default function AnalyticsPage() {
   });
 
   const [displayCount, setDisplayCount] = useState(50);
+  const [selectedStockForDrawer, setSelectedStockForDrawer] = useState(null);
 
   // ─── Handlers with Persistence ──────────────────────────────────────────────
   const handleSourceFilterChange = (filter) => {
@@ -90,6 +101,15 @@ export default function AnalyticsPage() {
     } catch {}
   };
 
+  const handleCapChange = (cap) => {
+    setSelectedCap(cap);
+    setDisplayCount(50);
+    try {
+      if (cap) localStorage.setItem('analytics_selected_cap', cap);
+      else localStorage.removeItem('analytics_selected_cap');
+    } catch {}
+  };
+
   const handleSortByChange = (newSort) => {
     setSortBy(newSort);
     setDisplayCount(50);
@@ -104,6 +124,51 @@ export default function AnalyticsPage() {
     try {
       localStorage.setItem('analytics_sort_dir', newDir);
     } catch {}
+  };
+
+  const handleExportCsv = () => {
+    if (!filteredStocks || filteredStocks.length === 0) return;
+    const headers = [
+      'Rank',
+      'Company Name',
+      'Sector',
+      'Market Cap',
+      'Direct Demat Value (INR)',
+      'Via Funds Value (INR)',
+      'Total Exposure (INR)',
+      'Portfolio Weight (%)',
+    ];
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = filteredStocks.map((s, idx) => [
+      idx + 1,
+      escapeCsv(s.name || 'Unknown'),
+      escapeCsv(s.sector || 'Other'),
+      escapeCsv(s.marketCap || 'Small Cap'),
+      Number(s.directValue || 0).toFixed(2),
+      Number(s.indirectValue || 0).toFixed(2),
+      Number(s.exposure || 0).toFixed(2),
+      Number(s.allocation || 0).toFixed(2),
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute(
+      'download',
+      `portfolio_holdings_analysis_${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // ─── Computations ────────────────────────────────────────────────────────────
@@ -152,6 +217,11 @@ export default function AnalyticsPage() {
           return false;
         }
 
+        // Market Cap Filter
+        if (selectedCap && (item.marketCap || 'Small Cap') !== selectedCap) {
+          return false;
+        }
+
         // Source Filter
         if (sourceFilter === 'direct') {
           if ((item.directValue || 0) <= 0) return false;
@@ -188,7 +258,7 @@ export default function AnalyticsPage() {
         }
         return sortDirection === 'desc' ? comp : -comp;
       });
-  }, [stocksData, selectedSector, sourceFilter, searchQuery, sortBy, sortDirection]);
+  }, [stocksData, selectedSector, selectedCap, sourceFilter, searchQuery, sortBy, sortDirection]);
 
   // 4. Max exposure for relative bars
   const maxExposure = useMemo(() => {
@@ -275,7 +345,16 @@ export default function AnalyticsPage() {
               <AnalyticsKpiRibbon stocksData={stocksData} sectorData={sectorData} />
             </section>
 
-            {/* 2. Interactive Sector Donut Engine */}
+            {/* 2. SEBI Market Cap Distribution Gauge */}
+            <section aria-label="Market Cap Distribution">
+              <MarketCapDistribution
+                stocksData={stocksData}
+                selectedCap={selectedCap}
+                onSelectCap={handleCapChange}
+              />
+            </section>
+
+            {/* 3. Interactive Sector Donut Engine */}
             <section aria-label="Sector Allocation">
               <SectorDonutChart
                 data={sectorData}
@@ -284,7 +363,7 @@ export default function AnalyticsPage() {
               />
             </section>
 
-            {/* 3. Zerodha Console Holdings Explorer */}
+            {/* 4. Zerodha Console Holdings Explorer */}
             <section aria-label="Holdings Explorer" className="space-y-3.5">
               <div className="flex items-center justify-between gap-2 px-1">
                 <div className="flex items-center gap-2">
@@ -305,10 +384,13 @@ export default function AnalyticsPage() {
                 selectedSector={selectedSector}
                 onSectorChange={handleSectorChange}
                 sectors={uniqueSectors}
+                selectedCap={selectedCap}
+                onCapChange={handleCapChange}
                 sortBy={sortBy}
                 onSortByChange={handleSortByChange}
                 sortDirection={sortDirection}
                 onSortDirectionChange={handleSortDirectionChange}
+                onExportCsv={handleExportCsv}
                 counts={sourceCounts}
               />
 
@@ -318,12 +400,20 @@ export default function AnalyticsPage() {
                 totalFilteredCount={filteredStocks.length}
                 displayCount={displayCount}
                 onLoadMore={() => setDisplayCount((prev) => prev + 50)}
+                onSelectStock={(stock) => setSelectedStockForDrawer(stock)}
                 maxExposure={maxExposure}
               />
             </section>
           </>
         )}
       </div>
+
+      {/* Stock Look-Through & Demat Position Drawer */}
+      <StockLookthroughDrawer
+        stock={selectedStockForDrawer}
+        isOpen={Boolean(selectedStockForDrawer)}
+        onClose={() => setSelectedStockForDrawer(null)}
+      />
 
       {/* Market News Overlay Drawer */}
       <NewsPage isOpen={newsPageOpen} onClose={() => setNewsPageOpen(false)} />

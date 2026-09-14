@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Layers } from 'lucide-react';
+import { Layers, ChevronRight } from 'lucide-react';
 import { usePrivacy } from '../../context/PrivacyContext';
 
 const RANK_COLORS = ['#F59E0B', '#94A3B8', '#CD7F32'];
@@ -17,6 +17,7 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
   totalFilteredCount = 0,
   displayCount = 50,
   onLoadMore,
+  onSelectStock,
   maxExposure = 1,
 }) {
   const { isPrivacyMode } = usePrivacy();
@@ -65,10 +66,12 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
               <th className="py-3 px-4 w-12 text-center">#</th>
               <th className="py-3 px-4">Company Name</th>
               <th className="py-3 px-4">Sector</th>
+              <th className="py-3 px-4">Cap</th>
               <th className="py-3 px-4 text-right">Direct Demat</th>
               <th className="py-3 px-4 text-right">Via Funds</th>
               <th className="py-3 px-4 text-right">Total Exposure</th>
               <th className="py-3 px-4 text-right w-36">Portfolio Weight</th>
+              <th className="py-3 px-3 w-8"></th>
             </tr>
           </thead>
           <tbody>
@@ -82,7 +85,10 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
               return (
                 <tr
                   key={`${item.name}-${idx}`}
-                  className="transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
+                  onClick={() => onSelectStock?.(item)}
+                  role="button"
+                  tabIndex={0}
+                  className="transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.03] cursor-pointer group"
                   style={{
                     borderBottom: idx < items.length - 1 ? '1px solid var(--divider)' : 'none',
                   }}
@@ -103,7 +109,7 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
                   {/* Company Name & Tag */}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold truncate max-w-[240px]" style={{ color: 'var(--text)' }}>
+                      <span className="text-sm font-bold truncate max-w-[220px]" style={{ color: 'var(--text)' }}>
                         {isPrivacyMode ? '••••••••••' : item.name}
                       </span>
                       {isOverlap && (
@@ -125,8 +131,23 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
                   </td>
 
                   {/* Sector */}
-                  <td className="py-3 px-4 text-xs font-medium text-[var(--text-2)] truncate max-w-[140px]">
+                  <td className="py-3 px-4 text-xs font-medium text-[var(--text-2)] truncate max-w-[130px]">
                     {item.sector || 'Other'}
+                  </td>
+
+                  {/* Market Cap */}
+                  <td className="py-3 px-4 text-xs font-medium">
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        item.marketCap === 'Large Cap'
+                          ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                          : item.marketCap === 'Mid Cap'
+                          ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400'
+                          : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                      }`}
+                    >
+                      {item.marketCap || 'Small Cap'}
+                    </span>
                   </td>
 
                   {/* Direct Demat Value */}
@@ -158,6 +179,11 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
                       </div>
                     </div>
                   </td>
+
+                  {/* Action Chevron */}
+                  <td className="py-3 px-3 text-right">
+                    <ChevronRight size={14} className="text-[var(--text-muted)] opacity-30 group-hover:opacity-100 transition-opacity" />
+                  </td>
                 </tr>
               );
             })}
@@ -176,7 +202,10 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
           return (
             <div
               key={`m-${item.name}-${idx}`}
-              className="p-3 sm:p-3.5 flex items-center justify-between gap-3 transition-colors active:bg-black/[0.03] dark:active:bg-white/[0.03]"
+              role="button"
+              tabIndex={0}
+              onClick={() => onSelectStock?.(item)}
+              className="p-3 sm:p-3.5 flex items-center justify-between gap-3 transition-colors active:bg-black/[0.03] dark:active:bg-white/[0.03] cursor-pointer"
             >
               {/* Left: Rank & Details */}
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -195,9 +224,14 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
                     {isPrivacyMode ? '••••••••' : item.name}
                   </h5>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[120px]">
+                    <span className="text-[10px] text-[var(--text-muted)] truncate max-w-[110px]">
                       {item.sector || 'Other'}
                     </span>
+                    {item.marketCap && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+                        {item.marketCap}
+                      </span>
+                    )}
                     {isOverlap && (
                       <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                         Direct + Funds
@@ -218,13 +252,16 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
               </div>
 
               {/* Right: Exposure & Allocation % */}
-              <div className="text-right shrink-0">
-                <div className="text-xs sm:text-sm font-extrabold" style={{ color: 'var(--text)' }}>
-                  {isPrivacyMode ? '₹••••' : formatAmt(item.exposure)}
+              <div className="text-right shrink-0 flex items-center gap-2">
+                <div>
+                  <div className="text-xs sm:text-sm font-extrabold" style={{ color: 'var(--text)' }}>
+                    {isPrivacyMode ? '₹••••' : formatAmt(item.exposure)}
+                  </div>
+                  <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    {Number(item.allocation || 0).toFixed(2)}%
+                  </div>
                 </div>
-                <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                  {Number(item.allocation || 0).toFixed(2)}%
-                </div>
+                <ChevronRight size={14} className="text-[var(--text-muted)] opacity-40 shrink-0" />
               </div>
             </div>
           );
@@ -247,3 +284,4 @@ export const HoldingsConsoleTable = memo(function HoldingsConsoleTable({
 });
 
 export default HoldingsConsoleTable;
+

@@ -451,6 +451,7 @@ export const supabaseApi = {
       return data.map(s => ({
         name: s.stock_name || s.name || s.symbol,
         sector: s.sector || 'Other',
+        marketCap: s.market_cap_category || 'Small Cap',
         exposure: Number(Number(s.total_exposure || 0).toFixed(2)),
         allocation: Number(Number(s.allocation_pct || s.weight_pct || 0).toFixed(2)),
         directValue: Number(Number(s.direct_value || 0).toFixed(2)),
@@ -463,11 +464,29 @@ export const supabaseApi = {
     return stocks.map(s => ({
       name: s.name,
       sector: s.sector || 'Other',
+      marketCap: 'Small Cap',
       exposure: Number((s.currentValue || 0).toFixed(2)),
       allocation: totalCur > 0 ? Number(((s.currentValue / totalCur) * 100).toFixed(2)) : 0,
       directValue: Number((s.currentValue || 0).toFixed(2)),
       indirectValue: 0
     })).sort((a, b) => b.exposure - a.exposure);
+  },
+
+  getStockLookthrough: async (stockName) => {
+    if (!stockName) return null;
+    try {
+      const { data, error } = await supabase.rpc('get_stock_lookthrough', {
+        p_stock_name: stockName,
+      });
+      if (error) {
+        console.warn('Error fetching stock lookthrough:', error);
+        return null;
+      }
+      return data;
+    } catch (err) {
+      console.warn('Failed to call get_stock_lookthrough:', err);
+      return null;
+    }
   },
 
   getDashboard: async () => {

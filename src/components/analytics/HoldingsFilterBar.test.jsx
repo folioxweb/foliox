@@ -11,10 +11,13 @@ describe('HoldingsFilterBar', () => {
     selectedSector: null,
     onSectorChange: vi.fn(),
     sectors: ['Financial Services', 'Technology', 'Consumer Goods'],
+    selectedCap: null,
+    onCapChange: vi.fn(),
     sortBy: 'exposure',
     onSortByChange: vi.fn(),
     sortDirection: 'desc',
     onSortDirectionChange: vi.fn(),
+    onExportCsv: vi.fn(),
     counts: { all: 100, direct: 20, funds: 80, overlap: 15 },
   };
 
@@ -40,10 +43,30 @@ describe('HoldingsFilterBar', () => {
   it('renders sector options and triggers sector change', () => {
     render(<HoldingsFilterBar {...defaultProps} />);
 
-    const selectEl = screen.getByRole('combobox');
-    fireEvent.change(selectEl, { target: { value: 'Technology' } });
+    const selectEls = screen.getAllByRole('combobox');
+    // First select is Sector
+    fireEvent.change(selectEls[0], { target: { value: 'Technology' } });
 
     expect(defaultProps.onSectorChange).toHaveBeenCalledWith('Technology');
+  });
+
+  it('renders market cap options and triggers cap change', () => {
+    render(<HoldingsFilterBar {...defaultProps} />);
+
+    const selectEls = screen.getAllByRole('combobox');
+    // Second select is Market Cap
+    fireEvent.change(selectEls[1], { target: { value: 'Large Cap' } });
+
+    expect(defaultProps.onCapChange).toHaveBeenCalledWith('Large Cap');
+  });
+
+  it('calls onExportCsv when Export CSV button is clicked', () => {
+    render(<HoldingsFilterBar {...defaultProps} />);
+
+    const exportBtn = screen.getByRole('button', { name: /Export/i });
+    fireEvent.click(exportBtn);
+
+    expect(defaultProps.onExportCsv).toHaveBeenCalledTimes(1);
   });
 
   it('opens sort modal when clicking sort button', () => {

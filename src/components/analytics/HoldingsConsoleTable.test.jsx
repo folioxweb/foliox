@@ -8,6 +8,7 @@ describe('HoldingsConsoleTable', () => {
     {
       name: 'HDFC Bank Ltd',
       sector: 'Financial Services',
+      marketCap: 'Large Cap',
       exposure: 250000,
       allocation: 25.5,
       directValue: 150000,
@@ -16,6 +17,7 @@ describe('HoldingsConsoleTable', () => {
     {
       name: 'TCS Ltd',
       sector: 'Technology',
+      marketCap: 'Large Cap',
       exposure: 180000,
       allocation: 18.2,
       directValue: 180000,
@@ -36,6 +38,7 @@ describe('HoldingsConsoleTable', () => {
 
     expect(screen.getAllByText('HDFC Bank Ltd').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('TCS Ltd').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Large Cap').length).toBeGreaterThanOrEqual(2);
   });
 
   it('renders Direct + Funds overlap badge for dual exposure', () => {
@@ -47,6 +50,24 @@ describe('HoldingsConsoleTable', () => {
 
     expect(screen.getAllByText('Direct + Funds').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Direct').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('triggers onSelectStock when a row is clicked', () => {
+    const handleSelectStock = vi.fn();
+    render(
+      <PrivacyProvider>
+        <HoldingsConsoleTable
+          items={mockItems}
+          totalFilteredCount={2}
+          onSelectStock={handleSelectStock}
+        />
+      </PrivacyProvider>
+    );
+
+    const hdfcRow = screen.getAllByText('HDFC Bank Ltd')[0];
+    fireEvent.click(hdfcRow);
+
+    expect(handleSelectStock).toHaveBeenCalledWith(mockItems[0]);
   });
 
   it('renders empty state when no items match', () => {
