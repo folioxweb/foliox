@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, ExternalLink } from 'lucide-react';
 import Badge from '../../components/ui/Badge';
 import { formatCurrency, formatPercent } from '../../utils/formatters';
 import { usePrivacy } from '../../context/PrivacyContext';
@@ -188,6 +188,17 @@ export default function DetailScreen({ holding: propHolding }) {
   const isStockOrETF = !isFD && !isMF;
   const isStock = !isFD && !isMF && holding.assetType !== "etfs" && holding.asset_type !== "ETF" && holding.category !== "ETF";
 
+  const screenerSymbol = useMemo(() => {
+    if (!isStock) return '';
+    const raw = holding?.symbol || (!holding?.name?.includes(' ') ? holding?.name : '') || '';
+    if (!raw) return '';
+    return String(raw)
+      .replace(/\.(NS|BO)$/i, '')
+      .replace(/^(NSE|BSE):/i, '')
+      .trim()
+      .toUpperCase();
+  }, [isStock, holding?.symbol, holding?.name]);
+
   const derivedPrice = (currentValue && quantity && quantity > 0) ? (currentValue / quantity) : undefined;
   const todayPrice = isFD
     ? (currentValue || holding.principal || 0)
@@ -236,10 +247,26 @@ export default function DetailScreen({ holding: propHolding }) {
           <span>Portfolio</span>
         </button>
 
-        <Badge
-          label={isFD ? "Fixed Deposit" : labelStr}
-          color={isFD ? "teal" : badgeColor}
-        />
+        <div className="flex items-center gap-2">
+          {isStock && screenerSymbol && (
+            <a
+              href={`https://www.screener.in/company/${encodeURIComponent(screenerSymbol)}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 bg-[var(--sheet-btn-bg)] text-[var(--text)] hover:text-emerald-500 font-semibold text-xs border border-[var(--card-border)] hover:border-emerald-500/40 transition-all shadow-sm group"
+              title={`View ${screenerSymbol} on Screener.in`}
+              aria-label={`View ${screenerSymbol} on Screener.in`}
+            >
+              <span>Screener</span>
+              <ExternalLink size={13} className="text-[var(--text-muted)] group-hover:text-emerald-500 transition-colors" />
+            </a>
+          )}
+
+          <Badge
+            label={isFD ? "Fixed Deposit" : labelStr}
+            color={isFD ? "teal" : badgeColor}
+          />
+        </div>
       </header>
 
       {/* ── Stock Name & Today's Live Price / Returns (Clean Android Typography) ── */}
